@@ -1,0 +1,278 @@
+import { describe, it, expect } from 'vitest';
+import { gameReducer } from '../useSnakeGame';
+import type { GameState } from '../../types/game';
+import { POINTS_PER_FOOD } from '../../utils/constants';
+
+function makeState(overrides: Partial<GameState> = {}): GameState {
+  return {
+    snake: [
+      { x: 5, y: 5 },
+      { x: 4, y: 5 },
+      { x: 3, y: 5 },
+    ],
+    food: { x: 10, y: 10 },
+    direction: 'RIGHT',
+    nextDirection: 'RIGHT',
+    status: 'idle',
+    score: 0,
+    highScore: 0,
+    level: 1,
+    obstacles: [],
+    ...overrides,
+  };
+}
+
+describe('gameReducer', () => {
+  describe('START_GAME / RESET', () => {
+    it('sets status to playing', () => {
+      const state = makeState();
+      const next = gameReducer(state, { type: 'START_GAME' });
+      expect(next.status).toBe('playing');
+    });
+
+    it('resets score to 0', () => {
+      const state = makeState({ score: 100 });
+      const next = gameReducer(state, { type: 'RESET' });
+      expect(next.score).toBe(0);
+    });
+
+    it('resets level to 1', () => {
+      const state = makeState({ level: 5 });
+      const next = gameReducer(state, { type: 'START_GAME' });
+      expect(next.level).toBe(1);
+    });
+
+    it('resets direction to RIGHT', () => {
+      const state = makeState({ direction: 'LEFT', nextDirection: 'LEFT' });
+      const next = gameReducer(state, { type: 'RESET' });
+      expect(next.direction).toBe('RIGHT');
+      expect(next.nextDirection).toBe('RIGHT');
+    });
+  });
+
+  describe('PAUSE_GAME', () => {
+    it('sets status to paused', () => {
+      const state = makeState({ status: 'playing' });
+      const next = gameReducer(state, { type: 'PAUSE_GAME' });
+      expect(next.status).toBe('paused');
+    });
+  });
+
+  describe('RESUME_GAME', () => {
+    it('sets status to playing', () => {
+      const state = makeState({ status: 'paused' });
+      const next = gameReducer(state, { type: 'RESUME_GAME' });
+      expect(next.status).toBe('playing');
+    });
+  });
+
+  describe('CHANGE_DIRECTION', () => {
+    it('updates nextDirection', () => {
+      const state = makeState();
+      const next = gameReducer(state, { type: 'CHANGE_DIRECTION', payload: 'UP' });
+      expect(next.nextDirection).toBe('UP');
+    });
+  });
+
+  describe('MOVE_SNAKE', () => {
+    it('moves snake in current direction', () => {
+      const state = makeState({ nextDirection: 'RIGHT' });
+      const next = gameReducer(state, { type: 'MOVE_SNAKE' });
+      expect(next.snake[0]).toEqual({ x: 6, y: 5 });
+    });
+
+    it('removes tail when no food eaten', () => {
+      const state = makeState({ nextDirection: 'RIGHT' });
+      const next = gameReducer(state, { type: 'MOVE_SNAKE' });
+      expect(next.snake.length).toBe(3);
+    });
+
+    it('grows snake when food is eaten', () => {
+      const state = makeState({
+        snake: [
+          { x: 9, y: 10 },
+          { x: 8, y: 10 },
+          { x: 7, y: 10 },
+        ],
+        food: { x: 10, y: 10 },
+        nextDirection: 'RIGHT',
+      });
+      const next = gameReducer(state, { type: 'MOVE_SNAKE' });
+      expect(next.snake.length).toBe(4);
+      expect(next.snake[0]).toEqual({ x: 10, y: 10 });
+    });
+
+    it('increments score when food is eaten', () => {
+      const state = makeState({
+        snake: [
+          { x: 9, y: 10 },
+          { x: 8, y: 10 },
+          { x: 7, y: 10 },
+        ],
+        food: { x: 10, y: 10 },
+        nextDirection: 'RIGHT',
+        score: 0,
+      });
+      const next = gameReducer(state, { type: 'MOVE_SNAKE' });
+      expect(next.score).toBe(POINTS_PER_FOOD);
+    });
+
+    it('spawns new food when food is eaten', () => {
+      const state = makeState({
+        snake: [
+          { x: 9, y: 10 },
+          { x: 8, y: 10 },
+          { x: 7, y: 10 },
+        ],
+        food: { x: 10, y: 10 },
+        nextDirection: 'RIGHT',
+      });
+      const next = gameReducer(state, { type: 'MOVE_SNAKE' });
+      expect(next.food).not.toEqual(state.food);
+    });
+
+    it('does not change food when no food eaten', () => {
+      const state = makeState({ nextDirection: 'RIGHT' });
+      const next = gameReducer(state, { type: 'MOVE_SNAKE' });
+      expect(next.food).toEqual(state.food);
+    });
+
+    it('sets gameover on wall collision', () => {
+      const state = makeState({
+        snake: [{ x: 0, y: 5 }],
+        nextDirection: 'LEFT',
+      });
+      const next = gameReducer(state, { type: 'MOVE_SNAKE' });
+      expect(next.status).toBe('gameover');
+    });
+
+    it('sets gameover on self collision', () => {
+      const state = makeState({
+        snake: [
+          { x: 5, y: 5 },  // head
+          { x: 5, y: 4 },  // body above
+          { x: 6, y: 4 },
+          { x: 6, y: 5 },
+        ],
+        nextDirection: 'UP',
+      });
+      const next = gameReducer(state, { type: 'MOVE_SNAKE' });
+      expect(next.status).toBe('gameover');
+    });
+
+    it('sets gameover on obstacle collision', () => {
+      const state = makeState({
+        snake: [{ x: 5, y: 5 }],
+        obstacles: [{ x: 6, y: 5 }],
+        nextDirection: 'RIGHT',
+      });
+      const next = gameReducer(state, { type: 'MOVE_SNAKE' });
+      expect(next.status).toBe('gameover');
+    });
+
+    it('updates direction to nextDirection', () => {
+      const state = makeState({ nextDirection: 'UP' });
+      const next = gameReducer(state, { type: 'MOVE_SNAKE' });
+      expect(next.direction).toBe('UP');
+    });
+
+    it('updates high score on gameover if score is higher', () => {
+      const state = makeState({
+        score: 50,
+        highScore: 30,
+        snake: [{ x: 0, y: 5 }],
+        nextDirection: 'LEFT',
+      });
+      const next = gameReducer(state, { type: 'MOVE_SNAKE' });
+      expect(next.highScore).toBe(50);
+    });
+
+    it('preserves high score on gameover if score is lower', () => {
+      const state = makeState({
+        score: 20,
+        highScore: 100,
+        snake: [{ x: 0, y: 5 }],
+        nextDirection: 'LEFT',
+      });
+      const next = gameReducer(state, { type: 'MOVE_SNAKE' });
+      expect(next.highScore).toBe(100);
+    });
+  });
+
+  describe('level up', () => {
+    it('levels up when score reaches target', () => {
+      const state = makeState({
+        level: 1,
+        score: 40,
+        snake: [
+          { x: 9, y: 10 },
+          { x: 8, y: 10 },
+          { x: 7, y: 10 },
+        ],
+        food: { x: 10, y: 10 },
+        nextDirection: 'RIGHT',
+      });
+      const next = gameReducer(state, { type: 'MOVE_SNAKE' });
+      expect(next.level).toBe(2);
+      expect(next.score).toBe(50);
+    });
+
+    it('resets snake on level up', () => {
+      const state = makeState({
+        level: 1,
+        score: 40,
+        snake: [
+          { x: 9, y: 10 },
+          { x: 8, y: 10 },
+          { x: 7, y: 10 },
+        ],
+        food: { x: 10, y: 10 },
+        nextDirection: 'RIGHT',
+      });
+      const next = gameReducer(state, { type: 'MOVE_SNAKE' });
+      expect(next.snake).toHaveLength(3);
+      expect(next.snake[0]).toEqual({ x: 10, y: 10 });
+    });
+
+    it('sets won status when level 10 is completed', () => {
+      const state = makeState({
+        level: 10,
+        score: 490,
+        snake: [
+          { x: 9, y: 10 },
+          { x: 8, y: 10 },
+          { x: 7, y: 10 },
+        ],
+        food: { x: 10, y: 10 },
+        nextDirection: 'RIGHT',
+      });
+      const next = gameReducer(state, { type: 'MOVE_SNAKE' });
+      expect(next.status).toBe('won');
+    });
+
+    it('updates high score on win', () => {
+      const state = makeState({
+        level: 10,
+        score: 490,
+        highScore: 400,
+        snake: [
+          { x: 9, y: 10 },
+          { x: 8, y: 10 },
+          { x: 7, y: 10 },
+        ],
+        food: { x: 10, y: 10 },
+        nextDirection: 'RIGHT',
+      });
+      const next = gameReducer(state, { type: 'MOVE_SNAKE' });
+      expect(next.highScore).toBe(500);
+    });
+  });
+
+  describe('default action', () => {
+    it('returns current state for unknown action', () => {
+      const state = makeState();
+      const next = gameReducer(state, { type: 'UNKNOWN' } as any);
+      expect(next).toBe(state);
+    });
+  });
+});
