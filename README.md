@@ -1,6 +1,6 @@
-# Snake Game
+# Snake Run
 
-Classic Snake game built with React, TypeScript, and Vite.
+Classic Snake Run built with React, TypeScript, and Vite.
 
 Navigate a snake on a 20x20 grid, eat food to grow, avoid walls and obstacles, and complete 10 levels to win.
 

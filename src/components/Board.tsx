@@ -30,7 +30,7 @@ export const Board = ({ snake, direction, food, obstacles }: BoardProps) => {
     <div
       className={styles.board}
       role="grid"
-      aria-label="Snake game board"
+      aria-label="Snake Run board"
       style={{
         display: 'grid',
         gridTemplateColumns: `repeat(${GRID_SIZE}, ${CELL_SIZE}px)`,

@@ -1,4 +1,4 @@
-# Snake Game — End-to-End Specification
+# Snake Run — End-to-End Specification
 
 Complete behavioral and technical specification of the game as currently implemented. Intended as a handoff document for AI-assisted feature planning.
 
@@ -6,7 +6,7 @@ Complete behavioral and technical specification of the game as currently impleme
 
 ## 1. Game Overview
 
-A classic single-player Snake game. The player controls a snake on a 20x20 grid. The snake moves continuously in one of four directions. Eating food grows the snake and earns points. The game ends on collision with a wall, the snake's own body, or an obstacle. There are 10 levels with increasing speed and obstacles. Completing level 10 wins the game.
+A classic single-player Snake Run. The player controls a snake on a 20x20 grid. The snake moves continuously in one of four directions. Eating food grows the snake and earns points. The game ends on collision with a wall, the snake's own body, or an obstacle. There are 10 levels with increasing speed and obstacles. Completing level 10 wins the game.
 
 ---
 
@@ -150,7 +150,7 @@ won
 ### 7.2 State Descriptions
 | Status | Description | Board | Overlay |
 |--------|-------------|-------|---------|
-| `idle` | Initial state, game not started | Shows snake + food + obstacles | "Snake Game" with Start button |
+| `idle` | Initial state, game not started | Shows snake + food + obstacles | "Snake Run" with Start button |
 | `playing` | Active gameplay, snake moving | Full board visible | None |
 | `paused` | Game paused by user | Board visible (frozen) | "Paused" with Resume button |
 | `gameover` | Player lost | Board visible (frozen) | "Game Over!" with score + Play Again |
@@ -220,7 +220,7 @@ won
 - Renders 400 Cell components in CSS Grid
 - Memoizes grid cell coordinates (static)
 - Memoizes snake body Set and obstacles Set for O(1) lookups per cell
-- `role="grid"` + `aria-label="Snake game board"`
+- `role="grid"` + `aria-label="Snake Run board"`
 
 ### 10.3 Cell
 - Pure presentational component

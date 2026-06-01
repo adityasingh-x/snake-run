@@ -10,7 +10,7 @@ AI-generated gameplay/content is a future possibility but is NOT a current devel
 
 Current focus:
 
-Create the best possible Snake game first.
+Create the best possible Snake Run first.
 
 ---
 

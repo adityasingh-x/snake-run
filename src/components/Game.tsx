@@ -9,7 +9,7 @@ import { GameOver } from './GameOver';
 import styles from './Game.module.css';
 
 const STATUS_ANNOUNCEMENTS: Record<string, string> = {
-  idle: 'Snake Game ready. Press Space or click Start to begin.',
+  idle: 'Snake Run ready. Press Space or click Start to begin.',
   playing: 'Game started. Use arrow keys or WASD to move.',
   paused: 'Game paused. Press Space or click Resume to continue.',
   gameover: 'Game over!',
@@ -64,14 +64,14 @@ export const Game = () => {
 
   return (
     <div className={styles.gameContainer}>
-      <h1 className={styles.title}>Snake Game</h1>
+      <h1 className={styles.title}>Snake Run</h1>
       <ScoreBoard score={state.score} highScore={state.highScore} level={state.level} soundOn={soundOn} onToggleSound={handleToggleSound} />
       <div className={styles.boardWrapper} ref={boardRef}>
         <Board snake={state.snake} direction={state.direction} food={state.food} obstacles={state.obstacles} />
         {state.status === 'idle' && (
           <div className={styles.overlay}>
             <div className={styles.overlayContent}>
-              <h2>Snake Game</h2>
+              <h2>Snake Run</h2>
               <p>Use arrow keys or WASD to move</p>
               <button className={styles.startButton} onClick={() => { initAudio(); startGame(); }} autoFocus>
                 Start Game

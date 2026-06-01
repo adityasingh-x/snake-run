@@ -10,7 +10,7 @@ v0.1.0
 
 Playable Prototype
 
-The game is fully playable as a traditional Snake game and serves as the foundation for future development.
+The game is fully playable as a traditional Snake Run and serves as the foundation for future development.
 
 The project has not yet been publicly released.
 

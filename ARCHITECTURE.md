@@ -1,4 +1,4 @@
-# Snake Game — Codebase Map
+# Snake Run — Codebase Map
 
 ## Technology Stack
 
@@ -11,7 +11,7 @@
 
 ## Core Functionality
 
-Classic Snake game on a 20x20 grid. Players control a snake that grows by eating food. Game ends on collision with walls, self, or obstacles. Win by completing all 10 levels.
+Classic Snake Run on a 20x20 grid. Players control a snake that grows by eating food. Game ends on collision with walls, self, or obstacles. Win by completing all 10 levels.
 
 ## Project Structure
 
