@@ -129,7 +129,7 @@ A classic single-player Snake Run. The player controls a snake on a 20x20 grid. 
 idle
   START_GAME -> playing
   PAUSE_GAME -> paused
-  RESET -> idle
+  RESET -> playing
 
 playing
   PAUSE_GAME -> paused
@@ -141,10 +141,10 @@ paused
   SPACE -> RESUME_GAME -> playing
 
 gameover
-  RESTART -> RESET -> idle
+  RESTART -> RESET -> playing
 
 won
-  RESTART -> RESET -> idle
+  RESTART -> RESET -> playing
 ```
 
 ### 7.2 State Descriptions
@@ -188,8 +188,8 @@ won
 ## 9. Sound System
 
 - **Engine:** Web Audio API oscillators (no audio asset files)
-- **AudioContext:** created lazily via `initAudio()` using a module-level `sharedCtxRef` singleton; called from user gesture handlers (Start, Resume, Restart buttons, Space key) to satisfy browser autoplay policies
-- **Shared state:** module-level `sharedEnabledRef` singleton so all `useSound()` instances share the same toggle state
+- **AudioContext:** created lazily via `SoundManager.initAudio()`; called from user gesture handlers (Start, Resume, Restart buttons, Space key) to satisfy browser autoplay policies
+- **Shared state:** a single `sharedSoundManager` singleton (exported from `src/platform/sound.ts`) is used by the game engine for playback and by the React component for the toggle, ensuring mute state is shared across the app
 - **Persistence:** sound preference stored in localStorage key `snakeSoundEnabled`
 - **Default:** enabled (`true`)
 
@@ -307,10 +307,11 @@ won
 ## 15. Testing
 
 - **Framework:** Vitest with jsdom environment
-- **80 unit tests** across 5 test files:
+- **92 unit tests** across 6 test files:
+  - `state.test.ts` (24 tests): gameReducer state transitions (START, RESET, PAUSE, RESUME, CHANGE_DIRECTION, MOVE_SNAKE, collisions, level-up, win, high score)
+  - `Engine.test.ts` (12 tests): Engine class behavior (start, pause, resume, reset, loop management, subscriptions, destroy)
   - `gameLogic.test.ts` (25 tests): positionsEqual, calculateNewHead, isWallCollision, isSelfCollision, isObstacleCollision, isCollision, spawnFood
   - `levelData.test.ts` (18 tests): getLevelData, generateObstacles
-  - `useSnakeGame.test.ts` (24 tests): gameReducer state transitions (START, RESET, PAUSE, RESUME, CHANGE_DIRECTION, MOVE_SNAKE, collisions, level-up, win, high score)
   - `storage.test.ts` (8 tests): loadHighScore, saveHighScore with localStorage mock
   - `Cell.test.tsx` (5 tests): Cell component rendering, accessibility, and direction styling
 

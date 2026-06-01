@@ -66,11 +66,12 @@ npm run dev
 
 ```text
 src/
-├── components/
-├── hooks/
-├── utils/
-├── types/
-└── __tests__/
+├── game/          # React-independent game engine
+├── platform/      # Platform-specific adapters (keyboard, touch, sound)
+├── hooks/         # React bridge hooks
+├── components/    # React UI
+├── types/         # Shared types
+└── utils/         # Legacy compatibility re-exports
 ```
 
 ## Testing

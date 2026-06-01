@@ -122,27 +122,31 @@ Testing:
 
 - Basic testing infrastructure
 
+Foundation Refactor (Milestone 1):
+
+- Game engine separated from React (`src/game/`)
+- Platform adapters created (`src/platform/`)
+- React bridge hook (`useGame.ts`)
+- Framework-agnostic Engine class
+- 92 unit tests passing
+
 ---
 
 ## In Progress
 
 - Mobile control improvements
-- Platform architecture planning
-- Foundation refactor planning
 
 ---
 
 ## Not Started
 
-- Engine/UI separation
-- Platform abstraction layer
 - PWA support
 - Native mobile packaging
 - Native desktop packaging
 
 ---
 
-# Milestone 1 - Foundation Refactor
+# Milestone 1 - Foundation Refactor ✅
 
 Goal:
 
@@ -156,22 +160,22 @@ Key Tasks:
 - Create platform abstraction layer
 - Expand automated tests
 
-Suggested Structure:
+Structure:
 
 ```text
 src/
-├── game/
-├── platform/
-├── ui/
-├── hooks/
+├── game/           # React-independent game engine
+├── platform/       # Platform-specific adapters
+├── hooks/          # React integration layer
+├── components/     # React UI
 └── assets/
 ```
 
 Success Criteria:
 
-- Game engine is React-independent
-- Core gameplay logic is testable
-- Future platform support becomes simpler
+- Game engine is React-independent ✅
+- Core gameplay logic is testable ✅
+- Future platform support becomes simpler ✅
 
 ---
 

@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { useSnakeGame } from '../hooks/useSnakeGame';
+import { useGame } from '../hooks/useGame';
 import { useKeyboard } from '../hooks/useKeyboard';
 import { useTouch } from '../hooks/useTouch';
-import { useSound } from '../hooks/useSound';
+import { sharedSoundManager } from '../platform/sound';
 import { Board } from './Board';
 import { ScoreBoard } from './ScoreBoard';
 import { GameOver } from './GameOver';
@@ -25,15 +25,29 @@ export const Game = () => {
     resumeGame,
     changeDirection,
     resetGame,
-  } = useSnakeGame();
+  } = useGame();
 
-  const { toggleSound, isEnabled } = useSound();
-  const [soundOn, setSoundOn] = useState(() => isEnabled());
+  const [soundOn, setSoundOn] = useState(() => sharedSoundManager.isEnabled());
 
   const handleToggleSound = useCallback(() => {
-    const next = toggleSound();
+    const next = sharedSoundManager.toggleSound();
     setSoundOn(next);
-  }, [toggleSound]);
+  }, []);
+
+  const handleStart = useCallback(() => {
+    initAudio();
+    startGame();
+  }, [initAudio, startGame]);
+
+  const handleResume = useCallback(() => {
+    initAudio();
+    resumeGame();
+  }, [initAudio, resumeGame]);
+
+  const handleRestart = useCallback(() => {
+    initAudio();
+    resetGame();
+  }, [initAudio, resetGame]);
 
   const announceRef = useRef<HTMLDivElement>(null);
   const boardRef = useRef<HTMLDivElement>(null);
@@ -42,10 +56,10 @@ export const Game = () => {
   useKeyboard({
     status: state.status,
     currentDirection: state.direction,
-    onStart: () => { initAudio(); startGame(); },
+    onStart: handleStart,
     onPause: pauseGame,
-    onResume: () => { initAudio(); resumeGame(); },
-    onRestart: () => { initAudio(); resetGame(); },
+    onResume: handleResume,
+    onRestart: handleRestart,
     onChangeDirection: changeDirection,
   });
 
@@ -73,7 +87,7 @@ export const Game = () => {
             <div className={styles.overlayContent}>
               <h2>Snake Run</h2>
               <p>Use arrow keys or WASD to move</p>
-              <button className={styles.startButton} onClick={() => { initAudio(); startGame(); }} autoFocus>
+              <button className={styles.startButton} onClick={handleStart} autoFocus>
                 Start Game
               </button>
               <p className={styles.hint}>Or press Space</p>
@@ -84,7 +98,7 @@ export const Game = () => {
           <div className={styles.overlay}>
             <div className={styles.overlayContent}>
               <h2>Paused</h2>
-              <button className={styles.startButton} onClick={() => { initAudio(); resumeGame(); }} autoFocus>
+              <button className={styles.startButton} onClick={handleResume} autoFocus>
                 Resume
               </button>
               <p className={styles.hint}>Or press Space</p>
@@ -92,10 +106,10 @@ export const Game = () => {
           </div>
         )}
         {state.status === 'gameover' && (
-          <GameOver score={state.score} onRestart={() => { initAudio(); resetGame(); }} />
+          <GameOver score={state.score} onRestart={handleRestart} />
         )}
         {state.status === 'won' && (
-          <GameOver score={state.score} onRestart={() => { initAudio(); resetGame(); }} variant="win" />
+          <GameOver score={state.score} onRestart={handleRestart} variant="win" />
         )}
       </div>
       <div className={styles.dpad}>

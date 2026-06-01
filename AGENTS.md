@@ -357,3 +357,12 @@ docs/adr/
 
 - Permanent record of major decisions.
 - Historical reference for future development.
+
+## Git Workflow Protocol
+
+When you have successfully completed coding and verified that all tests pass, you must prepare the code for review. Do not guess the format. You must read and strictly follow the formatting rules defined in the template file:
+
+👉 **Protocol File:** `./git-workflow-template.md` (or wherever you save it)
+
+1. **Read the Template:** Open the file to get the schema constraints.
+2. **Generate Output:** Produce the Branch Name, Commit Message, and PR Body matching that exact specification.

@@ -28,11 +28,9 @@ Prepare the codebase for mobile, PWA, and future platform expansion while mainta
 
 ## Current Priorities
 
-1. Separate game engine from React UI
-2. Improve mobile controls and gesture reliability
-3. Establish platform abstraction boundaries
-4. Expand gameplay test coverage
-5. Prepare for PWA release
+1. Improve mobile controls and gesture reliability
+2. Expand gameplay test coverage
+3. Prepare for PWA release
 
 ---
 
@@ -80,6 +78,14 @@ Planned Focus:
 - Architecture documentation
 - Specification documentation
 
+### Foundation Refactor (Milestone 1)
+
+- Game engine separated from React (`src/game/`)
+- Platform abstraction layer created (`src/platform/`)
+- React bridge hook (`useGame.ts`)
+- Framework-agnostic Engine class
+- 92 unit tests passing
+
 ### Testing
 
 - Automated testing infrastructure
@@ -89,17 +95,10 @@ Planned Focus:
 ## In Progress
 
 - Mobile control improvements
-- Foundation refactor planning
-- Multi-platform architecture preparation
 
 ---
 
 ## Known Technical Debt
-
-### Architecture
-
-- Game logic is not fully separated from UI
-- Platform abstraction layer does not yet exist
 
 ### Mobile
 
@@ -151,12 +150,11 @@ Gameplay Principles:
 
 ## Success Definition For Current Milestone
 
-Milestone 1 will be considered complete when:
+Milestone 1 success criteria:
 
-- Core game logic is separated from React UI
-- Platform boundaries are established
-- Core gameplay systems are testable
-- Mobile control improvements are ready for broader testing
+- Core game logic is separated from React UI ✅
+- Platform boundaries are established ✅
+- Core gameplay systems are testable ✅
 - The project is ready to begin Mobile Experience work
 
 ---

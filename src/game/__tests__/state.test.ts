@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { gameReducer } from '../useSnakeGame';
-import type { GameState, GameAction } from '../../types/game';
-import { POINTS_PER_FOOD } from '../../utils/constants';
+import { gameReducer } from '../state';
+import type { GameState, GameAction } from '../types';
+import { POINTS_PER_FOOD } from '../constants';
 
 function makeState(overrides: Partial<GameState> = {}): GameState {
   return {
