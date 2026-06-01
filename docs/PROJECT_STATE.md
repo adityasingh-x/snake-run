@@ -4,64 +4,173 @@
 
 v0.1.0
 
+---
+
 ## Current Status
 
-Playable
+Playable Prototype
 
-The game is feature-complete as a basic Snake game and serves as the foundation for future development.
+The game is fully playable as a traditional Snake game and serves as the foundation for future development.
 
-## Current Development Phase
+The project has not yet been publicly released.
 
-Phase 2 - Game Feel Improvements
+---
+
+## Current Milestone
+
+Milestone 1 - Foundation Refactor
+
+Current Goal:
+
+Prepare the codebase for mobile, PWA, and future platform expansion while maintaining development velocity.
+
+---
 
 ## Current Priorities
 
-1. Mobile pause button
-2. Directional snake eyes
-3. Audio polish
-4. Level transition screen
-5. General visual polish
+1. Separate game engine from React UI
+2. Improve mobile controls and gesture reliability
+3. Establish platform abstraction boundaries
+4. Expand gameplay test coverage
+5. Prepare for PWA release
 
-## Next Major Phase
+---
 
-Phase 3 - Gameplay Variety
+## Next Milestone
 
-Planned focus:
+Milestone 2 - Mobile Experience
 
-- Special food types
-- Power-ups
-- Distinct level designs
+Planned Focus:
+
+- Improved swipe controls
+- Better touch responsiveness
+- Mobile-friendly UI improvements
+- Responsive layouts
+- Mobile performance validation
+
+---
 
 ## Completed Features
 
+### Core Gameplay
+
 - Snake movement
-- Food system
-- Obstacle system
+- Food collection
+- Collision detection
+- Scoring system
+- Game over state
 - Level progression
+- Obstacle system
 - Win condition
-- Mobile controls
+
+### User Experience
+
 - Accessibility support
 - Sound effects
 - High score persistence
-- Automated tests
+
+### Visuals
+
+- Directional snake eyes
+
+### Project Foundation
+
+- React + TypeScript + Vite setup
+- Project documentation structure
+- Architecture documentation
+- Specification documentation
+
+### Testing
+
+- Automated testing infrastructure
+
+---
+
+## In Progress
+
+- Mobile control improvements
+- Foundation refactor planning
+- Multi-platform architecture preparation
+
+---
 
 ## Known Technical Debt
 
-- Board currently renders using 400 DOM nodes
+### Architecture
+
+- Game logic is not fully separated from UI
+- Platform abstraction layer does not yet exist
+
+### Mobile
+
+- Swipe controls require refinement
+- Touch interactions need additional testing
+
+### Release
+
 - No PWA support
-- No achievement/statistics system
-- No level transition animation
+- No deployment pipeline
+- No installable build
+
+---
 
 ## Current Architectural Direction
 
-- React + TypeScript
-- Browser-first
-- Mobile and desktop support
+Frontend:
+
+- React
+- TypeScript
+- Vite
+
+Testing:
+
+- Vitest
+
+Styling:
+
+- CSS Modules
+
+Audio:
+
+- Web Audio API
+
+Platform Strategy:
+
+- Browser-first development
+- PWA as first public release
+- Capacitor for future mobile packaging
+- Tauri for future desktop packaging
+
+Gameplay Principles:
+
 - Deterministic gameplay
-- AI-assisted development workflow
+- Offline-first where practical
+- No dependency on AI services for gameplay
+
+---
+
+## Success Definition For Current Milestone
+
+Milestone 1 will be considered complete when:
+
+- Core game logic is separated from React UI
+- Platform boundaries are established
+- Core gameplay systems are testable
+- Mobile control improvements are ready for broader testing
+- The project is ready to begin Mobile Experience work
+
+---
 
 ## Important Notes
 
-The current goal is to create a polished Snake game.
+The current objective is not feature expansion.
 
-AI-generated gameplay/content is a future consideration and is not part of the current development phase.
+The current objective is to strengthen the foundation required for:
+
+- Better mobile support
+- PWA release
+- Future native packaging
+
+The first public release target is a PWA that can be shared with family and friends for feedback.
+
+AI-generated gameplay and content systems remain a future consideration and are not part of the current milestone.

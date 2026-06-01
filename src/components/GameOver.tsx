@@ -1,5 +1,5 @@
 import type { GameOverProps } from '../types/components';
-import styles from './Game.module.css';
+import styles from './GameOver.module.css';
 
 export const GameOver = ({ score, onRestart, variant = 'gameover' }: GameOverProps) => {
   const isWin = variant === 'win';

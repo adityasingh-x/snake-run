@@ -19,7 +19,7 @@ describe('loadHighScore', () => {
 
   it('returns 0 for corrupted data', () => {
     localStorage.setItem(STORAGE_KEY, 'not-a-number');
-    expect(loadHighScore()).toBeNaN();
+    expect(loadHighScore()).toBe(0);
   });
 
   it('returns 0 for empty string (falsy, falls back to "0")', () => {

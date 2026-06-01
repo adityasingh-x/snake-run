@@ -50,6 +50,7 @@ src/
 ```
 
 Root config files:
+
 - `vite.config.ts` — sourcemaps, `--host` preview
 - `vitest.config.ts` — extends vite.config, jsdom environment
 - `.env` — VITE_GRID_SIZE, VITE_CELL_SIZE, VITE_POINTS_PER_FOOD, VITE_LEVEL_COUNT
@@ -57,17 +58,20 @@ Root config files:
 ## Architecture & Design Patterns
 
 ### State Management
+
 - **useReducer** with single `gameReducer` function
 - **Single source of truth** — all game state in one `GameState` object
 - **Action dispatch** via `GameAction` discriminated union: START_GAME, PAUSE_GAME, RESUME_GAME, MOVE_SNAKE, CHANGE_DIRECTION, RESET
 
 ### Game Loop Pattern
+
 - **requestAnimationFrame** with accumulator pattern (not setInterval)
 - **Dynamic speed** based on current level (150ms → 60ms)
 - **Cleanup** via `cancelAnimationFrame` on unmount/status change
 - **Direction queuing** (`nextDirection`) debounces rapid key presses
 
 ### Component Architecture
+
 - **Top-level:** `Game` orchestrates hooks and rendering
 - **Hooks:** useKeyboard, useTouch, useSound, useSnakeGame
 - **Pure utility functions:** testable logic in `gameLogic.ts`
@@ -75,6 +79,7 @@ Root config files:
 - **Compositional rendering:** Game → ScoreBoard + Board + Overlays
 
 ### Data Flow
+
 ```
 Keyboard/Touch Input → useKeyboard/useTouch → dispatch CHANGE_DIRECTION →
 reducer updates nextDirection → MOVE_SNAKE action →
@@ -84,13 +89,18 @@ level up / game over / normal move → re-render
 
 ## Key Features
 
+- **Directional Snake Eyes:** Snake head rendering includes eyes that face the current direction of movement.
+
 ### Collision Detection
+
 1. **Wall collision:** bounds check
 2. **Self collision:** checks all segments except tail
-3. **Obstacle collision:** Set-based lookup
+3. **Obstacle collision:** linear scan O(n) (max 8 obstacles)
+
 - Combined via `isCollision()` utility
 
 ### Food Spawning
+
 - Random position within grid bounds
 - Excludes snake body and obstacles
 - Uses Set for O(1) lookup
@@ -98,6 +108,7 @@ level up / game over / normal move → re-render
 - Fallback to snake head if grid fills
 
 ### Level System
+
 - **10 levels** with dynamic generation
 - **Progression:** target score = 50 x level number
 - **Speed ramp:** 150ms → 60ms (10ms per level)
@@ -106,11 +117,13 @@ level up / game over / normal move → re-render
 - **Win:** complete level 10
 
 ### Touch Controls
+
 - **Swipe gestures:** 30px threshold, maps to Direction
 - **D-pad buttons:** on-screen controls for mobile
 - **Hidden on desktop** via `@media (hover: none) and (pointer: coarse)`
 
 ### Sound Effects
+
 - **Web Audio API** oscillators (no audio files)
 - **AudioContext** created lazily via `initAudio()`, called from user gesture handlers (Start, Resume, Restart) to satisfy browser autoplay policies
 - **Eat:** short sine wave chirp
@@ -119,6 +132,7 @@ level up / game over / normal move → re-render
 - **Toggle:** persisted to localStorage, shared across instances
 
 ### Accessibility
+
 - `role="grid"` + `aria-label` on Board
 - `role="gridcell"` + contextual `aria-label` on Cell
 - `aria-live="polite"` on ScoreBoard for score/level changes
@@ -127,7 +141,8 @@ level up / game over / normal move → re-render
 - `.sr-only` CSS utility for off-screen text
 
 ### Environment Configuration
-- `.env` file with VITE_ prefix for Vite env vars
+
+- `.env` file with VITE\_ prefix for Vite env vars
 - `constants.ts` reads from `import.meta.env`
 
 ## State Machine
@@ -145,7 +160,7 @@ PLAYING
 
 PAUSED
     ├── RESUME_GAME → PLAYING
-    └── SPACE → RESET → IDLE
+    └── SPACE → RESUME → PLAYING
 
 GAMEOVER
     └── RESTART → RESET → IDLE
@@ -156,15 +171,15 @@ WON
 
 ## Important Constants
 
-| Constant | Value | Description |
-|----------|-------|-------------|
-| GRID_SIZE | 20 | Grid dimensions |
-| CELL_SIZE | 20 | Each cell is 20px |
-| POINTS_PER_FOOD | 10 | Points per food |
-| INITIAL_SNAKE | 3 segments | Starting length |
-| LEVEL_COUNT | 10 | Total levels |
-| INITIAL_SPEED | 150ms | Starting speed |
-| MIN_SPEED | 60ms | Final level speed |
+| Constant        | Value      | Description       |
+| --------------- | ---------- | ----------------- |
+| GRID_SIZE       | 20         | Grid dimensions   |
+| CELL_SIZE       | 20         | Each cell is 20px |
+| POINTS_PER_FOOD | 10         | Points per food   |
+| INITIAL_SNAKE   | 3 segments | Starting length   |
+| LEVEL_COUNT     | 10         | Total levels      |
+| INITIAL_SPEED   | 150ms      | Starting speed    |
+| MIN_SPEED       | 60ms       | Final level speed |
 
 ## Styling Conventions
 
@@ -179,6 +194,65 @@ WON
 ## Testing
 
 - **Framework:** Vitest with jsdom
-- **75 unit tests** across 4 test files
-- **Coverage:** gameLogic.ts (25 tests), levelData.ts (18 tests), useSnakeGame.ts (24 tests), storage.ts (8 tests)
+- **80 unit tests** across 5 test files
+- **Coverage:** gameLogic.ts (25 tests), levelData.ts (18 tests), useSnakeGame.ts (24 tests), storage.ts (8 tests), Cell.tsx (5 tests)
 - **Run:** `npm test` or `npm run test:watch`
+
+# Platform Strategy
+
+Primary Platform:
+
+- Browser
+
+Planned Release Path:
+
+1. Browser
+2. Progressive Web App (PWA)
+3. Capacitor mobile packaging
+4. Tauri desktop packaging
+
+Future architectural decisions should support this path unless superseded by an ADR.
+
+---
+
+# Architectural Direction
+
+The current implementation prioritizes simplicity and rapid iteration.
+
+Future development is expected to move toward greater separation between gameplay systems, platform services, and UI rendering.
+
+Target structure:
+
+```text
+src/
+├── game/
+│   ├── Engine.ts
+│   ├── Snake.ts
+│   ├── Food.ts
+│   ├── Collision.ts
+│   └── Types.ts
+│
+├── platform/
+│   ├── keyboard.ts
+│   ├── touch.ts
+│   ├── storage.ts
+│   └── haptics.ts
+│
+├── ui/
+│   ├── components/
+│   └── screens/
+│
+├── hooks/
+├── assets/
+└── types/
+```
+
+Goals:
+
+- Keep gameplay logic independent from React where practical.
+- Improve automated testability.
+- Support mobile-specific features.
+- Simplify future PWA support.
+- Prepare for native packaging through Capacitor and Tauri.
+
+This section describes intended architectural evolution and does not necessarily reflect the current implementation.

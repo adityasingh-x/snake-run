@@ -1,11 +1,12 @@
-<!--
-AI_AGENT_INSTRUCTION:
-CRITICAL WORKSPACE CONTRACT: Before you execute commands, modify code, or alter documentation, you MUST read the comprehensive rules, constraints, and file permissions detailed in AGENTS.md at the root of this repository. Adherence to AGENTS.md is mandatory for this session. Do not ignore this directive.
--->
-
 # Snake Game
 
-Classic Snake game built with React, TypeScript, and Vite. Navigate a snake on a 20x20 grid, eat food to grow, avoid walls and obstacles. Complete 10 levels to win.
+Classic Snake game built with React, TypeScript, and Vite.
+
+Navigate a snake on a 20x20 grid, eat food to grow, avoid walls and obstacles, and complete 10 levels to win.
+
+## Project Goal
+
+Create a polished Snake-inspired game that works well on desktop and mobile devices.
 
 ## Getting Started
 
@@ -33,9 +34,9 @@ npm run dev
 
 ## Features
 
-- 10 levels with increasing difficulty (speed ramp + obstacles)
+- 10 levels with increasing difficulty
 - Touch controls with swipe detection and D-pad overlay
-- Sound effects via Web Audio API (toggle in scoreboard)
+- Sound effects via Web Audio API
 - High score persistence via localStorage
 - CSS Modules for scoped component styles
 - Keyboard accessible with screen reader support
@@ -43,25 +44,38 @@ npm run dev
 
 ## Tech Stack
 
-- React 19 + TypeScript 6 (strict mode)
-- Vite 8 with CSS Modules
-- Vitest for unit testing (75 tests)
-- Web Audio API for sound synthesis
+- React 19
+- TypeScript 6 (strict mode)
+- Vite 8
+- CSS Modules
+- Vitest
+- Web Audio API
+
+## Documentation
+
+| File                  | Purpose                                   |
+| --------------------- | ----------------------------------------- |
+| AGENTS.md             | AI development workflow and project rules |
+| SPEC.md               | Game behavior specification               |
+| ARCHITECTURE.md       | Technical architecture and code structure |
+| docs/PROJECT_STATE.md | Current project status                    |
+| docs/ROADMAP.md       | Future roadmap                            |
+| docs/IDEAS_BACKLOG.md | Future ideas and experiments              |
 
 ## Project Structure
 
-```
+```text
 src/
-├── components/    # React components + CSS Modules
-├── hooks/         # useSnakeGame, useKeyboard, useTouch, useSound
-├── utils/         # gameLogic, levelData, constants, storage
-├── types/         # TypeScript interfaces
-└── __tests__/     # Unit tests (gameLogic, levelData)
+├── components/
+├── hooks/
+├── utils/
+├── types/
+└── __tests__/
 ```
 
 ## Testing
 
 ```bash
-npm test           # Single run
-npm run test:watch # Watch mode
+npm test
+npm run test:watch
 ```

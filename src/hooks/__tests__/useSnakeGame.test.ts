@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { gameReducer } from '../useSnakeGame';
-import type { GameState } from '../../types/game';
+import type { GameState, GameAction } from '../../types/game';
 import { POINTS_PER_FOOD } from '../../utils/constants';
 
 function makeState(overrides: Partial<GameState> = {}): GameState {
@@ -71,6 +71,12 @@ describe('gameReducer', () => {
       const state = makeState();
       const next = gameReducer(state, { type: 'CHANGE_DIRECTION', payload: 'UP' });
       expect(next.nextDirection).toBe('UP');
+    });
+
+    it('ignores opposite direction', () => {
+      const state = makeState({ direction: 'RIGHT', nextDirection: 'RIGHT' });
+      const next = gameReducer(state, { type: 'CHANGE_DIRECTION', payload: 'LEFT' });
+      expect(next.nextDirection).toBe('RIGHT');
     });
   });
 
@@ -271,7 +277,7 @@ describe('gameReducer', () => {
   describe('default action', () => {
     it('returns current state for unknown action', () => {
       const state = makeState();
-      const next = gameReducer(state, { type: 'UNKNOWN' } as any);
+      const next = gameReducer(state, { type: 'UNKNOWN' } as unknown as GameAction);
       expect(next).toBe(state);
     });
   });

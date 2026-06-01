@@ -1,17 +1,7 @@
-import { useState, useCallback } from 'react';
-import { useSound } from '../hooks/useSound';
 import type { ScoreBoardProps } from '../types/components';
 import styles from './ScoreBoard.module.css';
 
-export const ScoreBoard = ({ score, highScore, level }: ScoreBoardProps) => {
-  const { toggleSound, isEnabled } = useSound();
-  const [soundOn, setSoundOn] = useState(() => isEnabled());
-
-  const handleToggle = useCallback(() => {
-    const next = toggleSound();
-    setSoundOn(next);
-  }, [toggleSound]);
-
+export const ScoreBoard = ({ score, highScore, level, soundOn, onToggleSound }: ScoreBoardProps) => {
   return (
     <>
       <div className={styles.scoreboard} aria-live="polite">
@@ -29,7 +19,7 @@ export const ScoreBoard = ({ score, highScore, level }: ScoreBoardProps) => {
         </div>
         <button
           className={styles.soundToggle}
-          onClick={handleToggle}
+          onClick={onToggleSound}
           aria-label={soundOn ? 'Mute sound' : 'Unmute sound'}
         >
           {soundOn ? '🔊' : '🔇'}

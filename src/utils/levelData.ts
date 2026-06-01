@@ -14,7 +14,10 @@ export default LEVELS;
 
 export function getLevelData(levelId: number) {
   const data = LEVELS[levelId - 1];
-  return data || { id: levelId, targetScore: Infinity, speed: 60 };
+  if (!data) {
+    throw new Error(`Invalid level ID: ${levelId}. Must be between 1 and 10.`);
+  }
+  return data;
 }
 
 export function generateObstacles(

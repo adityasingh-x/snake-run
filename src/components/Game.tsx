@@ -1,7 +1,8 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { useSnakeGame } from '../hooks/useSnakeGame';
 import { useKeyboard } from '../hooks/useKeyboard';
 import { useTouch } from '../hooks/useTouch';
+import { useSound } from '../hooks/useSound';
 import { Board } from './Board';
 import { ScoreBoard } from './ScoreBoard';
 import { GameOver } from './GameOver';
@@ -25,6 +26,14 @@ export const Game = () => {
     changeDirection,
     resetGame,
   } = useSnakeGame();
+
+  const { toggleSound, isEnabled } = useSound();
+  const [soundOn, setSoundOn] = useState(() => isEnabled());
+
+  const handleToggleSound = useCallback(() => {
+    const next = toggleSound();
+    setSoundOn(next);
+  }, [toggleSound]);
 
   const announceRef = useRef<HTMLDivElement>(null);
   const boardRef = useRef<HTMLDivElement>(null);
@@ -56,9 +65,9 @@ export const Game = () => {
   return (
     <div className={styles.gameContainer}>
       <h1 className={styles.title}>Snake Game</h1>
-      <ScoreBoard score={state.score} highScore={state.highScore} level={state.level} />
+      <ScoreBoard score={state.score} highScore={state.highScore} level={state.level} soundOn={soundOn} onToggleSound={handleToggleSound} />
       <div className={styles.boardWrapper} ref={boardRef}>
-        <Board snake={state.snake} food={state.food} obstacles={state.obstacles} />
+        <Board snake={state.snake} direction={state.direction} food={state.food} obstacles={state.obstacles} />
         {state.status === 'idle' && (
           <div className={styles.overlay}>
             <div className={styles.overlayContent}>

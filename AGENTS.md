@@ -30,6 +30,7 @@ Read:
 Read:
 
 - ARCHITECTURE.md
+- docs/ROADMAP.md
 - docs/adr/\*
 
 ### For roadmap decisions
@@ -37,6 +38,13 @@ Read:
 Read:
 
 - docs/ROADMAP.md
+
+### For platform or deployment work
+
+Read:
+
+- docs/ROADMAP.md
+- ARCHITECTURE.md
 
 Avoid reading unnecessary files.
 
@@ -65,6 +73,7 @@ Architecture change:
 
 - Read AGENTS.md
 - Read ARCHITECTURE.md
+- Read docs/ROADMAP.md
 - Read relevant ADRs
 
 Roadmap or planning discussion:
@@ -89,6 +98,31 @@ Never leave them inconsistent.
 
 ---
 
+## Technology Direction
+
+The project technology direction is defined in docs/ROADMAP.md.
+
+Unless explicitly instructed otherwise, agents should align proposals and implementations with the documented platform strategy.
+
+Current planned direction:
+
+- React + TypeScript + Vite
+- PWA for installable web releases
+- Capacitor for native mobile packaging
+- Tauri for native desktop packaging
+
+Do not introduce alternative platform frameworks without justification and approval.
+
+Examples:
+
+- React Native
+- Flutter
+- Electron
+- Unity
+- Godot
+
+---
+
 ## Documentation Rules
 
 Behavior changes:
@@ -101,13 +135,27 @@ Architecture changes:
 
 Completed roadmap work:
 
-- Update docs/PROJECT_STATE.md
+- Update docs/ROADMAP.md
+
+Project status changes:
+
+- Follow PROJECT_STATE Rules
 
 Major decisions:
 
 - Create an ADR in docs/adr/
 
 Do not update README.md unless setup instructions, controls, or user-facing features change.
+
+---
+
+## Documentation Consistency
+
+When updating documentation:
+
+- Keep SPEC.md, ARCHITECTURE.md, PROJECT_STATE.md, and ROADMAP.md consistent with one another.
+- Do not leave contradictory statements across documents.
+- If documentation becomes outdated, update it as part of the same change whenever practical.
 
 ---
 
@@ -145,6 +193,34 @@ Do not update PROJECT_STATE.md for:
 - small refactors
 - documentation corrections
 - minor UI polish
+
+---
+
+## ROADMAP Maintenance Rules
+
+ROADMAP.md is the source of truth for project direction and milestone progress.
+
+After completing any roadmap item, milestone task, or significant feature, agents must:
+
+- Update milestone progress
+- Move completed items into the appropriate Completed section
+- Update Current Progress
+- Remove obsolete roadmap entries
+- Keep roadmap status aligned with repository reality
+
+Project progress tracking is considered part of implementation work.
+
+A feature is not fully complete until ROADMAP.md has been updated.
+
+---
+
+## Milestone Scope
+
+When implementing roadmap work:
+
+- Prefer completing the current milestone before starting future milestones.
+- Do not pull future milestone work into the current milestone unless explicitly requested.
+- Record useful ideas in docs/IDEAS_BACKLOG.md instead of expanding scope.
 
 ---
 
@@ -224,6 +300,19 @@ Examples that SHOULD NOT create an ADR:
 ADRs are historical records.
 
 Do not modify existing ADRs except to correct factual errors.
+
+---
+
+## Definition of Done
+
+A task is considered complete only when:
+
+- Implementation is complete
+- Relevant tests pass (when tests exist)
+- No new TypeScript or lint errors are introduced
+- Required documentation is updated
+- ROADMAP.md progress is updated when applicable
+- No known inconsistencies remain between documentation and implementation
 
 ---
 

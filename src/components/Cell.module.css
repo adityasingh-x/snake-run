@@ -6,7 +6,32 @@
   background: #22c55e;
   box-shadow: 0 0 12px rgba(34, 197, 94, 0.8);
   border-radius: 2px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
+
+.eyes {
+  width: 70%;
+  height: 70%;
+  display: flex;
+  justify-content: space-between;
+  padding: 2px;
+}
+
+.eyes::before, .eyes::after {
+  content: '';
+  width: 25%;
+  height: 25%;
+  background: #000;
+  border-radius: 50%;
+}
+
+.snakeHead--up .eyes { flex-direction: row; align-items: flex-start; }
+.snakeHead--down .eyes { flex-direction: row; align-items: flex-end; }
+.snakeHead--left .eyes { flex-direction: column; align-items: flex-start; }
+.snakeHead--right .eyes { flex-direction: column; align-items: flex-end; }
 
 .snakeBody {
   background: #16a34a;

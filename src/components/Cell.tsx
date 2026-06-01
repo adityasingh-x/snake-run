@@ -1,18 +1,14 @@
+import { memo } from 'react';
 import { CELL_SIZE } from '../utils/constants';
+import type { CellProps } from '../types/components';
 import styles from './Cell.module.css';
 
-interface CellProps {
-  x: number;
-  y: number;
-  isSnakeHead: boolean;
-  isSnakeBody: boolean;
-  isFood: boolean;
-  isObstacle: boolean;
-}
-
-export const Cell = ({ x, y, isSnakeHead, isSnakeBody, isFood, isObstacle }: CellProps) => {
+export const Cell = memo(({ x, y, isSnakeHead, isSnakeBody, isFood, isObstacle, direction }: CellProps) => {
   let className = styles.cell;
-  if (isSnakeHead) className += ` ${styles.snakeHead}`;
+  if (isSnakeHead) {
+    className += ` ${styles.snakeHead}`;
+    if (direction) className += ` ${styles[`snakeHead--${direction.toLowerCase()}`]}`;
+  }
   else if (isSnakeBody) className += ` ${styles.snakeBody}`;
   else if (isFood) className += ` ${styles.food}`;
   if (isObstacle) className += ` ${styles.obstacle}`;
@@ -32,6 +28,10 @@ export const Cell = ({ x, y, isSnakeHead, isSnakeBody, isFood, isObstacle }: Cel
         width: CELL_SIZE,
         height: CELL_SIZE,
       }}
-    />
+    >
+      {isSnakeHead && (
+        <div className={styles.eyes} />
+      )}
+    </div>
   );
-};
+});

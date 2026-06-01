@@ -1,5 +1,7 @@
 export function loadHighScore(): number {
-  return parseInt(localStorage.getItem('snakeHighScore') || '0', 10);
+  const val = localStorage.getItem('snakeHighScore') || '0';
+  const parsed = parseInt(val, 10);
+  return Number.isNaN(parsed) ? 0 : parsed;
 }
 
 export function saveHighScore(score: number): void {

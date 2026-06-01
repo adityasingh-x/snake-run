@@ -24,17 +24,12 @@ describe('getLevelData', () => {
     expect(data.speed).toBe(60);
   });
 
-  it('returns fallback data for invalid level', () => {
-    const data = getLevelData(99);
-    expect(data.id).toBe(99);
-    expect(data.targetScore).toBe(Infinity);
-    expect(data.speed).toBe(60);
+  it('throws error for invalid level', () => {
+    expect(() => getLevelData(99)).toThrow('Invalid level ID: 99');
   });
 
-  it('returns fallback data for level 0', () => {
-    const data = getLevelData(0);
-    expect(data.id).toBe(0);
-    expect(data.targetScore).toBe(Infinity);
+  it('throws error for level 0', () => {
+    expect(() => getLevelData(0)).toThrow('Invalid level ID: 0');
   });
 });
 

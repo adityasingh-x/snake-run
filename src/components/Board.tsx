@@ -5,7 +5,7 @@ import { Cell } from './Cell';
 import type { BoardProps } from '../types/components';
 import styles from './Board.module.css';
 
-export const Board = ({ snake, food, obstacles }: BoardProps) => {
+export const Board = ({ snake, direction, food, obstacles }: BoardProps) => {
   const grid = useMemo(() => {
     const cells: { x: number; y: number }[] = [];
     for (let y = 0; y < GRID_SIZE; y++) {
@@ -54,6 +54,7 @@ export const Board = ({ snake, food, obstacles }: BoardProps) => {
             isSnakeBody={isSnakeBody}
             isFood={isFood}
             isObstacle={isObstacle}
+            direction={isSnakeHead ? direction : undefined}
           />
         );
       })}

@@ -10,13 +10,9 @@ Implement visual directional cues for the snake head (e.g., eyes) based on the c
 
 ## Implementation Steps
 
-1. **Verify State Tracking:** Ensure the snake head's current direction is easily accessible to the rendering layer.
-2. **Component Update (`Cell.tsx`):**
-    - Add visual markers (e.g., small circles or CSS pseudo-elements) to the snake head.
-    - Conditional rendering or dynamic CSS classes to rotate the markers based on `direction`.
-3. **Refinement:**
-    - Test the appearance for all four directions (UP, DOWN, LEFT, RIGHT).
-    - Ensure styling remains consistent with the project's CSS Module design.
+- [x] Verify State Tracking: Snake direction is passed down to rendering.
+- [x] Component Update (`Cell.tsx`): Added visual markers and conditional CSS for directional eyes.
+- [x] Refinement: Directional eyes implemented and verified (logic checks).
 
 ## Verification
 - Run existing unit tests (`npm test`) to ensure no regressions.

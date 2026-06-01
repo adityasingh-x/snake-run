@@ -1,6 +1,6 @@
 import { useReducer, useEffect, useCallback, useRef } from 'react';
 import type { GameState, GameAction, Direction } from '../types/game';
-import { INITIAL_SNAKE, POINTS_PER_FOOD } from '../utils/constants';
+import { INITIAL_SNAKE, POINTS_PER_FOOD, DIRECTION_OPPOSITE } from '../utils/constants';
 import { calculateNewHead, spawnFood, positionsEqual, isCollision } from '../utils/gameLogic';
 import { loadHighScore, saveHighScore } from '../utils/storage';
 import { getLevelData, generateObstacles } from '../utils/levelData';
@@ -43,8 +43,12 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     case 'RESUME_GAME':
       return { ...state, status: 'playing' };
 
-    case 'CHANGE_DIRECTION':
+    case 'CHANGE_DIRECTION': {
+      if (action.payload === DIRECTION_OPPOSITE[state.direction]) {
+        return state;
+      }
       return { ...state, nextDirection: action.payload };
+    }
 
     case 'MOVE_SNAKE': {
       const head = state.snake[0];
@@ -106,7 +110,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 }
 
 export function useSnakeGame() {
-  const [state, dispatch] = useReducer(gameReducer, null, getInitialState);
+  const [state, dispatch] = useReducer(gameReducer, getInitialState());
   const { initAudio, playEat, playCollision, playLevelUp } = useSound();
 
   const config = getLevelData(state.level);
@@ -148,17 +152,20 @@ export function useSnakeGame() {
   }, [state.status, speed]);
 
   useEffect(() => {
+    let playedLevelUp = false;
+
     if (state.status === 'gameover') {
       saveHighScore(state.score);
       playCollision();
     } else if (state.status === 'won') {
       saveHighScore(state.score);
       playLevelUp();
+      playedLevelUp = true;
     }
     if (state.score > prevScoreRef.current) {
       playEat();
     }
-    if (state.level > prevLevelRef.current) {
+    if (state.level > prevLevelRef.current && !playedLevelUp) {
       playLevelUp();
     }
     prevScoreRef.current = state.score;

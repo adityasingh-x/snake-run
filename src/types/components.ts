@@ -1,22 +1,28 @@
-import type { Position } from './game';
+import type { Position, Direction } from './game';
 
 export interface BoardProps {
   snake: Position[];
+  direction: Direction;
   food: Position;
-  obstacles: { x: number; y: number }[];
+  obstacles: Position[];
 }
 
 export interface CellProps {
+  x: number;
+  y: number;
   isSnakeHead: boolean;
   isSnakeBody: boolean;
   isFood: boolean;
   isObstacle: boolean;
+  direction?: Direction;
 }
 
 export interface ScoreBoardProps {
   score: number;
   highScore: number;
   level: number;
+  soundOn: boolean;
+  onToggleSound: () => void;
 }
 
 export interface GameOverProps {

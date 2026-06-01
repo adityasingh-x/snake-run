@@ -138,7 +138,7 @@ playing
 
 paused
   RESUME_GAME -> playing
-  SPACE -> RESET -> idle
+  SPACE -> RESUME_GAME -> playing
 
 gameover
   RESTART -> RESET -> idle
@@ -293,7 +293,7 @@ won
 - **Dark theme:**
   - Background: `#1a1a2e` (page), `#16213e` (game card)
   - Text: `#f8fafc` (primary), `#94a3b8` (secondary), `#64748b` (muted)
-- **Snake head:** `#22c55e` with `box-shadow: 0 0 12px rgba(34, 197, 94, 0.8)`, 2px border-radius
+- **Snake head:** `#22c55e` with `box-shadow: 0 0 12px rgba(34, 197, 94, 0.8)`, 2px border-radius, and **directional eyes** that align visually according to the movement vector (UP, DOWN, LEFT, RIGHT).
 - **Snake body:** `#16a34a`, 1px border-radius
 - **Food:** `#ef4444`, circular, pulse animation (scale 0.8 to 1.0)
 - **Obstacles:** `#6366f1` background, `#818cf8` border, `box-shadow: 0 0 8px`
@@ -307,11 +307,12 @@ won
 ## 15. Testing
 
 - **Framework:** Vitest with jsdom environment
-- **75 unit tests** across 4 test files:
+- **80 unit tests** across 5 test files:
   - `gameLogic.test.ts` (25 tests): positionsEqual, calculateNewHead, isWallCollision, isSelfCollision, isObstacleCollision, isCollision, spawnFood
   - `levelData.test.ts` (18 tests): getLevelData, generateObstacles
   - `useSnakeGame.test.ts` (24 tests): gameReducer state transitions (START, RESET, PAUSE, RESUME, CHANGE_DIRECTION, MOVE_SNAKE, collisions, level-up, win, high score)
   - `storage.test.ts` (8 tests): loadHighScore, saveHighScore with localStorage mock
+  - `Cell.test.tsx` (5 tests): Cell component rendering, accessibility, and direction styling
 
 ---
 
