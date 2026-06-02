@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { GRID_SIZE, CELL_SIZE } from '../utils/constants';
+import { GRID_SIZE } from '../utils/constants';
 import { positionsEqual } from '../utils/gameLogic';
 import { Cell } from './Cell';
 import type { BoardProps } from '../types/components';
@@ -33,8 +33,8 @@ export const Board = ({ snake, direction, food, obstacles }: BoardProps) => {
       aria-label="Snake Run board"
       style={{
         display: 'grid',
-        gridTemplateColumns: `repeat(${GRID_SIZE}, ${CELL_SIZE}px)`,
-        gridTemplateRows: `repeat(${GRID_SIZE}, ${CELL_SIZE}px)`,
+        gridTemplateColumns: `repeat(${GRID_SIZE}, 1fr)`,
+        gridTemplateRows: `repeat(${GRID_SIZE}, 1fr)`,
       }}
     >
       {grid.map(({ x, y }) => {

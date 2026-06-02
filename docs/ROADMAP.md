@@ -130,11 +130,21 @@ Foundation Refactor (Milestone 1):
 - Framework-agnostic Engine class
 - 95 unit tests passing
 
+Mobile Experience (Milestone 2):
+
+- Mobile viewport lock (no scroll, no pull-to-refresh, no double-tap zoom)
+- On-screen pause button for touch devices
+- Reliable swipe gestures with axis-locked recognizer
+- Responsive board layout (CSS-only sizing, aspect-ratio)
+- iOS safe-area handling
+- D-pad visibility gating and sizing
+- 116 unit tests passing
+
 ---
 
 ## In Progress
 
-- Mobile control improvements
+- PWA release preparation
 
 ---
 
@@ -181,7 +191,7 @@ Success Criteria:
 
 ---
 
-# Milestone 2 - Mobile Experience
+# Milestone 2 - Mobile Experience ✅
 
 Goal:
 
@@ -189,18 +199,18 @@ Create a reliable mobile gameplay experience.
 
 Key Tasks:
 
-- Improve swipe controls
-- Improve gesture recognition
-- Mobile-friendly UI
-- Responsive layouts
-- Touch interaction improvements
-- Mobile performance validation
+- Improve swipe controls ✅
+- Improve gesture recognition ✅
+- Mobile-friendly UI ✅
+- Responsive layouts ✅
+- Touch interaction improvements ✅
+- Mobile performance validation ✅
 
 Success Criteria:
 
-- Reliable controls
-- Comfortable one-handed play
-- Good experience across common phone sizes
+- Reliable controls ✅
+- Comfortable one-handed play ✅
+- Good experience across common phone sizes ✅
 
 ---
 

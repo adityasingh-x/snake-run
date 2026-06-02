@@ -49,6 +49,10 @@ export const Game = () => {
     resetGame();
   }, [initAudio, resetGame]);
 
+  const handlePause = useCallback(() => {
+    pauseGame();
+  }, [pauseGame]);
+
   const handleDpadUp = useCallback(() => changeDirection('UP'), [changeDirection]);
   const handleDpadDown = useCallback(() => changeDirection('DOWN'), [changeDirection]);
   const handleDpadLeft = useCallback(() => changeDirection('LEFT'), [changeDirection]);
@@ -86,6 +90,17 @@ export const Game = () => {
       <h1 className={styles.title}>Snake Run</h1>
       <ScoreBoard score={state.score} highScore={state.highScore} level={state.level} soundOn={soundOn} onToggleSound={handleToggleSound} />
       <div className={styles.boardWrapper} ref={boardRef}>
+        {state.status === 'playing' && (
+          <button
+            className={styles.pauseButton}
+            onClick={handlePause}
+            aria-label="Pause game"
+            type="button"
+            autoFocus={false}
+          >
+            ⏸
+          </button>
+        )}
         <Board snake={state.snake} direction={state.direction} food={state.food} obstacles={state.obstacles} />
         {state.status === 'idle' && (
           <div className={styles.overlay}>
@@ -117,7 +132,7 @@ export const Game = () => {
           <GameOver score={state.score} onRestart={handleRestart} variant="win" />
         )}
       </div>
-      <div className={styles.dpad}>
+      <div className={`${styles.dpad} ${state.status === 'playing' || state.status === 'paused' ? '' : styles.dpadHidden}`}>
         <button className={styles.dpadBtn} onClick={handleDpadUp} aria-label="Move up">▲</button>
         <div className={styles.dpadRow}>
           <button className={styles.dpadBtn} onClick={handleDpadLeft} aria-label="Move left">◀</button>

@@ -13,11 +13,12 @@ A classic single-player Snake Run. The player controls a snake on a 20x20 grid. 
 ## 2. Grid and Rendering
 
 - **Grid dimensions:** 20 columns x 20 rows (0-indexed: x in [0,19], y in [0,19])
-- **Cell size:** 20px x 20px
-- **Total board:** 400px x 400px
-- **Layout:** CSS Grid with `gridTemplateColumns: repeat(20, 20px)`
+- **Cell size:** CSS-only responsive sizing using `1fr` units
+- **Total board:** responsive, fills available viewport (max 400px)
+- **Layout:** CSS Grid with `gridTemplateColumns: repeat(20, 1fr)`
 - **Cell rendering:** 400 individual `<div>` elements, one per cell, each with `role="gridcell"` and contextual `aria-label`
-- **Board wrapper:** `position: relative` container for overlay positioning and touch event capture
+- **Board wrapper:** `position: relative` container with `aspect-ratio: 1/1` and `width: min(90vw, 70dvh, 400px)` for responsive sizing
+- **Note:** `CELL_SIZE` constant is retained for reference but is no longer used for layout
 
 ---
 
@@ -173,15 +174,28 @@ won
 - **Ref-based tracking:** latest direction and status stored in refs for closure stability
 
 ### 8.2 Touch (Mobile)
-- **Swipe gestures:** detect touchstart/touchend delta on the board
-  - 30px minimum threshold to register as swipe
-  - Horizontal swipe > vertical swipe = LEFT or RIGHT
-  - Vertical swipe > horizontal swipe = UP or DOWN
-- **D-pad buttons:** on-screen directional buttons (56px squares)
+- **Swipe gestures:** axis-locked gesture recognizer with progress feedback
+  - `lockThreshold`: 24px (distance to lock axis)
+  - `triggerThreshold`: 36px (minimum distance to fire swipe)
+  - `axisRatio`: 1.5 (required ratio of primary to secondary axis movement)
+  - `cooldownMs`: 80ms between consecutive swipes
+  - Axis is locked on first move exceeding lockThreshold; subsequent moves cannot switch axis
+  - Swipe fires on touchend if locked axis distance >= triggerThreshold and axis ratio is satisfied
+  - Diagonals, short taps, and slow drags produce no swipe
+  - `touchcancel` resets state silently
+  - All listeners attached with `{ passive: true }` (CSS handles scroll prevention via `touch-action: none`)
+- **D-pad buttons:** on-screen directional buttons (64px on touch devices for thumb comfort)
   - Hidden on desktop (`display: none`)
   - Shown on touch devices via `@media (hover: none) and (pointer: coarse)`
+  - Hidden during idle/gameover/won overlays; visible during playing/paused
   - Layout: cross pattern (up, left, center spacer, right, down)
   - `touch-action: manipulation` to prevent zoom
+  - **Pre-aiming:** D-pad accepts direction changes during `paused` state, allowing players to queue their next direction before resuming. This is consistent with keyboard behavior.
+- **Pause button:** on-screen pause control (44px, top-right of board)
+  - Only rendered when status is `playing`
+  - Hidden on devices without coarse pointer
+  - `aria-label="Pause game"`, `touch-action: manipulation`
+  - Tap pauses game, showing "Paused" overlay with Resume button
 - **Touch events:** passive listeners on board wrapper; swipe disabled when status is not `playing`
 
 ---
@@ -254,6 +268,8 @@ won
 - **Keyboard:** all actions available via keyboard; `autoFocus` on action buttons (Start, Resume, Play Again)
 - **Screen-reader-only:** `.sr-only` CSS utility class for off-screen text
 - **D-pad:** `aria-label` on each direction button
+- **Pause button:** `aria-label="Pause game"` for screen reader announcement
+- **Note:** `user-scalable=no` in viewport meta prevents browser-level text zoom during play. This is a known accessibility trade-off accepted for predictable touch behavior in a fast-paced game.
 
 ---
 
@@ -303,19 +319,26 @@ won
 - **Buttons:** `#4ade80` background, `#0f172a` text, hover: `#22c55e` with scale(1.05)
 - **Typography:** system font stack, weights 400-700
 - **Responsive:** `@media (max-width: 600px)` reduces padding and title size
+- **Mobile viewport:** `position: fixed`, `overflow: hidden`, `overscroll-behavior: none`, `touch-action: none` on body and root
+- **Safe-area insets:** `padding: max(20px, env(safe-area-inset-*))` on game container for notched devices
+- **iOS PWA:** `apple-mobile-web-app-capable`, `viewport-fit=cover`, `theme-color` meta tags
 
 ---
 
 ## 15. Testing
 
 - **Framework:** Vitest with jsdom environment
-- **95 unit tests** across 6 test files:
+- **116 unit tests** across 10 test files:
   - `state.test.ts` (24 tests): gameReducer state transitions (START, RESET, PAUSE, RESUME, CHANGE_DIRECTION, MOVE_SNAKE, collisions, level-up, win, high score)
   - `Engine.test.ts` (15 tests): Engine class behavior (start, pause, resume, reset, loop management, subscriptions, destroy, sound callback wiring)
   - `gameLogic.test.ts` (25 tests): positionsEqual, calculateNewHead, isWallCollision, isSelfCollision, isObstacleCollision, isCollision, spawnFood
   - `levelData.test.ts` (18 tests): getLevelData, generateObstacles
   - `storage.test.ts` (8 tests): loadHighScore, saveHighScore with localStorage mock
   - `Cell.test.tsx` (5 tests): Cell component rendering, accessibility, and direction styling
+  - `touch.test.ts` (13 tests): Gesture recognizer with axis locking, cooldown, progress, disabled state
+  - `useTouch.test.tsx` (2 tests): Hook integration with touch events
+  - `Game.test.tsx` (3 tests): Pause button rendering and interaction
+  - `Board.test.tsx` (3 tests): Board rendering and responsive sizing
 
 ---
 
@@ -333,12 +356,12 @@ won
 ## 17. Known Limitations
 
 1. No difficulty selection — levels are sequential only
-2. No pause overlay on mobile (pause only via Space key)
-3. No leaderboard — high score is local only
-4. No difficulty scaling between games — each START_GAME resets to level 1
-5. No undo or continue-after-death
-6. No visual pause indicator on the board itself (overlay only)
-7. Sound effects are simple oscillators — no music or complex audio
-8. No PWA/offline support
-9. No analytics or scoring history
-10. Grid size is fixed — not responsive to screen size beyond media query padding
+2. No leaderboard — high score is local only
+3. No difficulty scaling between games — each START_GAME resets to level 1
+4. No undo or continue-after-death
+5. Sound effects are simple oscillators — no music or complex audio
+6. No PWA/offline support
+7. No analytics or scoring history
+8. Grid size is fixed — not responsive to screen size beyond viewport constraints
+9. `user-scalable=no` prevents browser-level text zoom (documented accessibility trade-off)
+10. `overscroll-behavior: none` requires iOS Safari 16+ or Chrome 95+ for full support
