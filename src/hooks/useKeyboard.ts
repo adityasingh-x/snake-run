@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import type { Direction, GameStatus } from '../types/game';
-import { KEY_MAP, DIRECTION_OPPOSITE } from '../utils/constants';
+import { createKeyboardListener } from '../platform/keyboard';
 
 interface UseKeyboardProps {
   status: GameStatus;
@@ -21,50 +21,30 @@ export function useKeyboard({
   onRestart,
   onChangeDirection,
 }: UseKeyboardProps) {
-  const directionRef = useRef(currentDirection);
-  const statusRef = useRef(status);
+  const listenerRef = useRef<ReturnType<typeof createKeyboardListener> | null>(null);
+
+  // All callbacks must be stable (useCallback with correct deps) to avoid
+  // tearing down and re-creating the keyboard listener on every render.
+  useEffect(() => {
+    listenerRef.current = createKeyboardListener({
+      onStart,
+      onPause,
+      onResume,
+      onRestart,
+      onChangeDirection,
+    });
+    listenerRef.current.attach();
+
+    return () => {
+      listenerRef.current?.detach();
+    };
+  }, [onStart, onPause, onResume, onRestart, onChangeDirection]);
 
   useEffect(() => {
-    directionRef.current = currentDirection;
+    listenerRef.current?.setDirection(currentDirection);
   }, [currentDirection]);
 
   useEffect(() => {
-    statusRef.current = status;
+    listenerRef.current?.setStatus(status);
   }, [status]);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (
-        ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
-         'w', 'W', 'a', 'A', 's', 'S', 'd', 'D', ' '].includes(
-          e.key
-        )
-      ) {
-        e.preventDefault();
-      }
-
-      if (e.key === ' ') {
-        if (statusRef.current === 'idle') {
-          onStart();
-        } else if (statusRef.current === 'playing') {
-          onPause();
-        } else if (statusRef.current === 'paused') {
-          onResume();
-        } else if (statusRef.current === 'gameover') {
-          onRestart();
-        } else if (statusRef.current === 'won') {
-          onRestart();
-        }
-        return;
-      }
-
-      const newDir = KEY_MAP[e.key];
-      if (newDir && newDir !== DIRECTION_OPPOSITE[directionRef.current]) {
-        onChangeDirection(newDir);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onStart, onPause, onResume, onRestart, onChangeDirection]);
 }

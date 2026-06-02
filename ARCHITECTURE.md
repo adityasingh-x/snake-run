@@ -17,51 +17,91 @@ Classic Snake Run on a 20x20 grid. Players control a snake that grows by eating 
 
 ```
 src/
-├── components/
-│   ├── Cell.tsx              # Individual grid cell renderer
-│   ├── Cell.module.css
-│   ├── Board.tsx             # Grid container with cell generation
-│   ├── Board.module.css
-│   ├── Game.tsx              # Main game container with overlays
-│   ├── Game.module.css
-│   ├── GameOver.tsx          # Win/gameover modal (variant prop)
-│   ├── ScoreBoard.tsx        # Score display + sound toggle
-│   └── ScoreBoard.module.css
-├── hooks/
-│   ├── useKeyboard.ts        # Keyboard event handling
-│   ├── useSnakeGame.ts       # Main game logic + reducer
-│   ├── useSound.ts           # Web Audio API sound effects
-│   └── useTouch.ts           # Touch swipe detection + D-pad
-├── utils/
-│   ├── constants.ts          # Reads from import.meta.env
-│   ├── gameLogic.ts          # Collision detection, food spawning
-│   ├── levelData.ts          # Level configuration
-│   ├── storage.ts            # localStorage high score
-│   └── __tests__/
-│       ├── gameLogic.test.ts     # 25 unit tests
-│       ├── levelData.test.ts     # 18 unit tests
-│       ├── useSnakeGame.test.ts  # 24 unit tests
-│       └── storage.test.ts       # 8 unit tests
-├── types/
-│   ├── game.ts               # GameState, GameAction, Direction
-│   └── components.ts         # BoardProps, CellProps, etc.
+├── game/                     # React-independent game engine
+│   ├── types.ts              # GameState, GameAction, Direction, Position
+│   ├── constants.ts          # Grid size, initial snake, key mappings
+│   ├── state.ts              # Game reducer and initial state
+│   ├── Engine.ts             # Framework-agnostic game engine class
+│   ├── collision.ts          # Collision detection utilities
+│   ├── food.ts               # Food spawning logic
+│   ├── snake.ts              # Snake movement helpers
+│   ├── levels.ts             # Level data and obstacle generation
+│   ├── storage.ts            # High score persistence
+│   └── index.ts              # Barrel exports
+├── platform/                 # Platform-specific adapters
+│   ├── keyboard.ts           # Keyboard event handling
+│   ├── touch.ts              # Touch/gesture handling
+│   ├── sound.ts              # Web Audio API sound effects
+│   └── index.ts              # Barrel exports
+├── hooks/                    # React hooks (thin wrappers)
+│   ├── useGame.ts            # Bridges game Engine to React
+│   ├── useKeyboard.ts        # Keyboard hook (wraps platform/keyboard)
+│   └── useTouch.ts           # Touch hook (wraps platform/touch)
+├── components/               # React UI components
+│   ├── Game.tsx              # Main game container
+│   ├── Board.tsx             # Grid renderer
+│   ├── Cell.tsx              # Individual cell renderer
+│   ├── ScoreBoard.tsx        # Score display
+│   ├── GameOver.tsx          # Win/gameover modal
+│   └── *.module.css          # Component styles
+├── types/                    # Shared types (re-exports from game/)
+│   ├── game.ts               # Re-exports from game/types
+│   └── components.ts         # Component prop types
+├── utils/                    # Legacy utilities (re-exports from game/)
+│   ├── constants.ts          # Re-exports from game/constants
+│   ├── gameLogic.ts          # Re-exports from game/*
+│   ├── levelData.ts          # Re-exports from game/levels
+│   ├── storage.ts            # Re-exports from game/storage
+│   └── __tests__/            # Utility tests
+├── assets/                   # Static assets
 ├── main.tsx                  # React entry point
-└── index.css                 # Global resets, .sr-only utility
+└── index.css                 # Global resets
 ```
-
-Root config files:
-
-- `vite.config.ts` — sourcemaps, `--host` preview
-- `vitest.config.ts` — extends vite.config, jsdom environment
-- `.env` — VITE_GRID_SIZE, VITE_CELL_SIZE, VITE_POINTS_PER_FOOD, VITE_LEVEL_COUNT
 
 ## Architecture & Design Patterns
 
+### Game Engine (Framework-Agnostic)
+
+The core game logic lives in `src/game/` with zero React dependencies:
+
+- **Engine class** (`Engine.ts`): Manages game loop, state, and events
+- **State reducer** (`state.ts`): Pure function for state transitions
+- **Domain modules**: collision, food, snake, levels, storage
+
+```typescript
+// Usage without React:
+import { Engine } from './game';
+
+const engine = new Engine();
+engine.subscribe(state => console.log(state));
+engine.start();
+```
+
+### Platform Adapters
+
+Platform-specific code is isolated in `src/platform/`:
+
+- **Keyboard**: Event listener management
+- **Touch**: Swipe gesture detection
+- **Sound**: Web Audio API synthesis (with `sharedSoundManager` singleton)
+
+These adapters are framework-agnostic and can be used by any UI.
+
+### React Integration
+
+React hooks in `src/hooks/` provide thin wrappers:
+
+- **useGame**: Bridges Engine to React state
+- **useKeyboard**: Wraps platform/keyboard for React
+- **useTouch**: Wraps platform/touch for React
+
+Sound is consumed directly via the `sharedSoundManager` singleton exported from `platform/sound.ts`.
+
 ### State Management
 
-- **useReducer** with single `gameReducer` function
 - **Single source of truth** — all game state in one `GameState` object
-- **Action dispatch** via `GameAction` discriminated union: START_GAME, PAUSE_GAME, RESUME_GAME, MOVE_SNAKE, CHANGE_DIRECTION, RESET
+- **Action dispatch** via `GameAction` discriminated union
+- **Engine** manages state transitions via reducer
 
 ### Game Loop Pattern
 
@@ -73,18 +113,16 @@ Root config files:
 ### Component Architecture
 
 - **Top-level:** `Game` orchestrates hooks and rendering
-- **Hooks:** useKeyboard, useTouch, useSound, useSnakeGame
-- **Pure utility functions:** testable logic in `gameLogic.ts`
+- **Hooks:** useGame, useKeyboard, useTouch
+- **Pure utility functions:** testable logic in `game/` modules
 - **CSS Modules:** scoped styles per component
 - **Compositional rendering:** Game → ScoreBoard + Board + Overlays
 
 ### Data Flow
 
 ```
-Keyboard/Touch Input → useKeyboard/useTouch → dispatch CHANGE_DIRECTION →
-reducer updates nextDirection → MOVE_SNAKE action →
-reducer calculates new head → collision check →
-level up / game over / normal move → re-render
+Input (Keyboard/Touch) → Platform Adapter → useGame hook → Engine →
+dispatch action → gameReducer → new state → subscribe → React re-render
 ```
 
 ## Key Features
@@ -97,7 +135,7 @@ level up / game over / normal move → re-render
 2. **Self collision:** checks all segments except tail
 3. **Obstacle collision:** linear scan O(n) (max 8 obstacles)
 
-- Combined via `isCollision()` utility
+- Combined via `isCollision()` utility in `game/collision.ts`
 
 ### Food Spawning
 
@@ -143,7 +181,7 @@ level up / game over / normal move → re-render
 ### Environment Configuration
 
 - `.env` file with VITE\_ prefix for Vite env vars
-- `constants.ts` reads from `import.meta.env`
+- `game/constants.ts` reads from `import.meta.env`
 
 ## State Machine
 
@@ -194,8 +232,8 @@ WON
 ## Testing
 
 - **Framework:** Vitest with jsdom
-- **80 unit tests** across 5 test files
-- **Coverage:** gameLogic.ts (25 tests), levelData.ts (18 tests), useSnakeGame.ts (24 tests), storage.ts (8 tests), Cell.tsx (5 tests)
+- **92 unit tests** across 6 test files
+- **Coverage:** game/ modules, Engine, hooks, utilities
 - **Run:** `npm test` or `npm run test:watch`
 
 # Platform Strategy
@@ -217,42 +255,18 @@ Future architectural decisions should support this path unless superseded by an 
 
 # Architectural Direction
 
-The current implementation prioritizes simplicity and rapid iteration.
+The game engine is now separated from React, enabling future platform support.
 
-Future development is expected to move toward greater separation between gameplay systems, platform services, and UI rendering.
+Current architecture:
 
-Target structure:
+- `game/` — Framework-agnostic game logic
+- `platform/` — Platform-specific adapters
+- `hooks/` — React integration layer
+- `components/` — React UI
 
-```text
-src/
-├── game/
-│   ├── Engine.ts
-│   ├── Snake.ts
-│   ├── Food.ts
-│   ├── Collision.ts
-│   └── Types.ts
-│
-├── platform/
-│   ├── keyboard.ts
-│   ├── touch.ts
-│   ├── storage.ts
-│   └── haptics.ts
-│
-├── ui/
-│   ├── components/
-│   └── screens/
-│
-├── hooks/
-├── assets/
-└── types/
-```
+This separation allows:
 
-Goals:
-
-- Keep gameplay logic independent from React where practical.
-- Improve automated testability.
-- Support mobile-specific features.
-- Simplify future PWA support.
-- Prepare for native packaging through Capacitor and Tauri.
-
-This section describes intended architectural evolution and does not necessarily reflect the current implementation.
+- Independent testing of game logic
+- Reuse with alternative UI frameworks
+- Native mobile/desktop packaging via Capacitor/Tauri
+- PWA support with minimal changes
