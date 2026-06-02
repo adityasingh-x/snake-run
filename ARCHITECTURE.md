@@ -82,7 +82,7 @@ engine.start();
 Platform-specific code is isolated in `src/platform/`:
 
 - **Keyboard**: Event listener management
-- **Touch**: Swipe gesture detection
+- **Touch**: Rich gesture recognizer with axis locking, progress callbacks, and cooldown
 - **Sound**: Web Audio API synthesis (with `sharedSoundManager` singleton)
 
 These adapters are framework-agnostic and can be used by any UI.
@@ -156,8 +156,14 @@ dispatch action → gameReducer → new state → subscribe → React re-render
 
 ### Touch Controls
 
-- **Swipe gestures:** 30px threshold, maps to Direction
-- **D-pad buttons:** on-screen controls for mobile
+- **Gesture recognizer:** axis-locked swipe detection with configurable thresholds
+  - `lockThreshold`: distance to lock axis (24px default)
+  - `triggerThreshold`: minimum distance to fire swipe (36px default)
+  - `axisRatio`: required ratio of primary to secondary axis (1.5 default)
+  - `cooldownMs`: delay between consecutive swipes (80ms default)
+- **Progress callbacks:** `onProgress` fires during drag with candidate direction and progress
+- **D-pad buttons:** on-screen controls for mobile (64px on touch devices)
+- **Pause button:** on-screen pause control (44px, touch-only, top-right of board)
 - **Hidden on desktop** via `@media (hover: none) and (pointer: coarse)`
 
 ### Sound Effects
@@ -212,7 +218,7 @@ WON
 | Constant        | Value      | Description       |
 | --------------- | ---------- | ----------------- |
 | GRID_SIZE       | 20         | Grid dimensions   |
-| CELL_SIZE       | 20         | Each cell is 20px |
+| CELL_SIZE       | 20         | Reference only (no longer used for layout) |
 | POINTS_PER_FOOD | 10         | Points per food   |
 | INITIAL_SNAKE   | 3 segments | Starting length   |
 | LEVEL_COUNT     | 10         | Total levels      |
@@ -232,8 +238,8 @@ WON
 ## Testing
 
 - **Framework:** Vitest with jsdom
-- **92 unit tests** across 6 test files
-- **Coverage:** game/ modules, Engine, hooks, utilities
+- **116 unit tests** across 10 test files
+- **Coverage:** game/ modules, Engine, hooks, utilities, touch recognizer, pause button
 - **Run:** `npm test` or `npm run test:watch`
 
 # Platform Strategy

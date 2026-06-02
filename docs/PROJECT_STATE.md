@@ -2,15 +2,15 @@
 
 ## Current Version
 
-v0.1.0
+v0.2.0
 
 ---
 
 ## Current Status
 
-Playable Prototype
+Mobile-Ready Prototype
 
-The game is fully playable as a traditional Snake Run and serves as the foundation for future development.
+The game is fully playable on desktop and mobile browsers with responsive layout, reliable touch controls, and iOS safe-area support.
 
 The project has not yet been publicly released.
 
@@ -18,33 +18,34 @@ The project has not yet been publicly released.
 
 ## Current Milestone
 
-Milestone 1 - Foundation Refactor
+Milestone 3 - PWA Release
 
 Current Goal:
 
-Prepare the codebase for mobile, PWA, and future platform expansion while maintaining development velocity.
+Get the game into players' hands quickly with PWA support, offline capabilities, and public hosting.
 
 ---
 
 ## Current Priorities
 
-1. Improve mobile controls and gesture reliability
-2. Expand gameplay test coverage
-3. Prepare for PWA release
+1. PWA support and offline capabilities
+2. App manifest and icons for installability
+3. Deployment pipeline
+4. Public hosting
 
 ---
 
 ## Next Milestone
 
-Milestone 2 - Mobile Experience
+Milestone 4 - Feedback & Iteration
 
 Planned Focus:
 
-- Improved swipe controls
-- Better touch responsiveness
-- Mobile-friendly UI improvements
-- Responsive layouts
-- Mobile performance validation
+- Gather feedback
+- Fix usability issues
+- Improve controls
+- Improve onboarding
+- Resolve gameplay frustrations
 
 ---
 
@@ -86,6 +87,17 @@ Planned Focus:
 - Framework-agnostic Engine class
 - 92 unit tests passing
 
+### Mobile Experience (Milestone 2)
+
+- Mobile viewport lock (no scroll, no pull-to-refresh, no double-tap zoom)
+- On-screen pause button for touch devices
+- Reliable swipe gestures with axis-locked recognizer
+- Responsive board layout (CSS-only sizing, aspect-ratio)
+- iOS safe-area handling
+- D-pad visibility gating (hidden during overlays)
+- D-pad sizing for thumb comfort (64px on touch)
+- 116 unit tests passing
+
 ### Testing
 
 - Automated testing infrastructure
@@ -94,16 +106,11 @@ Planned Focus:
 
 ## In Progress
 
-- Mobile control improvements
+- PWA release preparation
 
 ---
 
 ## Known Technical Debt
-
-### Mobile
-
-- Swipe controls require refinement
-- Touch interactions need additional testing
 
 ### Release
 
@@ -150,24 +157,30 @@ Gameplay Principles:
 
 ## Success Definition For Current Milestone
 
-Milestone 1 success criteria:
+Milestone 2 success criteria (completed):
 
-- Core game logic is separated from React UI ✅
-- Platform boundaries are established ✅
-- Core gameplay systems are testable ✅
-- The project is ready to begin Mobile Experience work
+- Page cannot be scrolled, pinched, or double-tap zoomed during play
+- Vertical swipe-down does NOT trigger pull-to-refresh
+- An on-screen pause button is visible on touch devices while playing
+- Swipes are reliable and axis-locked (no accidental swipes)
+- Board fits the viewport at any phone size, portrait or landscape
+- D-pad is comfortably reachable with thumbs and hidden during overlays
+- Safe-area insets are respected on notched devices
+- All existing tests pass; new tests cover gesture, pause, and board sizing
+- No new TypeScript or lint errors
+- SPEC.md, ARCHITECTURE.md, PROJECT_STATE.md, and ROADMAP.md are updated
 
 ---
 
 ## Important Notes
 
-The current objective is not feature expansion.
+The current objective is PWA release preparation.
 
 The current objective is to strengthen the foundation required for:
 
-- Better mobile support
-- PWA release
-- Future native packaging
+- Public sharing with family and friends
+- Offline capability
+- Installable on home screens
 
 The first public release target is a PWA that can be shared with family and friends for feedback.
 
