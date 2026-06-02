@@ -162,9 +162,10 @@ dispatch action → gameReducer → new state → subscribe → React re-render
   - `axisRatio`: required ratio of primary to secondary axis (1.5 default)
   - `cooldownMs`: delay between consecutive swipes (80ms default)
 - **Progress callbacks:** `onProgress` fires during drag with candidate direction and progress
-- **D-pad buttons:** on-screen controls for mobile (64px on touch devices)
-- **Pause button:** on-screen pause control (44px, touch-only, top-right of board)
-- **Hidden on desktop** via `@media (hover: none) and (pointer: coarse)`
+- **Controls toolbar:** always-visible row above the board with Sound toggle, D-pad toggle (touch only), and Pause/Resume button
+- **D-pad buttons:** on-screen controls for mobile (64px on touch devices), toggleable via toolbar button
+- **Pause/Resume button:** visible during playing and paused states; pauses or resumes game
+- **Hidden on desktop** via `@media (pointer: coarse)` for touch-only elements
 
 ### Sound Effects
 

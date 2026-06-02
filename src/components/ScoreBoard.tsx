@@ -1,7 +1,7 @@
 import type { ScoreBoardProps } from '../types/components';
 import styles from './ScoreBoard.module.css';
 
-export const ScoreBoard = ({ score, highScore, level, soundOn, onToggleSound }: ScoreBoardProps) => {
+export const ScoreBoard = ({ score, highScore, level }: ScoreBoardProps) => {
   return (
     <>
       <div className={styles.scoreboard} aria-live="polite">
@@ -17,13 +17,6 @@ export const ScoreBoard = ({ score, highScore, level, soundOn, onToggleSound }: 
           <span className={styles.label}>High Score:</span>
           <span className={styles.value}>{highScore}</span>
         </div>
-        <button
-          className={styles.soundToggle}
-          onClick={onToggleSound}
-          aria-label={soundOn ? 'Mute sound' : 'Unmute sound'}
-        >
-          {soundOn ? '🔊' : '🔇'}
-        </button>
       </div>
       <div className="sr-only" aria-live="assertive" role="status">
         {score > 0 && `Score: ${score}. `}
