@@ -9,7 +9,6 @@ export type {
 
 export {
   GRID_SIZE,
-  CELL_SIZE,
   POINTS_PER_FOOD,
   LEVEL_COUNT,
   INITIAL_SNAKE,

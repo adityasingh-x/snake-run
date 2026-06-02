@@ -43,6 +43,9 @@ export class Engine {
       this.stopLoop();
     }
 
+    // Note: callbacks fire after listeners see the mutated state and after the
+    // loop stops on gameover/won. The engine is not re-entrant safe — a
+    // callback must not dispatch another action.
     if (this.state.score > prevScore) {
       this.onEat?.();
     }

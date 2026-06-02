@@ -54,6 +54,8 @@ export class SoundManager {
     }
   }
 
+  // Note: setTimeout here will leak if SoundManager is destroyed mid-play.
+  // Acceptable for a singleton that lives for the page lifetime.
   playEat() {
     this.playTone(600, 0.1, 'sine');
     setTimeout(() => this.playTone(800, 0.1, 'sine'), 50);

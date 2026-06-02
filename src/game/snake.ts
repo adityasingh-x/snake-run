@@ -10,7 +10,5 @@ export function calculateNewHead(head: Position, direction: Direction): Position
       return { x: head.x - 1, y: head.y };
     case 'RIGHT':
       return { x: head.x + 1, y: head.y };
-    default:
-      return head;
   }
 }

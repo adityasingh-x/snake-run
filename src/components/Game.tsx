@@ -49,6 +49,11 @@ export const Game = () => {
     resetGame();
   }, [initAudio, resetGame]);
 
+  const handleDpadUp = useCallback(() => changeDirection('UP'), [changeDirection]);
+  const handleDpadDown = useCallback(() => changeDirection('DOWN'), [changeDirection]);
+  const handleDpadLeft = useCallback(() => changeDirection('LEFT'), [changeDirection]);
+  const handleDpadRight = useCallback(() => changeDirection('RIGHT'), [changeDirection]);
+
   const announceRef = useRef<HTMLDivElement>(null);
   const boardRef = useRef<HTMLDivElement>(null);
   const prevStatusRef = useRef(state.status);
@@ -113,13 +118,13 @@ export const Game = () => {
         )}
       </div>
       <div className={styles.dpad}>
-        <button className={styles.dpadBtn} onClick={() => changeDirection('UP')} aria-label="Move up">▲</button>
+        <button className={styles.dpadBtn} onClick={handleDpadUp} aria-label="Move up">▲</button>
         <div className={styles.dpadRow}>
-          <button className={styles.dpadBtn} onClick={() => changeDirection('LEFT')} aria-label="Move left">◀</button>
+          <button className={styles.dpadBtn} onClick={handleDpadLeft} aria-label="Move left">◀</button>
           <div className={styles.dpadCenter} />
-          <button className={styles.dpadBtn} onClick={() => changeDirection('RIGHT')} aria-label="Move right">▶</button>
+          <button className={styles.dpadBtn} onClick={handleDpadRight} aria-label="Move right">▶</button>
         </div>
-        <button className={styles.dpadBtn} onClick={() => changeDirection('DOWN')} aria-label="Move down">▼</button>
+        <button className={styles.dpadBtn} onClick={handleDpadDown} aria-label="Move down">▼</button>
       </div>
       <div className={styles.controlsInfo}>
         <p>

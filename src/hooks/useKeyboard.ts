@@ -23,6 +23,8 @@ export function useKeyboard({
 }: UseKeyboardProps) {
   const listenerRef = useRef<ReturnType<typeof createKeyboardListener> | null>(null);
 
+  // All callbacks must be stable (useCallback with correct deps) to avoid
+  // tearing down and re-creating the keyboard listener on every render.
   useEffect(() => {
     listenerRef.current = createKeyboardListener({
       onStart,

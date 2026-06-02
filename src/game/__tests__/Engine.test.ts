@@ -144,5 +144,19 @@ describe('Engine', () => {
       expect(onGameOver).not.toHaveBeenCalled();
       expect(onWin).not.toHaveBeenCalled();
     });
+
+    it('fires onGameOver when the snake crashes', () => {
+      const onGameOver = vi.fn();
+      engine.onGameOver = onGameOver;
+
+      engine.start();
+      engine.changeDirection('UP');
+      engine.changeDirection('LEFT');
+      engine.changeDirection('DOWN');
+      vi.advanceTimersByTime(5000);
+
+      expect(engine.getState().status).toBe('gameover');
+      expect(onGameOver).toHaveBeenCalled();
+    });
   });
 });

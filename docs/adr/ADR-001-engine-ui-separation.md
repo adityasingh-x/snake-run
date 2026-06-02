@@ -23,6 +23,8 @@ This had three concrete problems:
 
 Introduce a framework-agnostic `Engine` class in `src/game/` that owns the full game state, game loop, and sound event hooks. The React layer is reduced to a thin `useGame` bridge that subscribes to engine state and forwards user actions.
 
+**Note:** "Framework-agnostic" here means "React-free." The engine still depends on browser globals (`requestAnimationFrame`, `localStorage`) and Vite env vars (`import.meta.env`). It is not portable to arbitrary runtimes without providing those APIs. For Capacitor/Tauri targets this is fine since Vite is the bundler.
+
 ### Module Layout
 
 ```

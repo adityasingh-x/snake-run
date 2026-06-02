@@ -360,9 +360,46 @@ docs/adr/
 
 ## Git Workflow Protocol
 
-When you have successfully completed coding and verified that all tests pass, you must prepare the code for review. Do not guess the format. You must read and strictly follow the formatting rules defined in the template file:
+When you have successfully completed coding and verified that all tests pass, you must prepare the code for review using the rules below.
 
-👉 **Protocol File:** `./git-workflow-template.md` (or wherever you save it)
+### Branch Naming
 
-1. **Read the Template:** Open the file to get the schema constraints.
-2. **Generate Output:** Produce the Branch Name, Commit Message, and PR Body matching that exact specification.
+Format: `<prefix>/<short-descriptive-name>` (lowercase, hyphens, numbers only)
+
+- `feature/` — New functionality
+- `bugfix/` — Fixing issues
+- `chore/` — Maintenance, dependencies, tooling
+- `docs/` — Documentation changes only
+
+### Commit Message (Conventional Commits)
+
+Format: `<type>(<scope>): <short description in imperative mood, max 50 chars>`
+
+Allowed Types: `feat`, `fix`, `chore`, `docs`, `refactor`, `test`, `style`
+
+### PR Body Template
+
+```
+## Description
+
+[Clear description of the changes, the problem solved, and the approach]
+
+## Type of Change
+
+- [ ] Bug fix
+- [ ] New feature
+- [ ] Breaking change
+- [ ] Refactor / Chore / Documentation
+
+## How Has This Been Tested?
+
+- **Test Command:** [Insert command here]
+- **Outcome:** [Insert test results summary here]
+```
+
+### Final Output Format
+
+- **Branch Name:** [Generated branch name]
+- **Commit Message:** [Generated commit message]
+- **PR Title:** [Generated PR title]
+- **PR Body:** [Populated Markdown PR template block]
