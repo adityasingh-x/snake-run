@@ -19,6 +19,14 @@
   text-shadow: 0 0 10px rgba(74, 222, 128, 0.5);
 }
 
+.controlsRow {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
 .boardWrapper {
   position: relative;
   margin: 0 auto;
@@ -90,13 +98,10 @@
   color: #94a3b8;
 }
 
-.pauseButton {
-  position: absolute;
-  top: 8px;
-  right: 8px;
+.toolbarBtn {
   width: 44px;
   height: 44px;
-  display: none;
+  display: flex;
   align-items: center;
   justify-content: center;
   background: rgba(15, 23, 42, 0.7);
@@ -105,13 +110,25 @@
   border-radius: 8px;
   font-size: 1.2rem;
   cursor: pointer;
-  z-index: 20;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s, border-color 0.15s;
 }
 
-.pauseButton:active {
+.toolbarBtn:active {
   background: rgba(30, 41, 59, 0.9);
+  border-color: #64748b;
+}
+
+.toolbarBtn[aria-pressed="true"] {
+  background: #4ade80;
+  color: #0f172a;
+  border-color: #4ade80;
+}
+
+.toolbarBtn[aria-pressed="true"]:active {
+  background: #22c55e;
+  border-color: #22c55e;
 }
 
 .dpad {
@@ -140,14 +157,17 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.15s;
+  transition: background 0.1s;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .dpadBtn:active {
   background: #4ade80;
   color: #0f172a;
+  transform: scale(0.95);
 }
 
 .dpadCenter {
@@ -159,11 +179,11 @@
   display: none;
 }
 
-@media (hover: none) and (pointer: coarse) {
-  .pauseButton {
-    display: flex;
-  }
+.dpadToggle {
+  display: none;
+}
 
+@media (pointer: coarse) {
   .dpad {
     display: flex;
   }
@@ -176,11 +196,16 @@
     width: 64px;
     height: 64px;
     font-size: 1.4rem;
+    transition: background 0.05s, transform 0.05s;
   }
 
   .dpadCenter {
     width: 64px;
     height: 64px;
+  }
+
+  .dpadToggle {
+    display: flex;
   }
 
   .controlsInfo {

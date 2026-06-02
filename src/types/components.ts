@@ -21,8 +21,6 @@ export interface ScoreBoardProps {
   score: number;
   highScore: number;
   level: number;
-  soundOn: boolean;
-  onToggleSound: () => void;
 }
 
 export interface GameOverProps {

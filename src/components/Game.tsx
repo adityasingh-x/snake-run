@@ -8,6 +8,8 @@ import { ScoreBoard } from './ScoreBoard';
 import { GameOver } from './GameOver';
 import styles from './Game.module.css';
 
+const DPAD_STORAGE_KEY = 'snakeDpadEnabled';
+
 const STATUS_ANNOUNCEMENTS: Record<string, string> = {
   idle: 'Snake Run ready. Press Space or click Start to begin.',
   playing: 'Game started. Use arrow keys or WASD to move.',
@@ -28,10 +30,30 @@ export const Game = () => {
   } = useGame();
 
   const [soundOn, setSoundOn] = useState(() => sharedSoundManager.isEnabled());
+  const [dpadOn, setDpadOn] = useState(() => {
+    try {
+      const stored = localStorage.getItem(DPAD_STORAGE_KEY);
+      return stored !== null ? stored === 'true' : true;
+    } catch {
+      return true;
+    }
+  });
 
   const handleToggleSound = useCallback(() => {
     const next = sharedSoundManager.toggleSound();
     setSoundOn(next);
+  }, []);
+
+  const handleToggleDpad = useCallback(() => {
+    setDpadOn((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem(DPAD_STORAGE_KEY, String(next));
+      } catch {
+        // ignore
+      }
+      return next;
+    });
   }, []);
 
   const handleStart = useCallback(() => {
@@ -88,19 +110,38 @@ export const Game = () => {
   return (
     <div className={styles.gameContainer}>
       <h1 className={styles.title}>Snake Run</h1>
-      <ScoreBoard score={state.score} highScore={state.highScore} level={state.level} soundOn={soundOn} onToggleSound={handleToggleSound} />
-      <div className={styles.boardWrapper} ref={boardRef}>
-        {state.status === 'playing' && (
+      <ScoreBoard score={state.score} highScore={state.highScore} level={state.level} />
+      <div className={styles.controlsRow}>
+        <button
+          className={styles.toolbarBtn}
+          onClick={handleToggleSound}
+          aria-label={soundOn ? 'Mute sound' : 'Unmute sound'}
+          type="button"
+        >
+          {soundOn ? '🔊' : '🔇'}
+        </button>
+        <button
+          className={`${styles.toolbarBtn} ${styles.dpadToggle}`}
+          onClick={handleToggleDpad}
+          aria-label={dpadOn ? 'Hide D-pad' : 'Show D-pad'}
+          aria-pressed={dpadOn}
+          type="button"
+        >
+          🎮
+        </button>
+        {(state.status === 'playing' || state.status === 'paused') && (
           <button
-            className={styles.pauseButton}
-            onClick={handlePause}
-            aria-label="Pause game"
+            className={styles.toolbarBtn}
+            onClick={state.status === 'playing' ? handlePause : handleResume}
+            aria-label={state.status === 'playing' ? 'Pause game' : 'Resume game'}
             type="button"
             autoFocus={false}
           >
-            ⏸
+            {state.status === 'playing' ? '⏸' : '▶'}
           </button>
         )}
+      </div>
+      <div className={styles.boardWrapper} ref={boardRef}>
         <Board snake={state.snake} direction={state.direction} food={state.food} obstacles={state.obstacles} />
         {state.status === 'idle' && (
           <div className={styles.overlay}>
@@ -132,7 +173,7 @@ export const Game = () => {
           <GameOver score={state.score} onRestart={handleRestart} variant="win" />
         )}
       </div>
-      <div className={`${styles.dpad} ${state.status === 'playing' || state.status === 'paused' ? '' : styles.dpadHidden}`}>
+      <div className={`${styles.dpad} ${(state.status === 'playing' || state.status === 'paused') && dpadOn ? '' : styles.dpadHidden}`}>
         <button className={styles.dpadBtn} onClick={handleDpadUp} aria-label="Move up">▲</button>
         <div className={styles.dpadRow}>
           <button className={styles.dpadBtn} onClick={handleDpadLeft} aria-label="Move left">◀</button>

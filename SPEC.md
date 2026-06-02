@@ -186,16 +186,16 @@ won
   - All listeners attached with `{ passive: true }` (CSS handles scroll prevention via `touch-action: none`)
 - **D-pad buttons:** on-screen directional buttons (64px on touch devices for thumb comfort)
   - Hidden on desktop (`display: none`)
-  - Shown on touch devices via `@media (hover: none) and (pointer: coarse)`
+  - Shown on touch devices via `@media (pointer: coarse)`
   - Hidden during idle/gameover/won overlays; visible during playing/paused
   - Layout: cross pattern (up, left, center spacer, right, down)
   - `touch-action: manipulation` to prevent zoom
   - **Pre-aiming:** D-pad accepts direction changes during `paused` state, allowing players to queue their next direction before resuming. This is consistent with keyboard behavior.
-- **Pause button:** on-screen pause control (44px, top-right of board)
-  - Only rendered when status is `playing`
-  - Hidden on devices without coarse pointer
-  - `aria-label="Pause game"`, `touch-action: manipulation`
-  - Tap pauses game, showing "Paused" overlay with Resume button
+  - **D-pad toggle:** button in controls toolbar to show/hide d-pad; persisted to localStorage; only visible on touch devices
+- **Controls toolbar:** row of buttons above the board, always visible on all platforms
+  - **Sound toggle:** speaker emoji, toggles between enabled/disabled; persisted to localStorage
+  - **D-pad toggle:** gamepad emoji, toggles d-pad visibility (touch devices only)
+  - **Pause/Resume button:** pauses or resumes game; visible during `playing` and `paused` states; pauses game on tap, resumes when paused
 - **Touch events:** passive listeners on board wrapper; swipe disabled when status is not `playing`
 
 ---
