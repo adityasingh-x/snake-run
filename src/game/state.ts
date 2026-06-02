@@ -1,5 +1,5 @@
 import type { GameState, GameAction } from './types';
-import { INITIAL_SNAKE, POINTS_PER_FOOD, DIRECTION_OPPOSITE } from './constants';
+import { INITIAL_SNAKE, POINTS_PER_FOOD, DIRECTION_OPPOSITE, LEVEL_COUNT } from './constants';
 import { positionsEqual, isCollision } from './collision';
 import { spawnFood } from './food';
 import { calculateNewHead } from './snake';
@@ -68,7 +68,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       const shouldLevelUp = ateFood && newScore >= currentConfig.targetScore;
 
       if (shouldLevelUp) {
-        if (state.level >= 10) {
+        if (state.level >= LEVEL_COUNT) {
           return {
             ...state,
             snake: newSnake,

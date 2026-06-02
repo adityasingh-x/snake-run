@@ -9,7 +9,7 @@ export const GameOver = ({ score, onRestart, variant = 'gameover' }: GameOverPro
       <div className={styles.gameOverModal} data-win={isWin || undefined}>
         <h2>{isWin ? 'You Win!' : 'Game Over!'}</h2>
         <p className={styles.finalScore}>
-          {isWin ? `Completed all 10 levels! Score: ${score}` : `Your score: ${score}`}
+          {isWin ? `You completed the game! Score: ${score}` : `Your score: ${score}`}
         </p>
         <button className={styles.restartButton} onClick={onRestart}>
           Play Again

@@ -114,10 +114,11 @@ A classic single-player Snake Run. The player controls a snake on a 20x20 grid. 
   - Speed increases per new level formula
 
 ### 6.3 Win Condition
-- When level 10 target score is reached (500 points)
+
+- When level `LEVEL_COUNT` target score is reached (`LEVEL_COUNT * 50` points)
 - Status changes to `won`
 - High score saved
-- Win overlay displayed: "You Win! Completed all 10 levels! Score: {score}"
+- Win overlay displayed: "You Win! You completed the game! Score: {score}"
 - Level-up sound plays
 
 ---
@@ -235,9 +236,10 @@ won
 - Screen-reader-only `aria-live="assertive"` region announces score and level
 
 ### 10.5 GameOver (shared component)
+
 - Accepts `variant` prop: `"gameover"` (default) or `"win"`
 - `gameover`: "Game Over!" in red, "Your score: {score}"
-- `win`: "You Win!" in green, "Completed all 10 levels! Score: {score}"
+- `win`: "You Win!" in green, "You completed the game! Score: {score}"
 - Both: Play Again button + "Press Space to restart" hint
 - Win state styled via `data-win` attribute on modal
 
@@ -307,9 +309,9 @@ won
 ## 15. Testing
 
 - **Framework:** Vitest with jsdom environment
-- **92 unit tests** across 6 test files:
+- **95 unit tests** across 6 test files:
   - `state.test.ts` (24 tests): gameReducer state transitions (START, RESET, PAUSE, RESUME, CHANGE_DIRECTION, MOVE_SNAKE, collisions, level-up, win, high score)
-  - `Engine.test.ts` (12 tests): Engine class behavior (start, pause, resume, reset, loop management, subscriptions, destroy)
+  - `Engine.test.ts` (15 tests): Engine class behavior (start, pause, resume, reset, loop management, subscriptions, destroy, sound callback wiring)
   - `gameLogic.test.ts` (25 tests): positionsEqual, calculateNewHead, isWallCollision, isSelfCollision, isObstacleCollision, isCollision, spawnFood
   - `levelData.test.ts` (18 tests): getLevelData, generateObstacles
   - `storage.test.ts` (8 tests): loadHighScore, saveHighScore with localStorage mock

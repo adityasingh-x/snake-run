@@ -128,7 +128,7 @@ Foundation Refactor (Milestone 1):
 - Platform adapters created (`src/platform/`)
 - React bridge hook (`useGame.ts`)
 - Framework-agnostic Engine class
-- 92 unit tests passing
+- 95 unit tests passing
 
 ---
 
@@ -176,6 +176,8 @@ Success Criteria:
 - Game engine is React-independent ✅
 - Core gameplay logic is testable ✅
 - Future platform support becomes simpler ✅
+- Win condition honors `VITE_LEVEL_COUNT` env var ✅
+- Sound system uses a single shared `SoundManager` singleton ✅
 
 ---
 

@@ -70,21 +70,14 @@ describe('Engine', () => {
     const listener = vi.fn();
     engine.subscribe(listener);
     engine.start();
-    const initialSnake = engine.getState().snake;
     engine.changeDirection('UP');
     engine.changeDirection('LEFT');
     engine.changeDirection('DOWN');
     vi.advanceTimersByTime(5000);
-    const status = engine.getState().status;
-    const snakeAfter = engine.getState().snake;
-
-    if (status === 'gameover') {
-      const callsAtGameOver = listener.mock.calls.length;
-      vi.advanceTimersByTime(5000);
-      expect(listener.mock.calls.length).toBe(callsAtGameOver);
-    } else {
-      expect(snakeAfter).not.toEqual(initialSnake);
-    }
+    expect(engine.getState().status).toBe('gameover');
+    const callsAtGameOver = listener.mock.calls.length;
+    vi.advanceTimersByTime(5000);
+    expect(listener.mock.calls.length).toBe(callsAtGameOver);
   });
 
   it('subscribes to state changes', () => {
@@ -109,5 +102,47 @@ describe('Engine', () => {
     engine.destroy();
     engine.start();
     expect(listener).toHaveBeenCalledTimes(1);
+  });
+
+  describe('sound callback wiring', () => {
+    it('exposes onEat, onLevelUp, onGameOver, onWin as optional callbacks', () => {
+      expect(engine.onEat).toBeUndefined();
+      expect(engine.onLevelUp).toBeUndefined();
+      expect(engine.onGameOver).toBeUndefined();
+      expect(engine.onWin).toBeUndefined();
+    });
+
+    it('stores callback functions when assigned', () => {
+      const onEat = vi.fn();
+      const onLevelUp = vi.fn();
+      const onGameOver = vi.fn();
+      const onWin = vi.fn();
+      engine.onEat = onEat;
+      engine.onLevelUp = onLevelUp;
+      engine.onGameOver = onGameOver;
+      engine.onWin = onWin;
+      expect(engine.onEat).toBe(onEat);
+      expect(engine.onLevelUp).toBe(onLevelUp);
+      expect(engine.onGameOver).toBe(onGameOver);
+      expect(engine.onWin).toBe(onWin);
+    });
+
+    it('does not fire any sound callback on START_GAME (no score/level change)', () => {
+      const onEat = vi.fn();
+      const onLevelUp = vi.fn();
+      const onGameOver = vi.fn();
+      const onWin = vi.fn();
+      engine.onEat = onEat;
+      engine.onLevelUp = onLevelUp;
+      engine.onGameOver = onGameOver;
+      engine.onWin = onWin;
+
+      engine.start();
+
+      expect(onEat).not.toHaveBeenCalled();
+      expect(onLevelUp).not.toHaveBeenCalled();
+      expect(onGameOver).not.toHaveBeenCalled();
+      expect(onWin).not.toHaveBeenCalled();
+    });
   });
 });

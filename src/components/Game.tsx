@@ -13,7 +13,7 @@ const STATUS_ANNOUNCEMENTS: Record<string, string> = {
   playing: 'Game started. Use arrow keys or WASD to move.',
   paused: 'Game paused. Press Space or click Resume to continue.',
   gameover: 'Game over!',
-  won: 'You won! Completed all 10 levels!',
+  won: 'You won! You completed the game!',
 };
 
 export const Game = () => {

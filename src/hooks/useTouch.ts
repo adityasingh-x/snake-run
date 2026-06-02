@@ -22,7 +22,8 @@ export function useTouch({ onSwipe, enabled, boardRef }: UseTouchProps) {
     return () => {
       listenerRef.current?.detach();
     };
-  }, [onSwipe, boardRef, enabled]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- enabled is intentionally toggled via setEnabled in the effect below to avoid listener churn
+  }, [onSwipe, boardRef]);
 
   useEffect(() => {
     listenerRef.current?.setEnabled(enabled);
