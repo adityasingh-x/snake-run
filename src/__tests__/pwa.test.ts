@@ -24,8 +24,8 @@ describe.runIf(existsSync(distDir))('PWA build output', () => {
 
   it('index.html contains manifest link and SW registration', () => {
     const html = readFileSync(resolve(distDir, 'index.html'), 'utf-8');
-    expect(html).toContain('manifest');
-    expect(html).toContain('registerSW');
+    expect(html).toContain('rel="manifest"');
+    expect(html).toContain('vite-plugin-pwa:register-sw');
   });
 
   it('manifest contains correct subpath-critical values', () => {

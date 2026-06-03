@@ -328,7 +328,7 @@ won
 ## 15. Testing
 
 - **Framework:** Vitest with jsdom environment
-- **116 unit tests** across 10 test files:
+- **122 unit tests** across 11 test files:
   - `state.test.ts` (24 tests): gameReducer state transitions (START, RESET, PAUSE, RESUME, CHANGE_DIRECTION, MOVE_SNAKE, collisions, level-up, win, high score)
   - `Engine.test.ts` (15 tests): Engine class behavior (start, pause, resume, reset, loop management, subscriptions, destroy, sound callback wiring)
   - `gameLogic.test.ts` (25 tests): positionsEqual, calculateNewHead, isWallCollision, isSelfCollision, isObstacleCollision, isCollision, spawnFood
@@ -339,6 +339,7 @@ won
   - `useTouch.test.tsx` (2 tests): Hook integration with touch events
   - `Game.test.tsx` (3 tests): Pause button rendering and interaction
   - `Board.test.tsx` (3 tests): Board rendering and responsive sizing
+  - `pwa.test.ts` (6 tests): PWA build output verification (service worker, manifest, registration, HTML title, HTML manifest/SW links, manifest values)
 
 ---
 
@@ -349,7 +350,7 @@ won
 - **Preview:** `npm run preview` (with `--host` for local network access)
 - **Test:** `npm test` (single run), `npm run test:watch` (watch mode)
 - **Lint:** `npm run lint` (ESLint)
-- **Output:** sourcemaps enabled, ~203KB JS bundle (64KB gzipped), ~4KB CSS
+- **Output:** sourcemaps enabled, ~207KB JS bundle (65KB gzipped), ~6KB CSS (2KB gzip)
 
 ---
 
