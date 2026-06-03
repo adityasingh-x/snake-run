@@ -140,17 +140,25 @@ Mobile Experience (Milestone 2):
 - D-pad visibility gating and sizing
 - 116 unit tests passing
 
+PWA Release (Milestone 3):
+
+- PWA manifest with app name, theme color, and SVG icon ✅
+- Service worker with offline pre-caching ✅
+- Auto-updating service worker ✅
+- GitHub Pages deployment via GitHub Actions ✅
+- Shareable public URL ✅
+- Installable on mobile and desktop ✅
+
 ---
 
 ## In Progress
 
-- PWA release preparation
+- Feedback gathering
 
 ---
 
 ## Not Started
 
-- PWA support
 - Native mobile packaging
 - Native desktop packaging
 
@@ -214,7 +222,7 @@ Success Criteria:
 
 ---
 
-# Milestone 3 - PWA Release
+# Milestone 3 - PWA Release ✅
 
 Goal:
 
@@ -222,19 +230,19 @@ Get the game into players' hands quickly.
 
 Key Tasks:
 
-- PWA support
-- Offline support
-- App manifest
-- App icons
-- Deployment pipeline
-- Public hosting
+- PWA support ✅
+- Offline support ✅
+- App manifest ✅
+- App icons ✅
+- Deployment pipeline ✅
+- Public hosting ✅
 
 Success Criteria:
 
-- Shareable URL
-- Installable on phones
-- Installable on desktops
-- Playable offline
+- Shareable URL ✅
+- Installable on phones ✅
+- Installable on desktops ✅
+- Playable offline ✅
 
 ---
 
