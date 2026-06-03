@@ -2,36 +2,37 @@
 
 ## Current Version
 
-v0.2.0
+v0.3.0
 
 ---
 
 ## Current Status
 
-Mobile-Ready Prototype
+Public PWA Release
 
-The game is fully playable on desktop and mobile browsers with responsive layout, reliable touch controls, and iOS safe-area support.
+The game is available as a Progressive Web App at `https://adityasingh-x.github.io/snake-run/`. It can be installed on phones and desktops, and played fully offline.
 
-The project has not yet been publicly released.
+The project is now gathering feedback from family and friends.
 
 ---
 
 ## Current Milestone
 
-Milestone 3 - PWA Release
+Milestone 4 - Feedback & Iteration
 
 Current Goal:
 
-Get the game into players' hands quickly with PWA support, offline capabilities, and public hosting.
+Validate the game with real players and improve based on feedback.
 
 ---
 
 ## Current Priorities
 
-1. PWA support and offline capabilities
-2. App manifest and icons for installability
-3. Deployment pipeline
-4. Public hosting
+1. Gather feedback from family and friends
+2. Fix usability issues
+3. Improve controls based on feedback
+4. Improve onboarding
+5. Resolve gameplay frustrations
 
 ---
 
@@ -98,6 +99,15 @@ Planned Focus:
 - D-pad sizing for thumb comfort (64px on touch)
 - 116 unit tests passing
 
+### PWA Release (Milestone 3)
+
+- PWA manifest with installable standalone mode
+- Service worker with full offline caching
+- Auto-updating service worker
+- GitHub Pages deployment pipeline
+- Shareable public URL
+- Installable on phones and desktops
+
 ### Testing
 
 - Automated testing infrastructure
@@ -106,17 +116,13 @@ Planned Focus:
 
 ## In Progress
 
-- PWA release preparation
+- Feedback gathering
 
 ---
 
 ## Known Technical Debt
 
-### Release
-
-- No PWA support
-- No deployment pipeline
-- No installable build
+_No known technical debt._
 
 ---
 

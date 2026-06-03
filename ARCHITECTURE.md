@@ -251,10 +251,18 @@ Primary Platform:
 
 Planned Release Path:
 
-1. Browser
-2. Progressive Web App (PWA)
+1. Browser ✅
+2. Progressive Web App (PWA) ✅
 3. Capacitor mobile packaging
 4. Tauri desktop packaging
+
+### PWA Infrastructure
+
+- **Build-time:** `vite-plugin-pwa` generates the service worker (`sw.js`), web manifest (`manifest.webmanifest`), and injects registration into `index.html`
+- **Service worker:** Workbox-based, pre-caches all static assets (`**/*.{js,css,html,svg,png}`), auto-updates silently
+- **Manifest:** `display: standalone`, `theme_color: #16213e`, `background_color: #1a1a2e`, SVG icon
+- **Deployment:** GitHub Pages via GitHub Actions (`.github/workflows/deploy.yml`)
+- **Caching:** Network-first for external resources with 24-hour cache expiration
 
 Future architectural decisions should support this path unless superseded by an ADR.
 
