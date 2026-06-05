@@ -163,31 +163,37 @@ Gameplay Principles:
 
 ## Success Definition For Current Milestone
 
-Milestone 2 success criteria (completed):
+Milestone 3 success criteria (completed):
 
-- Page cannot be scrolled, pinched, or double-tap zoomed during play
-- Vertical swipe-down does NOT trigger pull-to-refresh
-- An on-screen pause button is visible on touch devices while playing
-- Swipes are reliable and axis-locked (no accidental swipes)
-- Board fits the viewport at any phone size, portrait or landscape
-- D-pad is comfortably reachable with thumbs and hidden during overlays
-- Safe-area insets are respected on notched devices
-- All existing tests pass; new tests cover gesture, pause, and board sizing
-- No new TypeScript or lint errors
-- SPEC.md, ARCHITECTURE.md, PROJECT_STATE.md, and ROADMAP.md are updated
+- Shareable URL (`https://adityasingh-x.github.io/snake-run/`)
+- Installable on phones (Android "Add to Home Screen", iOS share menu)
+- Installable on desktops (Chrome/Edge install icon, standalone window)
+- Playable offline (airplane mode test)
+- All game features work offline (start, eat, level up, game over, restart, sound toggle, d-pad)
+- Sound works in installed PWA
+- High score persists across sessions
+- `npm run build` completes with no errors
+- All 122 tests pass
+- No new lint errors
+- `dist/` contains `sw.js`, `manifest.webmanifest`, and `registerSW.js`
+- `SPEC.md`, `ARCHITECTURE.md`, `PROJECT_STATE.md`, and `ROADMAP.md` updated
+
+Milestone 4 success criteria (in progress):
+
+- Feedback collected from family and friends
+- Usability issues identified and prioritized
+- Control improvements implemented based on feedback
+- Onboarding experience improved
+- Gameplay frustrations resolved
 
 ---
 
 ## Important Notes
 
-The current objective is PWA release preparation.
+The current objective is feedback gathering and iteration.
 
-The current objective is to strengthen the foundation required for:
+The PWA is live at `https://adityasingh-x.github.io/snake-run/` and can be installed on phones and desktops.
 
-- Public sharing with family and friends
-- Offline capability
-- Installable on home screens
-
-The first public release target is a PWA that can be shared with family and friends for feedback.
+The first public release target is to gather feedback from family and friends and improve the game based on their experience.
 
 AI-generated gameplay and content systems remain a future consideration and are not part of the current milestone.
