@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { Engine } from '../Engine';
+import { getInitialState } from '../state';
 
 describe('Engine', () => {
   let engine: Engine;
@@ -157,6 +158,50 @@ describe('Engine', () => {
 
       expect(engine.getState().status).toBe('gameover');
       expect(onGameOver).toHaveBeenCalled();
+    });
+  });
+
+  describe('continueGame', () => {
+    it('is a no-op when status is not levelComplete', () => {
+      const onLevelUp = vi.fn();
+      engine.onLevelUp = onLevelUp;
+
+      engine.start();
+      expect(engine.getState().status).toBe('playing');
+
+      engine.continueGame();
+
+      expect(engine.getState().status).toBe('playing');
+      expect(onLevelUp).not.toHaveBeenCalled();
+    });
+
+    it('transitions from levelComplete to playing, increments level, resumes loop, and fires onLevelUp', () => {
+      const onLevelUp = vi.fn();
+      const listener = vi.fn();
+      engine.onLevelUp = onLevelUp;
+      engine.subscribe(listener);
+
+      // Set engine to levelComplete state
+      engine.setState({
+        ...getInitialState(),
+        status: 'levelComplete',
+        level: 1,
+        score: 50,
+      });
+
+      engine.continueGame();
+
+      // (a) Status is playing
+      expect(engine.getState().status).toBe('playing');
+      // (b) Level is incremented
+      expect(engine.getState().level).toBe(2);
+      // (c) Loop is running — advance timers and verify snake moves
+      const snakeBefore = engine.getState().snake;
+      vi.advanceTimersByTime(500);
+      const snakeAfter = engine.getState().snake;
+      expect(snakeAfter).not.toEqual(snakeBefore);
+      // (d) onLevelUp callback fired
+      expect(onLevelUp).toHaveBeenCalledTimes(1);
     });
   });
 });

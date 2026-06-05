@@ -62,24 +62,11 @@ Planned release path:
 
 - Progressive Web App (PWA)
 
-Target:
-
-- Android
-- iPhone
-- Windows
-- macOS
-- Linux
-
 ### Mobile Applications
 
 Planned packaging technology:
 
 - Capacitor
-
-Target:
-
-- Android
-- iOS
 
 ### Desktop Applications
 
@@ -87,80 +74,60 @@ Planned packaging technology:
 
 - Tauri
 
-Target:
-
-- Windows
-- macOS
-- Linux
-
 ---
 
 # Current Progress
 
 ## Completed
 
-Core Gameplay:
+### Milestone 1 - Foundation Refactor
 
-- Snake movement
-- Food collection
-- Scoring
-- Collision detection
-- Game over state
+- Game engine separated from React
+- Platform adapters created
+- Framework-agnostic engine
+- Automated testing established
 
-Visuals:
+### Milestone 2 - Mobile Experience
 
-- Directional snake eyes
+- Responsive layout
+- Swipe controls
+- Touch controls
+- Mobile UX improvements
 
-Project Setup:
+### Milestone 3 - PWA Release
 
-- React + TypeScript + Vite foundation
-- Documentation structure
-- Architecture documentation
-- Specification documentation
+- PWA support
+- Offline support
+- Service worker
+- Public deployment
+- Installable application
 
-Testing:
+### Milestone 4 - Level Progression System
 
-- Basic testing infrastructure
-
-Foundation Refactor (Milestone 1):
-
-- Game engine separated from React (`src/game/`)
-- Platform adapters created (`src/platform/`)
-- React bridge hook (`useGame.ts`)
-- Framework-agnostic Engine class
-- 95 unit tests passing
-
-Mobile Experience (Milestone 2):
-
-- Mobile viewport lock (no scroll, no pull-to-refresh, no double-tap zoom)
-- On-screen pause button for touch devices
-- Reliable swipe gestures with axis-locked recognizer
-- Responsive board layout (CSS-only sizing, aspect-ratio)
-- iOS safe-area handling
-- D-pad visibility gating and sizing
-- 116 unit tests passing
-
-PWA Release (Milestone 3):
-
-- PWA manifest with app name, theme color, and SVG icon ✅
-- Service worker with offline pre-caching ✅
-- Auto-updating service worker ✅
-- GitHub Pages deployment via GitHub Actions ✅
-- Shareable public URL ✅
-- Installable on mobile and desktop ✅
+- Level metadata system (names, descriptions)
+- Level complete overlay (combined completion + next level preview)
+- Level name displayed in ScoreBoard HUD
+- Two-step level transition (freeze → continue)
+- Keyboard and button support for advancing between levels
 
 ---
 
 ## In Progress
 
-- Feedback gathering
+### Milestone 5 - Obstacle Redesign
 
 ---
 
 ## Not Started
 
-- Native mobile packaging
-- Native desktop packaging
+- Obstacle redesign
+- Difficulty rebalance
+- Visual identity
+- Replayability systems
+- Gameplay expansion
+- Feedback and balancing
+- Mobile packaging
+- Desktop packaging
 
 ---
 
@@ -168,34 +135,13 @@ PWA Release (Milestone 3):
 
 Goal:
 
-Prepare the codebase for future growth and multi-platform support.
-
-Key Tasks:
-
-- Separate game engine from React UI
-- Create game domain layer
-- Establish state boundaries
-- Create platform abstraction layer
-- Expand automated tests
-
-Structure:
-
-```text
-src/
-├── game/           # React-independent game engine
-├── platform/       # Platform-specific adapters
-├── hooks/          # React integration layer
-├── components/     # React UI
-└── assets/
-```
+Prepare the codebase for future growth.
 
 Success Criteria:
 
-- Game engine is React-independent ✅
-- Core gameplay logic is testable ✅
-- Future platform support becomes simpler ✅
-- Win condition honors `VITE_LEVEL_COUNT` env var ✅
-- Sound system uses a single shared `SoundManager` singleton ✅
+- React-independent game engine
+- Platform abstraction layer
+- Automated tests
 
 ---
 
@@ -205,20 +151,11 @@ Goal:
 
 Create a reliable mobile gameplay experience.
 
-Key Tasks:
-
-- Improve swipe controls ✅
-- Improve gesture recognition ✅
-- Mobile-friendly UI ✅
-- Responsive layouts ✅
-- Touch interaction improvements ✅
-- Mobile performance validation ✅
-
 Success Criteria:
 
-- Reliable controls ✅
-- Comfortable one-handed play ✅
-- Good experience across common phone sizes ✅
+- Comfortable touch controls
+- Responsive layouts
+- Mobile-friendly gameplay
 
 ---
 
@@ -226,137 +163,412 @@ Success Criteria:
 
 Goal:
 
-Get the game into players' hands quickly.
-
-Key Tasks:
-
-- PWA support ✅
-- Offline support ✅
-- App manifest ✅
-- App icons ✅
-- Deployment pipeline ✅
-- Public hosting ✅
+Distribute the game quickly.
 
 Success Criteria:
 
-- Shareable URL ✅
-- Installable on phones ✅
-- Installable on desktops ✅
-- Playable offline ✅
+- Public URL
+- Offline support
+- Installable application
 
 ---
 
-# Milestone 4 - Feedback & Iteration
+# Milestone 4 - Level Progression System ✅
 
 Goal:
 
-Validate the game with real players.
+Make progression understandable and visible.
 
-Key Tasks:
+Problem Statement:
 
-- Gather feedback
-- Fix usability issues
-- Improve controls
-- Improve onboarding
-- Resolve gameplay frustrations
+Current level progression is difficult to notice.
+
+Players may not understand:
+
+- When a level ends
+- Why the snake resets
+- What changed in the next level
+- What makes levels different
+
+---
+
+## Feature: Level Metadata System ✅
+
+Introduce explicit level definitions.
+
+Each level contains:
+
+- id
+- name
+- description
+- targetScore
+- speed
+
+---
+
+## Feature: Level Complete Overlay ✅
+
+When a level is completed:
+
+Pause gameplay.
+
+Display:
+
+- Completed level number and name
+- Current score
+- Next level name and description
+- Continue button (or Space key)
+
+Combined overlay replaces the originally planned separate "Level Introduction Overlay" and "Level Complete Overlay" (see ADR-003).
+
+---
+
+## Feature: Level Name in HUD ✅
+
+Current level name displayed alongside level number in ScoreBoard.
+
+---
+
+## Success Criteria ✅
+
+- Players understand progression
+- Level transitions are clear
+- Foundation established for future level design
+
+---
+
+# Milestone 5 - Obstacle Redesign
+
+Goal:
+
+Make levels memorable.
+
+Problem Statement:
+
+Current single-tile obstacles rarely influence gameplay.
+
+---
+
+## Feature: Handcrafted Layout System
+
+Create predefined obstacle layouts.
+
+Remove random obstacle generation from progression levels.
+
+Level layouts become authored content.
+
+---
+
+### For Individual Level Designs
+
+Read:
+
+- docs/design/LEVEL_DESIGN.md
+
+---
+
+## Success Criteria
+
+- Every level feels different
+- Obstacles influence decisions
+- Levels become memorable
+
+---
+
+# Milestone 6 - Difficulty Rebalance
+
+Goal:
+
+Create longer and more meaningful gameplay sessions.
+
+Problem Statement:
+
+Current levels are too short.
+
+Difficulty relies too heavily on speed increases.
+
+---
+
+## Feature: Food Objective System
+
+Replace score-based progression.
+
+Target progression:
+
+| Level | Food Required |
+| ----- | ------------- |
+| 1     | 10            |
+| 2     | 12            |
+| 3     | 14            |
+| 4     | 16            |
+| 5     | 18            |
+| 6     | 20            |
+| 7     | 22            |
+| 8     | 24            |
+| 9     | 26            |
+| 10    | 30            |
+
+---
+
+## Feature: Speed Curve Rebalance
+
+Current speed progression is too aggressive.
+
+Target progression:
+
+| Level | Speed |
+| ----- | ----- |
+| 1     | 150ms |
+| 2     | 140ms |
+| 3     | 130ms |
+| 4     | 120ms |
+| 5     | 115ms |
+| 6     | 110ms |
+| 7     | 110ms |
+| 8     | 105ms |
+| 9     | 105ms |
+| 10    | 100ms |
+
+Difficulty should come primarily from layouts rather than reaction limits.
+
+---
+
+## Success Criteria
+
+- Levels last longer
+- Mobile remains playable
+- Difficulty feels fair
+
+---
+
+# Milestone 7 - Visual Identity
+
+Goal:
+
+Establish a recognizable visual style.
+
+Problem Statement:
+
+Current presentation resembles a default application rather than a game.
+
+---
+
+## Theme Direction
+
+Retro Arcade Neon
+
+Characteristics:
+
+- Dark background
+- Bright accent colors
+- Strong visual hierarchy
+- Clean readability
+
+Avoid:
+
+- Flashing effects
+- Excessive particles
+- Visual clutter
+
+---
+
+## Feature: HUD Redesign
+
+Improve:
+
+- Score display
+- Level display
+- High score display
+
+Goal:
+
+Create an arcade-style status panel.
+
+---
+
+## Feature: Overlay Redesign
+
+Improve:
+
+- Start screen
+- Pause screen
+- Game over screen
+- Win screen
+- Level introduction screen
+- Level complete screen
+
+---
+
+## Feature: Typography Pass
+
+Define:
+
+- Primary heading style
+- Secondary heading style
+- Numeric display style
+
+---
+
+## Success Criteria
+
+- Screenshots appear distinctive
+- Visual style feels intentional
+- UI no longer resembles a starter template
+
+---
+
+# Milestone 8 - Replayability Systems
+
+Goal:
+
+Encourage repeat play.
+
+Features:
+
+### Endless Mode
+
+Continue after level 10.
+
+### Statistics
+
+Track:
+
+- Games played
+- Total food eaten
+- Highest score
+- Best level reached
+
+### Achievements
+
+Examples:
+
+- Complete level 10
+- Reach 500 score
+- Complete game without pausing
 
 Success Criteria:
 
-- Positive feedback from family and friends
-- Core gameplay validated
+- Players have reasons to return
 
 ---
 
-# Milestone 5 - Game Polish
+# Milestone 9 - Gameplay Expansion
 
 Goal:
 
-Transform the game from functional to enjoyable.
+Introduce new gameplay decisions.
 
-Potential Areas:
+Features:
 
+### Food Variants
+
+Examples:
+
+- Gold food
+- Poison food
+- Speed food
+
+### Advanced Level Mechanics
+
+Examples:
+
+- Wrap-around levels
+- Portal levels
+- Moving obstacles
+
+### Advanced Challenges
+
+Examples:
+
+- Enemy snake
+- Boss levels
+
+Success Criteria:
+
+- Runs become less predictable
+- New mechanics create meaningful decisions
+
+---
+
+# Milestone 10 - Feedback & Balancing
+
+Goal:
+
+Validate gameplay with real players.
+
+Tasks:
+
+- Playtesting
+- Difficulty tuning
+- Balance adjustments
+- UX improvements
+
+Success Criteria:
+
+- Difficulty feels fair
+- Major frustrations resolved
+
+---
+
+# Milestone 11 - Game Polish
+
+Goal:
+
+Improve game feel.
+
+Features:
+
+- Particle effects
+- Animation improvements
 - Audio improvements
-- Visual effects
-- Animations
 - Accessibility improvements
-- Statistics
-- Quality-of-life features
-- Menus and transitions
+- Theme support
 
 Success Criteria:
 
-- Strong game feel
-- Better replayability
 - Professional presentation
+- Strong game feel
 
 ---
 
-# Milestone 6 - Mobile App Release
+# Milestone 12 - Mobile App Release
 
 Technology:
 
 - Capacitor
 
-Goal:
-
-Create native mobile applications.
-
-Key Tasks:
-
-- Android packaging
-- iOS packaging
-- Store preparation
-- Native integrations
-
 Success Criteria:
 
-- Android build available
-- iOS build available
+- Android build
+- iOS build
 
 ---
 
-# Milestone 7 - Desktop Release
+# Milestone 13 - Desktop Release
 
 Technology:
 
 - Tauri
 
-Goal:
-
-Create native desktop applications.
-
-Key Tasks:
-
-- Windows packaging
-- macOS packaging
-- Linux packaging
-- Desktop-specific improvements
-
 Success Criteria:
 
-- Native desktop builds available
+- Windows build
+- macOS build
+- Linux build
 
 ---
 
 # Future Opportunities
 
-These items are intentionally deprioritized until the core game is released.
+Intentionally deprioritized.
 
 Possible Future Features:
 
-- Multiple food types
-- Power-ups
-- Endless mode
-- Achievements
-- Statistics
-- Daily challenges
-- Unlockables
-- Online leaderboards
+- Global leaderboards
+- Ghost runs
 - Cloud saves
 - Multiplayer
-- AI-assisted content generation
+- Daily challenges
 - Procedural challenge generation
-
-```
-
-```
+- Adaptive difficulty
+- AI-assisted content generation

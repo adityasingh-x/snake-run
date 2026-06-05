@@ -43,6 +43,7 @@ src/
 │   ├── Cell.tsx              # Individual cell renderer
 │   ├── ScoreBoard.tsx        # Score display
 │   ├── GameOver.tsx          # Win/gameover modal
+│   ├── LevelTransition.tsx   # Level complete overlay
 │   └── *.module.css          # Component styles
 ├── types/                    # Shared types (re-exports from game/)
 │   ├── game.ts               # Re-exports from game/types
@@ -109,6 +110,7 @@ Sound is consumed directly via the `sharedSoundManager` singleton exported from 
 - **Dynamic speed** based on current level (150ms → 60ms)
 - **Cleanup** via `cancelAnimationFrame` on unmount/status change
 - **Direction queuing** (`nextDirection`) debounces rapid key presses
+- **Pause behavior:** loop stops when status is not `playing` (including `levelComplete`); resumes from where it left off when status returns to `playing`
 
 ### Component Architecture
 
@@ -147,12 +149,14 @@ dispatch action → gameReducer → new state → subscribe → React re-render
 
 ### Level System
 
-- **10 levels** with dynamic generation
+- **10 levels** with data-driven metadata (name, description)
 - **Progression:** target score = 50 x level number
 - **Speed ramp:** 150ms → 60ms (10ms per level)
 - **Obstacles:** `floor(level * 0.5)`, capped at 8
-- **Level-up:** snake resets to initial position
-- **Win:** complete level 10
+- **Level-up (two-step):**
+  1. Score reaches target → status = `levelComplete`, game freezes, overlay appears
+  2. Player clicks Continue or presses Space → `CONTINUE_GAME` → level increments, snake resets, game resumes
+- **Win:** complete level 10 (transitions directly to `won`, no levelComplete step)
 
 ### Touch Controls
 
@@ -201,11 +205,16 @@ START (idle)
 PLAYING
     ├── PAUSE_GAME → PAUSED
     ├── COLLISION → GAMEOVER (save high score)
-    └── LEVEL 10 → WON (save high score)
+    ├── SCORE REACHES TARGET (levels 1-9) → LEVELCOMPLETE
+    └── LEVEL 10 COMPLETE → WON (save high score)
 
 PAUSED
     ├── RESUME_GAME → PLAYING
     └── SPACE → RESUME → PLAYING
+
+LEVELCOMPLETE
+    ├── CONTINUE_GAME → PLAYING (increment level, reset snake)
+    └── SPACE → CONTINUE_GAME → PLAYING
 
 GAMEOVER
     └── RESTART → RESET → IDLE
@@ -239,8 +248,8 @@ WON
 ## Testing
 
 - **Framework:** Vitest with jsdom
-- **116 unit tests** across 10 test files
-- **Coverage:** game/ modules, Engine, hooks, utilities, touch recognizer, pause button
+- **140 unit tests** across 12 test files
+- **Coverage:** game/ modules, Engine, hooks, utilities, touch recognizer, components (Game, Board, Cell, LevelTransition)
 - **Run:** `npm test` or `npm run test:watch`
 
 # Platform Strategy

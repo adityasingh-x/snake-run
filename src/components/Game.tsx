@@ -3,9 +3,11 @@ import { useGame } from '../hooks/useGame';
 import { useKeyboard } from '../hooks/useKeyboard';
 import { useTouch } from '../hooks/useTouch';
 import { sharedSoundManager } from '../platform/sound';
+import { getLevelData } from '../game/levels';
 import { Board } from './Board';
 import { ScoreBoard } from './ScoreBoard';
 import { GameOver } from './GameOver';
+import { LevelTransition } from './LevelTransition';
 import styles from './Game.module.css';
 
 const DPAD_STORAGE_KEY = 'snakeDpadEnabled';
@@ -14,6 +16,7 @@ const STATUS_ANNOUNCEMENTS: Record<string, string> = {
   idle: 'Snake Run ready. Press Space or click Start to begin.',
   playing: 'Game started. Use arrow keys or WASD to move.',
   paused: 'Game paused. Press Space or click Resume to continue.',
+  levelComplete: 'Level complete! Press Space to continue.',
   gameover: 'Game over!',
   won: 'You won! You completed the game!',
 };
@@ -27,6 +30,7 @@ export const Game = () => {
     resumeGame,
     changeDirection,
     resetGame,
+    continueGame,
   } = useGame();
 
   const [soundOn, setSoundOn] = useState(() => sharedSoundManager.isEnabled());
@@ -75,6 +79,11 @@ export const Game = () => {
     pauseGame();
   }, [pauseGame]);
 
+  const handleContinue = useCallback(() => {
+    initAudio();
+    continueGame();
+  }, [initAudio, continueGame]);
+
   const handleDpadUp = useCallback(() => changeDirection('UP'), [changeDirection]);
   const handleDpadDown = useCallback(() => changeDirection('DOWN'), [changeDirection]);
   const handleDpadLeft = useCallback(() => changeDirection('LEFT'), [changeDirection]);
@@ -91,6 +100,7 @@ export const Game = () => {
     onPause: pauseGame,
     onResume: handleResume,
     onRestart: handleRestart,
+    onContinue: handleContinue,
     onChangeDirection: changeDirection,
   });
 
@@ -110,7 +120,7 @@ export const Game = () => {
   return (
     <div className={styles.gameContainer}>
       <h1 className={styles.title}>Snake Run</h1>
-      <ScoreBoard score={state.score} highScore={state.highScore} level={state.level} />
+      <ScoreBoard score={state.score} highScore={state.highScore} level={state.level} levelName={getLevelData(state.level).name} />
       <div className={styles.controlsRow}>
         <button
           className={styles.toolbarBtn}
@@ -165,6 +175,16 @@ export const Game = () => {
               <p className={styles.hint}>Or press Space</p>
             </div>
           </div>
+        )}
+        {state.status === 'levelComplete' && (
+          <LevelTransition
+            completedLevelId={state.level}
+            completedLevelName={getLevelData(state.level).name}
+            nextLevelName={getLevelData(state.level + 1).name}
+            nextLevelDescription={getLevelData(state.level + 1).description}
+            score={state.score}
+            onContinue={handleContinue}
+          />
         )}
         {state.status === 'gameover' && (
           <GameOver score={state.score} onRestart={handleRestart} />

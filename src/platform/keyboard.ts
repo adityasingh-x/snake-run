@@ -8,6 +8,7 @@ export interface KeyboardHandler {
   onPause: () => void;
   onResume: () => void;
   onRestart: () => void;
+  onContinue: () => void;
   onChangeDirection: (direction: Direction) => void;
 }
 
@@ -27,6 +28,8 @@ export function createKeyboardListener(handler: KeyboardHandler) {
         handler.onPause();
       } else if (currentStatus === 'paused') {
         handler.onResume();
+      } else if (currentStatus === 'levelComplete') {
+        handler.onContinue();
       } else if (currentStatus === 'gameover') {
         handler.onRestart();
       } else if (currentStatus === 'won') {

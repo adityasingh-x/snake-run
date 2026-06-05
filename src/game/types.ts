@@ -5,10 +5,12 @@ export interface Position {
 
 export type Direction = 'UP' | 'DOWN' | 'LEFT' | 'RIGHT';
 
-export type GameStatus = 'idle' | 'playing' | 'paused' | 'gameover' | 'won';
+export type GameStatus = 'idle' | 'playing' | 'paused' | 'levelComplete' | 'gameover' | 'won';
 
 export interface Level {
   id: number;
+  name: string;
+  description: string;
   targetScore: number;
   speed: number;
 }
@@ -31,4 +33,5 @@ export type GameAction =
   | { type: 'RESUME_GAME' }
   | { type: 'MOVE_SNAKE' }
   | { type: 'CHANGE_DIRECTION'; payload: Direction }
-  | { type: 'RESET' };
+  | { type: 'RESET' }
+  | { type: 'CONTINUE_GAME' };

@@ -70,6 +70,10 @@ export function useGame() {
     engineRef.current?.reset();
   }, []);
 
+  const continueGame = useCallback(() => {
+    engineRef.current?.continueGame();
+  }, []);
+
   return {
     state,
     initAudio,
@@ -78,5 +82,6 @@ export function useGame() {
     resumeGame,
     changeDirection,
     resetGame,
+    continueGame,
   };
 }

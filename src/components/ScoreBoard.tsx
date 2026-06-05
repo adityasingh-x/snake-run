@@ -1,13 +1,13 @@
 import type { ScoreBoardProps } from '../types/components';
 import styles from './ScoreBoard.module.css';
 
-export const ScoreBoard = ({ score, highScore, level }: ScoreBoardProps) => {
+export const ScoreBoard = ({ score, highScore, level, levelName }: ScoreBoardProps) => {
   return (
     <>
       <div className={styles.scoreboard} aria-live="polite">
         <div className={styles.score}>
           <span className={styles.label}>Level:</span>
-          <span className={styles.value}>{level}</span>
+          <span className={styles.value}>{level}{levelName ? ` — ${levelName}` : ''}</span>
         </div>
         <div className={styles.score}>
           <span className={styles.label}>Score:</span>

@@ -1,0 +1,76 @@
+.overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.95);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 4px;
+  z-index: 10;
+}
+
+.content {
+  text-align: center;
+  padding: 24px;
+}
+
+.title {
+  font-size: 1.8rem;
+  margin-bottom: 8px;
+  color: #4ade80;
+  text-shadow: 0 0 10px rgba(74, 222, 128, 0.5);
+}
+
+.completedName {
+  font-size: 1.2rem;
+  color: #94a3b8;
+  margin-bottom: 24px;
+}
+
+.nextSection {
+  margin-bottom: 20px;
+}
+
+.nextLabel {
+  font-size: 1.1rem;
+  color: #f8fafc;
+  margin-bottom: 8px;
+}
+
+.nextDescription {
+  font-size: 0.95rem;
+  color: #94a3b8;
+  margin-bottom: 0;
+}
+
+.score {
+  font-size: 1.1rem;
+  color: #f8fafc;
+  margin-bottom: 24px;
+}
+
+.continueButton {
+  background: #4ade80;
+  color: #0f172a;
+  border: none;
+  padding: 12px 32px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 8px;
+}
+
+.continueButton:hover {
+  background: #22c55e;
+  transform: scale(1.05);
+}
+
+.hint {
+  color: #64748b;
+  font-size: 0.85rem;
+}

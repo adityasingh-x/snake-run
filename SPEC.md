@@ -100,21 +100,51 @@ A classic single-player Snake Run. The player controls a snake on a 20x20 grid. 
 - Score does NOT decrease on any event
 
 ### 6.2 Level Progression
+
 - **Target score per level:** `level * 50`
   - Level 1: 50 points
   - Level 5: 250 points
   - Level 10: 500 points
 - **Level-up trigger:** score >= target score AND food was just eaten
-- **Level-up behavior:**
-  - Snake resets to initial position `[{x:10,y:10}, {x:9,y:10}, {x:8,y:10}]`
-  - Direction resets to RIGHT
-  - Score carries over (does NOT reset)
-  - New obstacles generated for next level
-  - New food spawned
-  - Level-up sound plays
-  - Speed increases per new level formula
+- **Level-up behavior (two-step transition):**
+  1. **Step 1 — Level Complete:** When score reaches target (levels 1-9):
+     - Status changes to `levelComplete`
+     - Game loop freezes (board visible but snake does not move)
+     - Snake keeps its grown position (NOT reset)
+     - Score carries over
+     - LevelTransition overlay appears showing completed level info and next level preview
+     - Eat sound plays (for the food that triggered level-up)
+  2. **Step 2 — Continue:** When player clicks Continue or presses Space:
+     - `CONTINUE_GAME` action dispatched
+     - Level incremented by 1
+     - Snake reset to initial position `[{x:10,y:10}, {x:9,y:10}, {x:8,y:10}]`
+     - Direction reset to RIGHT
+     - New obstacles generated for next level
+     - New food spawned
+     - Status changes to `playing`
+     - Game loop resumes
+     - Level-up sound plays
+- **Level 10 completion:** Transitions directly to `won` (no levelComplete step)
 
-### 6.3 Win Condition
+### 6.3 Level Metadata
+
+Each level is defined as a data-driven object with the following structure:
+
+```ts
+{
+  id: number;        // 1-10
+  name: string;      // 1-3 word label (e.g., "First Steps", "Final Run")
+  description: string; // One-sentence flavor text
+  targetScore: number; // Score threshold for level completion
+  speed: number;       // Tick interval in milliseconds
+}
+```
+
+Level metadata is displayed in:
+- **ScoreBoard HUD:** Shows "Level: {id} — {name}" during gameplay
+- **LevelTransition overlay:** Shows completed level name, next level name and description between levels
+
+### 6.4 Win Condition
 
 - When level `LEVEL_COUNT` target score is reached (`LEVEL_COUNT * 50` points)
 - Status changes to `won`
@@ -136,11 +166,16 @@ idle
 playing
   PAUSE_GAME -> paused
   MOVE_SNAKE (collision) -> gameover
+  MOVE_SNAKE (score reaches target, levels 1-9) -> levelComplete
   MOVE_SNAKE (level 10 complete) -> won
 
 paused
   RESUME_GAME -> playing
   SPACE -> RESUME_GAME -> playing
+
+levelComplete
+  CONTINUE_GAME -> playing
+  SPACE -> CONTINUE_GAME -> playing
 
 gameover
   RESTART -> RESET -> playing
@@ -155,6 +190,7 @@ won
 | `idle` | Initial state, game not started | Shows snake + food + obstacles | "Snake Run" with Start button |
 | `playing` | Active gameplay, snake moving | Full board visible | None |
 | `paused` | Game paused by user | Board visible (frozen) | "Paused" with Resume button |
+| `levelComplete` | Level completed, waiting for player to continue | Board visible (frozen) | LevelTransition with completed/next level info |
 | `gameover` | Player lost | Board visible (frozen) | "Game Over!" with score + Play Again |
 | `won` | Player completed level 10 | Board visible (frozen) | "You Win!" with score + Play Again |
 
@@ -168,6 +204,7 @@ won
   - `idle` -> start game
   - `playing` -> pause
   - `paused` -> resume
+  - `levelComplete` -> continue to next level
   - `gameover` -> restart
   - `won` -> restart
 - **Key prevention:** Arrow keys and WASD prevent default browser behavior (scrolling)
@@ -190,7 +227,7 @@ won
   - Hidden during idle/gameover/won overlays; visible during playing/paused
   - Layout: cross pattern (up, left, center spacer, right, down)
   - `touch-action: manipulation` to prevent zoom
-  - **Pre-aiming:** D-pad accepts direction changes during `paused` state, allowing players to queue their next direction before resuming. This is consistent with keyboard behavior.
+  - **Pre-aiming:** D-pad accepts direction changes during `paused` and `levelComplete` states, allowing players to queue their next direction before resuming or continuing. This is consistent with keyboard behavior.
   - **D-pad toggle:** button in controls toolbar to show/hide d-pad; persisted to localStorage; only visible on touch devices
 - **Controls toolbar:** row of buttons above the board, always visible on all platforms
   - **Sound toggle:** speaker emoji, toggles between enabled/disabled; persisted to localStorage
@@ -244,7 +281,9 @@ won
 - `role="gridcell"` + contextual aria-label
 
 ### 10.4 ScoreBoard
-- Displays: Level, Score, High Score
+
+- Displays: Level (with level name), Score, High Score
+- Level display format: "Level: {id} — {name}" (e.g., "Level: 1 — First Steps")
 - Sound toggle button (speaker emoji, toggles between enabled/disabled)
 - `aria-live="polite"` for score/level changes
 - Screen-reader-only `aria-live="assertive"` region announces score and level
@@ -256,6 +295,19 @@ won
 - `win`: "You Win!" in green, "You completed the game! Score: {score}"
 - Both: Play Again button + "Press Space to restart" hint
 - Win state styled via `data-win` attribute on modal
+
+### 10.6 LevelTransition
+
+- Displays between levels when status is `levelComplete`
+- Shows:
+  - "Level {N} Complete" heading
+  - Completed level name
+  - "Next: {Next Level Name}" with description
+  - Current score
+  - Continue button (`autoFocus` for keyboard; the only interactive element in the overlay, so naturally tappable on touch)
+  - "Press Space to continue" hint
+- Uses same overlay pattern as idle/paused overlays (`rgba(15, 23, 42, 0.95)` backdrop)
+- Button uses same styling as Start/Resume buttons
 
 ---
 
@@ -328,18 +380,19 @@ won
 ## 15. Testing
 
 - **Framework:** Vitest with jsdom environment
-- **122 unit tests** across 11 test files:
-  - `state.test.ts` (24 tests): gameReducer state transitions (START, RESET, PAUSE, RESUME, CHANGE_DIRECTION, MOVE_SNAKE, collisions, level-up, win, high score)
-  - `Engine.test.ts` (15 tests): Engine class behavior (start, pause, resume, reset, loop management, subscriptions, destroy, sound callback wiring)
-  - `gameLogic.test.ts` (25 tests): positionsEqual, calculateNewHead, isWallCollision, isSelfCollision, isObstacleCollision, isCollision, spawnFood
-  - `levelData.test.ts` (18 tests): getLevelData, generateObstacles
+- **140 unit tests** across 12 test files:
+  - `state.test.ts` (31 tests): gameReducer state transitions (START, RESET, PAUSE, RESUME, CHANGE_DIRECTION, MOVE_SNAKE, collisions, levelComplete, CONTINUE_GAME, win, high score)
+  - `Engine.test.ts` (18 tests): Engine class behavior (start, pause, resume, reset, continueGame, loop management, subscriptions, destroy, sound callback wiring)
+  - `gameLogic.test.ts` (31 tests): positionsEqual, calculateNewHead, isWallCollision, isSelfCollision, isObstacleCollision, isCollision, spawnFood
+  - `levelData.test.ts` (17 tests): getLevelData, generateObstacles, level metadata (name, description)
   - `storage.test.ts` (8 tests): loadHighScore, saveHighScore with localStorage mock
-  - `Cell.test.tsx` (5 tests): Cell component rendering, accessibility, and direction styling
-  - `touch.test.ts` (13 tests): Gesture recognizer with axis locking, cooldown, progress, disabled state
+  - `Cell.test.tsx` (4 tests): Cell component rendering, accessibility, and direction styling
+  - `touch.test.ts` (12 tests): Gesture recognizer with axis locking, cooldown, progress, disabled state
   - `useTouch.test.tsx` (2 tests): Hook integration with touch events
   - `Game.test.tsx` (3 tests): Pause button rendering and interaction
   - `Board.test.tsx` (3 tests): Board rendering and responsive sizing
   - `pwa.test.ts` (6 tests): PWA build output verification (service worker, manifest, registration, HTML title, HTML manifest/SW links, manifest values)
+  - `LevelTransition.test.tsx` (5 tests): LevelTransition component rendering, interaction, and accessibility
 
 ---
 
