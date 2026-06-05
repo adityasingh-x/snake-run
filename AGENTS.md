@@ -48,6 +48,13 @@ Read:
 
 Avoid reading unnecessary files.
 
+### For gameplay design work
+
+Read:
+
+- docs/ROADMAP.md
+- docs/design/\*
+
 ---
 
 ## Context Budget
@@ -269,11 +276,39 @@ Before starting a large feature:
 1. Create or update ACTIVE.md
 2. Obtain approval if required
 3. Execute the plan incrementally
-4. Archive the plan when complete
+4. Complete review and approval workflows
+5. Archive the plan
+6. Prepare the change for merge
 
 Do not create multiple active plans simultaneously.
 
 If multiple draft plans exist, ACTIVE.md determines which plan is authoritative.
+
+## Plan Lifecycle
+
+Implementation, review, approval, and archival are separate stages.
+
+A completed implementation does not mean a plan is complete.
+
+plans/ACTIVE.md remains the active plan until:
+
+- implementation is complete
+- code review is complete
+- review feedback is addressed
+- approval is granted
+
+Only after approval may ACTIVE.md be archived.
+
+Lifecycle:
+
+Draft
+→ ACTIVE
+→ Implemented
+→ Reviewed
+→ Review Fixes Applied
+→ Approved
+→ Archived
+→ Ready For Merge
 
 ---
 

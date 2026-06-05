@@ -52,6 +52,7 @@ describe('Game Component', () => {
       resumeGame: vi.fn(),
       changeDirection: vi.fn(),
       resetGame: vi.fn(),
+      continueGame: vi.fn(),
     });
   });
 
@@ -70,6 +71,7 @@ describe('Game Component', () => {
       resumeGame: vi.fn(),
       changeDirection: vi.fn(),
       resetGame: vi.fn(),
+      continueGame: vi.fn(),
     });
 
     render(<Game />);

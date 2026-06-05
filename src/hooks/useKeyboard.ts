@@ -9,6 +9,7 @@ interface UseKeyboardProps {
   onPause: () => void;
   onResume: () => void;
   onRestart: () => void;
+  onContinue: () => void;
   onChangeDirection: (direction: Direction) => void;
 }
 
@@ -19,6 +20,7 @@ export function useKeyboard({
   onPause,
   onResume,
   onRestart,
+  onContinue,
   onChangeDirection,
 }: UseKeyboardProps) {
   const listenerRef = useRef<ReturnType<typeof createKeyboardListener> | null>(null);
@@ -31,6 +33,7 @@ export function useKeyboard({
       onPause,
       onResume,
       onRestart,
+      onContinue,
       onChangeDirection,
     });
     listenerRef.current.attach();
@@ -38,7 +41,7 @@ export function useKeyboard({
     return () => {
       listenerRef.current?.detach();
     };
-  }, [onStart, onPause, onResume, onRestart, onChangeDirection]);
+  }, [onStart, onPause, onResume, onRestart, onContinue, onChangeDirection]);
 
   useEffect(() => {
     listenerRef.current?.setDirection(currentDirection);

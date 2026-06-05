@@ -1,9 +1,6 @@
 # Active Plan
 
-**Status:** No active plan
+**Status:** No active plan.
 
-The previous plan (Milestone 3 — PWA Release) has been completed and archived.
-
-- **Archive:** `plans/archive/2026-06-03-pwa-release.md`
-
-The next plan will be created here when Milestone 4 (Feedback & Iteration) work begins.
+- **Last completed:** `plans/archive/2026-06-05-milestone-4-level-progression.md`
+- **Next planned:** Milestone 5 — Obstacle Redesign (ROADMAP.md §M5). Plan to be created here when M5 work begins.

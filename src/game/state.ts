@@ -79,19 +79,13 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
           };
         }
 
-        const nextLevel = state.level + 1;
-        const nextObstacles = generateObstacles(nextLevel, INITIAL_SNAKE, { x: 0, y: 0 });
-        const nextFood = spawnFood(INITIAL_SNAKE, nextObstacles);
         return {
           ...state,
-          snake: [...INITIAL_SNAKE],
-          food: nextFood,
+          snake: newSnake,
+          food: spawnFood(newSnake, state.obstacles),
           score: newScore,
-          level: nextLevel,
-          direction: 'RIGHT',
-          nextDirection: 'RIGHT',
-          status: 'playing',
-          obstacles: nextObstacles,
+          direction: state.nextDirection,
+          status: 'levelComplete',
         };
       }
 
@@ -101,6 +95,27 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         food: ateFood ? spawnFood(newSnake, state.obstacles) : state.food,
         score: newScore,
         direction: state.nextDirection,
+      };
+    }
+
+    case 'CONTINUE_GAME': {
+      if (state.status !== 'levelComplete') {
+        return state;
+      }
+
+      const nextLevel = state.level + 1;
+      const nextObstacles = generateObstacles(nextLevel, INITIAL_SNAKE, { x: 0, y: 0 });
+      const nextFood = spawnFood(INITIAL_SNAKE, nextObstacles);
+
+      return {
+        ...state,
+        snake: [...INITIAL_SNAKE],
+        food: nextFood,
+        level: nextLevel,
+        direction: 'RIGHT',
+        nextDirection: 'RIGHT',
+        status: 'playing',
+        obstacles: nextObstacles,
       };
     }
 

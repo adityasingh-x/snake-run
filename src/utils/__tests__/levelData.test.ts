@@ -90,3 +90,36 @@ describe('generateObstacles', () => {
     expect(obstacles.length).toBe(2);
   });
 });
+
+describe('level metadata', () => {
+  it('each level has a non-empty name', () => {
+    for (let i = 1; i <= 10; i++) {
+      const data = getLevelData(i);
+      expect(data.name.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('each level has a non-empty description', () => {
+    for (let i = 1; i <= 10; i++) {
+      const data = getLevelData(i);
+      expect(data.description.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('returns correct name for level 1', () => {
+    const data = getLevelData(1);
+    expect(data.name).toBe('First Steps');
+  });
+
+  it('returns correct name for level 10', () => {
+    const data = getLevelData(10);
+    expect(data.name).toBe('Final Run');
+  });
+
+  it('all 10 levels exist', () => {
+    for (let i = 1; i <= 10; i++) {
+      const data = getLevelData(i);
+      expect(data.id).toBe(i);
+    }
+  });
+});

@@ -86,6 +86,16 @@ export class Engine {
     }
   }
 
+  continueGame(): void {
+    this.dispatch({ type: 'CONTINUE_GAME' });
+    this.startLoop();
+  }
+
+  /** Test-only: set internal state for testing purposes. */
+  setState(state: GameState): void {
+    this.state = state;
+  }
+
   private startLoop(): void {
     if (this.rafId !== null) return;
 

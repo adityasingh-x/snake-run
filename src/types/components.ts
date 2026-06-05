@@ -21,10 +21,20 @@ export interface ScoreBoardProps {
   score: number;
   highScore: number;
   level: number;
+  levelName?: string;
 }
 
 export interface GameOverProps {
   score: number;
   onRestart: () => void;
   variant?: 'gameover' | 'win';
+}
+
+export interface LevelTransitionProps {
+  completedLevelId: number;
+  completedLevelName: string;
+  nextLevelName: string;
+  nextLevelDescription: string;
+  score: number;
+  onContinue: () => void;
 }

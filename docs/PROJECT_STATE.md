@@ -2,51 +2,46 @@
 
 ## Current Version
 
-v0.3.0
+v0.4.0
 
 ---
 
 ## Current Status
 
-Public PWA Release
+Level Progression System Complete
 
-The game is available as a Progressive Web App at `https://adityasingh-x.github.io/snake-run/`. It can be installed on phones and desktops, and played fully offline.
-
-The project is now gathering feedback from family and friends.
+The game now has visible level transitions with a combined overlay showing level completion and next level preview. Players can see when a level ends and what's coming next.
 
 ---
 
 ## Current Milestone
 
-Milestone 4 - Feedback & Iteration
+Milestone 5 - Obstacle Redesign
 
 Current Goal:
 
-Validate the game with real players and improve based on feedback.
+Make levels memorable with handcrafted obstacle layouts.
 
 ---
 
 ## Current Priorities
 
-1. Gather feedback from family and friends
-2. Fix usability issues
-3. Improve controls based on feedback
-4. Improve onboarding
-5. Resolve gameplay frustrations
+1. Design handcrafted obstacle layouts for each level
+2. Replace random obstacle generation with predefined layouts
+3. Make each level feel distinct
+4. Ensure obstacles influence player decisions
 
 ---
 
 ## Next Milestone
 
-Milestone 4 - Feedback & Iteration
+Milestone 5 - Obstacle Redesign
 
 Planned Focus:
 
-- Gather feedback
-- Fix usability issues
-- Improve controls
-- Improve onboarding
-- Resolve gameplay frustrations
+- Handcrafted obstacle layouts
+- Level-specific obstacle configurations
+- Make levels feel distinct and memorable
 
 ---
 
@@ -108,6 +103,15 @@ Planned Focus:
 - Shareable public URL
 - Installable on phones and desktops
 
+### Level Progression System (Milestone 4)
+
+- Level metadata (names, descriptions)
+- Level complete overlay with next level preview
+- Level name displayed in ScoreBoard HUD
+- Two-step level transition (freeze → continue)
+- Keyboard and button support for advancing between levels
+- 140 unit tests passing
+
 ### Testing
 
 - Automated testing infrastructure
@@ -116,7 +120,7 @@ Planned Focus:
 
 ## In Progress
 
-- Feedback gathering
+- Handcrafted obstacle layout design (Milestone 5)
 
 ---
 
@@ -163,37 +167,33 @@ Gameplay Principles:
 
 ## Success Definition For Current Milestone
 
-Milestone 3 success criteria (completed):
+Milestone 4 success criteria (completed):
 
-- Shareable URL (`https://adityasingh-x.github.io/snake-run/`)
-- Installable on phones (Android "Add to Home Screen", iOS share menu)
-- Installable on desktops (Chrome/Edge install icon, standalone window)
-- Playable offline (airplane mode test)
-- All game features work offline (start, eat, level up, game over, restart, sound toggle, d-pad)
-- Sound works in installed PWA
-- High score persists across sessions
-- `npm run build` completes with no errors
-- All 122 tests pass
-- No new lint errors
-- `dist/` contains `sw.js`, `manifest.webmanifest`, and `registerSW.js`
-- `SPEC.md`, `ARCHITECTURE.md`, `PROJECT_STATE.md`, and `ROADMAP.md` updated
+- Levels have names and descriptions ✅
+- Level transitions are visible and intentional ✅
+- Level complete overlay shows completed and next level info ✅
+- Level name displayed in HUD ✅
+- Snake does not reset abruptly on level-up ✅
+- Continue button and Space key advance to next level ✅
+- `npm run build` completes with no errors ✅
+- All 140 tests pass ✅
+- SPEC.md, ROADMAP.md, PROJECT_STATE.md, and ARCHITECTURE.md updated ✅
 
-Milestone 4 success criteria (in progress):
+Milestone 5 success criteria (in progress):
 
-- Feedback collected from family and friends
-- Usability issues identified and prioritized
-- Control improvements implemented based on feedback
-- Onboarding experience improved
-- Gameplay frustrations resolved
+- Handcrafted obstacle layouts for all 10 levels
+- Each level feels distinct
+- Obstacles influence player decisions
+- Levels become memorable
 
 ---
 
 ## Important Notes
 
-The current objective is feedback gathering and iteration.
+The current objective is Milestone 5 — Obstacle Redesign.
 
 The PWA is live at `https://adityasingh-x.github.io/snake-run/` and can be installed on phones and desktops.
 
-The first public release target is to gather feedback from family and friends and improve the game based on their experience.
+Milestone 4 (Level Progression System) is complete. Level transitions are now visible and intentional with a combined overlay showing level completion and next level preview.
 
 AI-generated gameplay and content systems remain a future consideration and are not part of the current milestone.
