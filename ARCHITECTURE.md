@@ -107,7 +107,7 @@ Sound is consumed directly via the `sharedSoundManager` singleton exported from 
 ### Game Loop Pattern
 
 - **requestAnimationFrame** with accumulator pattern (not setInterval)
-- **Dynamic speed** based on current level (150ms → 60ms)
+- **Dynamic speed** based on current level (150ms → 100ms)
 - **Cleanup** via `cancelAnimationFrame` on unmount/status change
 - **Direction queuing** (`nextDirection`) debounces rapid key presses
 - **Pause behavior:** loop stops when status is not `playing` (including `levelComplete`); resumes from where it left off when status returns to `playing`
@@ -150,8 +150,8 @@ dispatch action → gameReducer → new state → subscribe → React re-render
 ### Level System
 
 - **10 levels** with data-driven metadata (name, description)
-- **Progression:** target score = 50 x level number
-- **Speed ramp:** 150ms → 60ms (10ms per level)
+- **Progression:** food-objective system (10–30 food per level)
+- **Speed ramp:** 150ms → 100ms (see SPEC.md for full table)
 - **Obstacles:** predefined handcrafted layouts per level (see `LEVEL_DESIGN.md`)
 - **Level-up (two-step):**
   1. Score reaches target → status = `levelComplete`, game freezes, overlay appears
@@ -206,8 +206,8 @@ START (idle)
 PLAYING
     ├── PAUSE_GAME → PAUSED
     ├── COLLISION → GAMEOVER (save high score, update lastUnlockedLevel)
-    ├── SCORE REACHES TARGET (levels 1-9) → LEVELCOMPLETE (update lastUnlockedLevel)
-    └── LEVEL 10 COMPLETE → WON (save high score, update lastUnlockedLevel)
+    ├── FOOD OBJECTIVE REACHED (levels 1-9) → LEVELCOMPLETE (update lastUnlockedLevel)
+    └── FOOD OBJECTIVE REACHED (level 10) → WON (save high score, update lastUnlockedLevel)
 
 PAUSED
     ├── RESUME_GAME → PLAYING
@@ -240,6 +240,7 @@ interface GameState {
   level: number;
   obstacles: Position[];
   lastUnlockedLevel: number;  // Persisted to localStorage
+  foodEaten: number;          // Per-level food counter
 }
 ```
 
@@ -253,7 +254,6 @@ interface GameState {
 | INITIAL_SNAKE   | 3 segments | Starting length   |
 | LEVEL_COUNT     | 10         | Total levels      |
 | INITIAL_SPEED   | 150ms      | Starting speed    |
-| MIN_SPEED       | 60ms       | Final level speed |
 
 ## Styling Conventions
 
@@ -268,7 +268,7 @@ interface GameState {
 ## Testing
 
 - **Framework:** Vitest with jsdom
-- **173 unit tests** across 13 test files
+- **178 unit tests** across 13 test files
 - **Coverage:** game/ modules, Engine, hooks, utilities, touch recognizer, components (Game, Board, Cell, LevelTransition)
 - **Run:** `npm test` or `npm run test:watch`
 

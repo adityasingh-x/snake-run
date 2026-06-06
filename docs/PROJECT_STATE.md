@@ -2,15 +2,15 @@
 
 ## Current Version
 
-v0.6.0
+v0.7.0
 
 ---
 
 ## Current Status
 
-Difficulty Rebalance In Progress
+Difficulty Rebalance Complete
 
-The milestone focus is on rebalancing food objectives and speed curves for longer, more meaningful gameplay sessions. Progress persistence (M6) is complete.
+Milestone 7 (Difficulty Rebalance) is complete. Food-objective progression replaces score-based level advancement, and the speed curve has been rebalanced for longer, more playable sessions.
 
 ---
 
@@ -26,21 +26,21 @@ Create longer and more meaningful gameplay sessions.
 
 ## Current Priorities
 
-1. Replace score-based progression with food-objective system (10, 12, 14, ... 30 food per level)
-2. Rebalance speed curve (150ms → 100ms, less aggressive ramp)
-3. Ensure mobile remains playable with longer levels
+1. Visual identity redesign (Milestone 8)
+2. HUD and overlay polish for arcade aesthetic
+3. Typography pass for consistent visual style
 
 ---
 
 ## Next Milestone
 
-Milestone 7 - Difficulty Rebalance
+Milestone 8 - Visual Identity
 
 Planned Focus:
 
-- Food-objective progression (10, 12, 14, ... 30 food per level)
-- Speed curve rebalance (150ms → 100ms, less aggressive)
-- Longer, more meaningful gameplay sessions
+- HUD redesign (arcade-style status panel)
+- Overlay redesign (start, pause, game over, win, level transition)
+- Typography pass (headings, numeric display)
 
 ---
 
@@ -131,6 +131,16 @@ Planned Focus:
 - `START_AT_LEVEL` action in state machine for jumping to any level
 - 173 unit tests passing
 
+### Difficulty Rebalance (Milestone 7)
+
+- Score-based progression replaced with food-objective system (`foodEaten >= foodRequired`)
+- `foodEaten` field added to GameState (per-level counter, resets on continue/start-at-level)
+- Level data field renamed: `targetScore` → `foodRequired`
+- Food requirements: 10, 12, 14, 16, 18, 20, 22, 24, 26, 30 (levels 1–10)
+- Speed curve rebalanced: 150ms → 100ms (less aggressive ramp, mobile-playable)
+- ScoreBoard HUD displays food progress ("Food: X/Y")
+- 178 unit tests passing
+
 ### Testing
 
 - Automated testing infrastructure
@@ -139,7 +149,7 @@ Planned Focus:
 
 ## In Progress
 
-- Difficulty rebalance (Milestone 7)
+- Visual Identity (Milestone 8)
 
 ---
 
@@ -212,13 +222,24 @@ Milestone 6 success criteria (completed):
 - Developers can instantly test any level ✅
 - Testing and balancing workflows become faster ✅
 
+Milestone 7 success criteria (completed):
+
+- Levels last longer (10–30 food per level vs previous 5) ✅
+- Mobile remains playable at all speeds (minimum 100ms, not 60ms) ✅
+- Difficulty feels fair — challenge from obstacle layouts, not reaction-time limits ✅
+- `npm run build` completes with no errors ✅
+- All 178 tests pass ✅
+- SPEC.md, ROADMAP.md, PROJECT_STATE.md, and ARCHITECTURE.md updated ✅
+
 ---
 
 ## Important Notes
 
-The current objective is Milestone 7 — Difficulty Rebalance.
+The current objective is Milestone 8 — Visual Identity.
 
 The PWA is live at `https://adityasingh-x.github.io/snake-run/` and can be installed on phones and desktops.
+
+Milestone 7 (Difficulty Rebalance) is complete. Level progression now uses a food-objective system (10–30 food per level) instead of score-based targets, and the speed curve has been rebalanced from 150ms→100ms for better mobile playability.
 
 Milestone 6 (Progress Persistence & Developer Experience) is complete. Players can continue from their last unlocked level, and developers have a level select for faster iteration.
 

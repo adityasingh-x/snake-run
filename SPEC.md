@@ -53,9 +53,14 @@ A classic single-player Snake Run. The player controls a snake on a 20x20 grid. 
 - **Speed per level:**
   - Level 1: 150ms
   - Level 2: 140ms
-  - ...
-  - Level 10: 60ms
-  - Formula: `150 - (level - 1) * 10` ms
+  - Level 3: 130ms
+  - Level 4: 120ms
+  - Level 5: 115ms
+  - Level 6: 110ms
+  - Level 7: 110ms
+  - Level 8: 105ms
+  - Level 9: 105ms
+  - Level 10: 100ms
 - **Cleanup:** `cancelAnimationFrame` on unmount or status change; accumulator and timestamp reset
 - **Pause behavior:** loop stops when status is not `playing`; resumes from where it left off
 
@@ -91,13 +96,20 @@ A classic single-player Snake Run. The player controls a snake on a 20x20 grid. 
 
 ### 6.2 Level Progression
 
-- **Target score per level:** `level * 50`
-  - Level 1: 50 points
-  - Level 5: 250 points
-  - Level 10: 500 points
-- **Level-up trigger:** score >= target score AND food was just eaten
+- **Food objective per level:**
+  - Level 1: 10 food
+  - Level 2: 12 food
+  - Level 3: 14 food
+  - Level 4: 16 food
+  - Level 5: 18 food
+  - Level 6: 20 food
+  - Level 7: 22 food
+  - Level 8: 24 food
+  - Level 9: 26 food
+  - Level 10: 30 food
+- **Level-up trigger:** foodEaten >= foodRequired AND food was just eaten
 - **Level-up behavior (two-step transition):**
-  1. **Step 1 — Level Complete:** When score reaches target (levels 1-9):
+  1. **Step 1 — Level Complete:** When food objective is reached (levels 1-9):
      - Status changes to `levelComplete`
      - Game loop freezes (board visible but snake does not move)
      - Snake keeps its grown position (NOT reset)
@@ -111,6 +123,7 @@ A classic single-player Snake Run. The player controls a snake on a 20x20 grid. 
      - Direction reset to RIGHT
      - New obstacles generated for next level
      - New food spawned
+     - foodEaten reset to 0
      - Status changes to `playing`
      - Game loop resumes
      - Level-up sound plays
@@ -125,7 +138,7 @@ Each level is defined as a data-driven object with the following structure:
   id: number;        // 1-10
   name: string;      // 1-3 word label (e.g., "First Meal", "Final Run")
   description: string; // One-sentence flavor text
-  targetScore: number; // Score threshold for level completion
+  foodRequired: number; // Food count threshold for level completion
   speed: number;       // Tick interval in milliseconds
   layout: Position[];   // Predefined obstacle positions for the level
 }
@@ -137,7 +150,7 @@ Level metadata is displayed in:
 
 ### 6.4 Win Condition
 
-- When level `LEVEL_COUNT` target score is reached (`LEVEL_COUNT * 50` points)
+- When level `LEVEL_COUNT` food objective is reached (30 food eaten at level 10)
 - Status changes to `won`
 - High score saved
 - Win overlay displayed: "You Win! You completed the game! Score: {score}"
@@ -158,8 +171,8 @@ idle
 playing
   PAUSE_GAME -> paused
   MOVE_SNAKE (collision) -> gameover
-  MOVE_SNAKE (score reaches target, levels 1-9) -> levelComplete
-  MOVE_SNAKE (level 10 complete) -> won
+  MOVE_SNAKE (food objective reached, levels 1-9) -> levelComplete
+  MOVE_SNAKE (level 10 food objective reached) -> won
 
 paused
   RESUME_GAME -> playing
@@ -277,11 +290,12 @@ won
 
 ### 10.4 ScoreBoard
 
-- Displays: Level (with level name), Score, High Score
+- Displays: Level (with level name), Food progress, Score, High Score
 - Level display format: "Level: {id} — {name}" (e.g., "Level: 1 — First Meal")
+- Food progress display: "Food: {foodEaten}/{foodRequired}" (e.g., "Food: 3/10")
 - Sound toggle button (speaker emoji, toggles between enabled/disabled)
 - `aria-live="polite"` for score/level changes
-- Screen-reader-only `aria-live="assertive"` region announces score and level
+- Screen-reader-only `aria-live="assertive"` region announces score, food progress, and level
 
 ### 10.5 GameOver (shared component)
 
@@ -351,7 +365,7 @@ won
 |----------|---------|-------------|
 | `VITE_GRID_SIZE` | 20 | Grid dimensions |
 | `VITE_CELL_SIZE` | 20 | Cell pixel size |
-| `VITE_POINTS_PER_FOOD` | 10 | Points per food eaten |
+| `VITE_POINTS_PER_FOOD` | 10 | Points per food eaten (scoring only, not progression) |
 | `VITE_LEVEL_COUNT` | 10 | Total levels |
 
 - Defined in `.env` file
@@ -383,7 +397,7 @@ won
 ## 15. Testing
 
 - **Framework:** Vitest with jsdom environment
-- **173 unit tests** across 13 test files:
+- **178 unit tests** across 13 test files:
   - `state.test.ts` (43 tests): gameReducer state transitions (START, RESET, PAUSE, RESUME, CHANGE_DIRECTION, MOVE_SNAKE, collisions, levelComplete, CONTINUE_GAME, win, high score, START_AT_LEVEL, lastUnlockedLevel tracking)
   - `Engine.test.ts` (26 tests): Engine class behavior (start, pause, resume, reset, continueGame, startAtLevel, loop management, subscriptions, destroy, sound callback wiring, lastUnlockedLevel persistence)
   - `gameLogic.test.ts` (31 tests): positionsEqual, calculateNewHead, isWallCollision, isSelfCollision, isObstacleCollision, isCollision, spawnFood

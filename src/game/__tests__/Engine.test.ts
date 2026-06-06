@@ -265,7 +265,8 @@ describe('Engine', () => {
         ...getInitialState(),
         status: 'playing',
         level: 10,
-        score: 490,
+        score: 290,
+        foodEaten: 29,
         lastUnlockedLevel: 1,
         snake: [
           { x: 9, y: 10 },
@@ -285,7 +286,8 @@ describe('Engine', () => {
         ...getInitialState(),
         status: 'playing',
         level: 1,
-        score: 40,
+        score: 90,
+        foodEaten: 9,
         lastUnlockedLevel: 1,
         snake: [
           { x: 9, y: 10 },

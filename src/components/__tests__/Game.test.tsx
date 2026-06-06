@@ -33,6 +33,7 @@ const makePlayingState = () => ({
   level: 1,
   obstacles: [],
   lastUnlockedLevel: 1,
+  foodEaten: 0,
 });
 
 const makeIdleState = () => ({

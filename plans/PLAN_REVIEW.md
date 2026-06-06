@@ -1,8 +1,8 @@
-# Plan Review: Milestone 6 — Progress Persistence & Developer Experience
+# Plan Review: Milestone 7 — Difficulty Rebalance
 
 **Reviewer:** Staff Engineer (Plan Review)
-**Plan under review:** `plans/ACTIVE.md` (Milestone 6 — Progress Persistence & Developer Experience, Draft, 2026-06-06)
-**Source documents:** `ROADMAP.md`, `AGENTS.md`, `ARCHITECTURE.md`, `SPEC.md`, `docs/PROJECT_STATE.md`, `docs/adr/ADR-003-level-transition-overlay-design.md`, `package.json`, `src/game/Engine.ts`, `src/game/state.ts`, `src/game/storage.ts`, `src/game/types.ts`, `src/hooks/useGame.ts`, `src/components/Game.tsx`, `src/components/GameOver.tsx`, `src/platform/keyboard.ts`, `src/game/__tests__/Engine.test.ts`, `src/game/__tests__/state.test.ts`, `src/utils/__tests__/storage.test.ts`, `src/components/__tests__/Game.test.tsx`
+**Plan under review:** `plans/ACTIVE.md` (Milestone 7 — Difficulty Rebalance, Draft, 2026-06-06)
+**Source documents:** `ROADMAP.md`, `AGENTS.md`, `ARCHITECTURE.md`, `SPEC.md`, `docs/PROJECT_STATE.md`, `package.json`, `src/game/state.ts`, `src/game/types.ts`, `src/game/levels.ts`, `src/game/Engine.ts`, `src/game/__tests__/state.test.ts`, `src/game/__tests__/Engine.test.ts`, `src/utils/__tests__/levelData.test.ts`, `src/components/Game.tsx`, `src/components/ScoreBoard.tsx`, `src/components/ScoreBoard.module.css`, `src/types/components.ts`
 **Review date:** 2026-06-06
 
 ---
@@ -11,57 +11,44 @@
 
 ## Strengths
 
-1. **Right-sized for the milestone.** Three features map 1:1 to ROADMAP M6 (`Continue From Last Reached Level`, `New Game Option`, `Developer Level Select`). No new abstractions, no new packages, no new files. This honours `AGENTS.md`'s "prefer simple solutions" and "avoid premature abstractions" rules.
-2. **Mirrors existing patterns.** `loadLastUnlockedLevel` / `saveLastUnlockedLevel` mirror `loadHighScore` / `saveHighScore` (`src/game/storage.ts:1–12`) character-for-character. `Engine.startAtLevel()` mirrors `start()` and `continueGame()` (`src/game/Engine.ts:63–92`) with the same `dispatch + startLoop` pattern. New components follow the existing CSS-Module / props-style conventions. Zero new conventions introduced.
-3. **Honest, bottom-up phasing.** Eight phases (persistence → state → engine → UI → wiring → a11y → tests → docs) with explicit per-phase verification. Every intermediate commit is compilable.
-4. **Strong out-of-scope table.** Cloud saves, achievement tracking, statistics, difficulty rebalance, mobile-specific Continue UI, progress reset, mid-run level changes, production-facing level select are all explicitly fenced. Future-milestone leakage is essentially zero.
-5. **Candid risk table.** Vite `import.meta.env.DEV` detection, two-button overlay crowding on small screens, dev-select leaking into production, and localStorage scope are all real risks with concrete mitigations.
-6. **Testability is enumerated.** Phase 7 names ~17 new test cases across four files. Storage tests, state tests, component tests, and Game-component updates are each scoped.
-7. **Button design is sound.** Primary (green, `autoFocus`, "Continue from Level N") and secondary (muted, no autoFocus, "New Game") are visually distinct. The Space=New Game / click=Continue asymmetry is intentional and pre-empts accidental continues on gameover.
-8. **Persistence write pattern is correct.** Calling `saveLastUnlockedLevel` inside the existing `dispatch()` `if (gameover || won)` block (alongside `saveHighScore`) and a new `if (levelComplete)` block keeps the pattern consistent with how high score is persisted (`src/game/Engine.ts:36–38`). The `Math.max` inside `saveLastUnlockedLevel` makes repeated calls a no-op, so multiple dispatches in a session are safe.
-9. **No ADR needed.** This is a self-contained feature addition (new state field, new action, new UI), not an architecture redesign. Skipping an ADR is the right call.
+1. **Right-sized for the milestone.** Two features (Food Objective System, Speed Curve Rebalance) map 1:1 to ROADMAP M7. No new abstractions, no new packages, no new files. Honours `AGENTS.md`'s "prefer simple solutions" and "avoid premature abstractions" rules.
+2. **Minimal blast radius.** The change is one new state field (`foodEaten`), one data field rename (`targetScore` → `foodRequired`), and a data-table swap in `levels.ts`. The reducer change is one condition swap. No new statuses, no new actions, no new reducer cases.
+3. **Engine and persistence are correctly identified as zero-change.** Phase 3 analysis is accurate: `Engine.ts:134-135` reads `getLevelData(state.level).speed` per tick, so the new speed table is picked up automatically. `Engine.dispatch()` sound and persistence wiring is driven by `score`/`level` deltas and status transitions, which are unaffected. `lastUnlockedLevel` from M6 continues to work because it is updated on the same status transitions that the new system preserves.
+4. **Honest bottom-up phasing.** Six phases (types → reducer → engine review → UI → tests → docs) with explicit per-phase verification. Every intermediate commit is compilable (or breaks the build by design in Phase 1, which is the right test of the type change).
+5. **Strong out-of-scope table.** HUD redesign, overlay redesign, endless mode, food variants, difficulty selection, statistics, achievements, playtesting, obstacle layout changes, score formula, grid size, mobile/desktop packaging are all explicitly fenced. Future-milestone leakage is zero.
+6. **Concrete data tables with exact values.** New `foodRequired` and `speed` values are tabulated for all 10 levels, matching `ROADMAP.md:382-416` character-for-character. The implementer cannot drift from the spec.
+7. **Score semantics are preserved correctly.** The plan keeps score accumulation per food, score carry-over between levels (via `CONTINUE_GAME`'s `...state` spread), and high-score tracking. `foodEaten` is per-level only. This is the cleanest possible factoring.
+8. **Line-numbered steps.** Phase steps reference specific line numbers in the source (`state.ts:56-104`, `types.ts:10-17`, etc.). This is a Staff-level pattern: an AI agent can verify each step before claiming completion. I verified all references against the current source — every line range is accurate.
+9. **Test count awareness.** Plan states the baseline is 173 and targets 173+. `npm test` confirms 173 passing, 13 test files, distributed as documented in `SPEC.md:386-399`.
+10. **No ADR needed.** This is a behavior change (progression condition), not an architecture redesign. Skipping an ADR is correct.
 
 ## Weaknesses
 
-1. **`Engine.test.ts` is not in the Phase 7 file list.** The plan adds `Engine.startAtLevel()` (Phase 3a) and modifies `Engine.dispatch()` to write `lastUnlockedLevel` to localStorage (Phase 3a). Neither change has a test. The existing `Engine.test.ts:164–206` (`continueGame` describe block) shows the established pattern for testing engine methods that combine dispatch + startLoop — that pattern needs a parallel `startAtLevel` describe block, and a new test for the persistence side-effect.
-2. **No `package.json` version bump.** `package.json:4` is currently `0.5.0`. `docs/PROJECT_STATE.md:5` is also `v0.5.0`. For M6, both should advance to `0.6.0` / `v0.6.0` to match the prior milestone's release cadence (`reviews/IMPLEMENTATION_REVIEW.md` and `plans/archive/2026-06-06-milestone-5-plan-review.md` F-07 establish the pattern). The plan updates `PROJECT_STATE.md` implicitly but does not list `package.json` in any phase.
-3. **No `ARCHITECTURE.md` updates are planned.** AGENTS.md says: "Architecture changes: Update ARCHITECTURE.md". This is borderline — the system structure is unchanged, but two ARCHITECTURE.md items will go stale:
-   - The state machine diagram (`ARCHITECTURE.md:199–224`) does not include the new `START_AT_LEVEL` transition or the `lastUnlockedLevel` field.
-   - The testing count (`ARCHITECTURE.md:251`) says "143 unit tests" and will drift to ~160 after Phase 7.
-4. **SPEC.md `§10.5 GameOver (shared component)` is not explicitly updated.** The plan updates `§7.1` (state machine), `§7.2` (state descriptions), `§8.1` (keyboard), `§12` (persistence, new `12.3`), and `§17` (limitations #2 and #3). It does not call out `§10.5`, which currently reads: "Both: Play Again button + 'Press Space to restart' hint" (`SPEC.md:287`). That sentence becomes incorrect when `lastUnlockedLevel > 1` and the second button appears.
-5. **SPEC.md `§17` limitation #4 ("No undo or continue-after-death") is not removed.** The plan removes limitation #3 and updates #2, but leaves #4 untouched. The entire purpose of this milestone is to provide continue-after-death; #4 is now stale.
-6. **Definition of Done claim is wrong.** DoD bullet 9: "No new architectural abstractions, state machine changes, or framework additions introduced." The plan introduces a new `START_AT_LEVEL` action and a new `lastUnlockedLevel` field — both are state machine changes. The bullet should be reworded to reflect that the *shape* of the existing state machine is preserved (no new statuses), while a single new transition is added.
-7. **No test for the `Engine.dispatch` persistence side-effect.** `state.test.ts` tests the reducer only; `Engine.test.ts` exercises the dispatch wrapper. The plan adds `saveLastUnlockedLevel` calls to `dispatch()` but no test asserts that localStorage is written on gameover, won, or levelComplete. A regression where the persistence call is removed would not be caught.
-8. **`Game.test.tsx` mock update is under-described.** The plan's Phase 7d says "Update existing tests to account for new GameOver props" but does not list the `useGame` mock return value change. The mock (`src/components/__tests__/Game.test.tsx:47–56, 64–75`) must add `startGameAtLevel: vi.fn()`. Without it, the new destructuring in `Game.tsx:25–34` will produce an undefined `startGameAtLevel` and crash on first render in tests.
+1. **Phase 5 path error.** Phase 5 lists `src/game/__tests__/levelData.test.ts` as a target file. The actual file is at `src/utils/__tests__/levelData.test.ts` (verified via `find`). The test imports from `../levelData`, which is a one-line re-export at `src/utils/levelData.ts:1` (`export { LEVELS as default, getLevelData, generateObstacles } from '../game';`). The data lives in `src/game/levels.ts`, so the rename in `src/game/levels.ts` will still propagate via the re-export — but the test file the implementer must edit is in `src/utils/`. An AI agent following the plan literally will either (a) edit the wrong file (with no effect on tests) or (b) create a new file at the wrong path and orphan the real one.
+2. **Phase 5c is wrong about `Engine.test.ts`.** The plan says: "No structural changes expected — the engine's behavior is driven by the reducer." This is incorrect. `Engine.test.ts:179-206` (`continueGame` describe block) sets state via `engine.setState({ ...getInitialState(), status: 'levelComplete', level: 1, score: 50 })` and asserts the transition. That test will still pass (it bypasses the reducer's level-up trigger by setting `status: 'levelComplete'` directly). But the `lastUnlockedLevel` persistence tests at `Engine.test.ts:248-301` use a different pattern: they set `status: 'playing'` with a `score` and `food` setup that triggers a level-up via `testDispatch({ type: 'MOVE_SNAKE' })`. After the change, `score: 40` and one food eaten at level 1 will not reach `foodRequired: 10`, so `levelComplete` will not fire and the test will fail. The plan's blanket "no structural changes expected" is misleading; the level-up and won tests in `Engine.test.ts` need the same kind of setup updates the plan prescribes for `state.test.ts`.
+3. **`state.test.ts` `makeState` helper is not called out.** `state.test.ts:6-24` builds a default `GameState` with explicit fields. After `GameState` gains `foodEaten: number`, `makeState` will fail TypeScript compilation (missing required field). The plan implies this via "Tests that check `initial state` shape — add `foodEaten: 0`" but does not explicitly say to add `foodEaten: 0` to the `makeState` helper. This is the most common omission a hurried AI agent will make — fix the explicit field assertions and forget the factory.
+4. **Documentation drift in SPEC.md §6.4 (Win Condition).** The plan updates §6.2 (level progression) and §6.3 (level metadata) but does not call out §6.4, which currently reads: "When level `LEVEL_COUNT` target score is reached (`LEVEL_COUNT * 50` points)" (`SPEC.md:140`). This sentence becomes factually wrong after the change. The win condition is now `level === LEVEL_COUNT && foodEaten >= foodRequired`.
+5. **Documentation drift in ARCHITECTURE.md line 110.** The plan updates the speed-ramp line at `ARCHITECTURE.md:154` but misses the parallel reference at `ARCHITECTURE.md:110`: "**Dynamic speed** based on current level (150ms → 60ms)". This will go stale.
+6. **Documentation drift in ARCHITECTURE.md state machine diagram.** The plan updates the Level System description and Important Constants table, but not the state machine diagram at `ARCHITECTURE.md:199-224`. Two lines are now wrong: "SCORE REACHES TARGET (levels 1-9) → LEVELCOMPLETE" (line 209) and "LEVEL 10 COMPLETE → WON" (line 210) implicitly reference the score-based trigger. They should read "FOOD OBJECTIVE REACHED" and "FOOD OBJECTIVE REACHED (level 10)".
+7. **Phase 4b screen-reader text format is unspecified.** The plan says: "Update the screen-reader-only text to include food progress." The current `aria-live="assertive"` block (`ScoreBoard.tsx:21-24`) reads `{score > 0 && \`Score: ${score}. \`}Level {level}.`. The plan does not specify where the food progress announcement goes, what it says, or whether the `score > 0` guard should be mirrored as `foodEaten > 0`. Minor ambiguity.
+8. **Plan does not address the "won" test setup explicitly.** `state.test.ts:245-260` triggers win at level 10 by setting `score: 490` and moving the snake to eat food (which pushes `score` to 500). After the change, this requires `foodEaten: 29` and the resulting `score: 290`. The plan's Phase 5b guidance is generic ("Tests that trigger `won` similarly") but does not enumerate the two test cases (the `won` status test and the `high score on win` test) that need this specific update.
 
 ## Major Risks
 
-1. **Test coverage gap in `Engine.test.ts`.** The plan adds a new public method (`startAtLevel`) and a new side-effect (`saveLastUnlockedLevel` in `dispatch`). Neither is tested. A future regression (e.g., `startAtLevel` no longer starts the loop, or persistence is silently dropped from a status branch) will not be caught. Severity is High, not Critical, because existing tests still pass and the behaviour is observable in manual smoke testing.
-2. **Documentation drift across four files.** The plan updates `SPEC.md` and the `SPEC.md §17` limitation list, but leaves `ARCHITECTURE.md` (state machine diagram, test count), `SPEC.md §10.5` (GameOver description), and `SPEC.md §17` limitation #4 (continue-after-death) untouched. AGENTS.md's "Documentation Consistency" rule ("Keep SPEC.md, ARCHITECTURE.md, PROJECT_STATE.md, and ROADMAP.md consistent with one another") is partially violated.
-3. **Vitest renders the dev select by default.** `import.meta.env.DEV` is `true` in Vitest (dev environment). The new dev select in `Game.tsx` will render in every `Game.test.tsx` render. Existing tests use targeted queries (`getByRole('button', { name: /pause game/i })`), so they should still pass — but a future test that uses `getAllByRole('button')` will see the new "Go" button. The plan does not state whether tests should mock `import.meta.env.DEV` or accept the additional button. This is a latent landmine, not a current failure.
-4. **The dev select's "Go" button can fire `onLevelUp` unexpectedly.** In `Engine.dispatch()` (`src/game/Engine.ts:52–54`), `onLevelUp` fires whenever `state.level > prevLevel && state.status === 'playing'`. When `startAtLevel(5)` is called from idle (level 1), the level jumps 1 → 5 and `onLevelUp` fires once. The level-up sound plays once, which is correct behaviour but a surprising source of the dev sound. Minor concern; not a bug.
-5. **`getLevelData(state.level + 1)` latent landmine (pre-existing, not introduced by the plan).** `src/components/Game.tsx:183` does `getLevelData(state.level + 1).name` for the LevelTransition overlay. At level 10 the game transitions directly to `won` (no `levelComplete` overlay), so this is never called with `level = 10`. But the M6 plan does not address this latent landmine. It is a "while you're in there" cleanup, not a regression.
+1. **Wrong-file edit (F-01).** The path error in Phase 5 will result in either (a) the real test file remaining unedited (test failures not fixed, plan appears to complete but tests fail) or (b) a new file created at the wrong path (orphan test that does not run). Severity: Critical because it is a silent failure mode. An AI agent following the plan step-by-step will not notice the discrepancy unless it grep-checks the file path first.
+2. **Test setup incompatibilities (F-02, F-03, F-08).** The `state.test.ts` `makeState` factory, the level-up tests in `state.test.ts` (lines 210-294), the won tests in `state.test.ts` (lines 245-277), the lastUnlockedLevel tests in `state.test.ts` (lines 406-481), the lastUnlockedLevel persistence tests in `Engine.test.ts` (lines 248-301), and the `Engine.test.ts:179-206` `continueGame` test all reference score-based setups or assume the absence of `foodEaten`. None of them will pass with the new system unless updated. The plan's generic guidance covers most of this, but the `Engine.test.ts` guidance is wrong ("no structural changes expected"), and the `makeState` factory update is implicit. Severity: High because the test suite is one of the Definition-of-Done gates, and silent failures during Phase 5 will cascade into Phase 6 (docs claim 173+ tests passing; in reality the suite is broken).
+3. **Documentation drift across three files (F-04, F-05, F-06).** The plan updates SPEC.md §4, §6.2, §6.3, §10.4, §13 and ARCHITECTURE.md §150-155, §154, §249-256. It misses SPEC.md §6.4, ARCHITECTURE.md §110, and ARCHITECTURE.md §199-224 (state machine diagram). `AGENTS.md`'s "Documentation Consistency" rule ("Keep SPEC.md, ARCHITECTURE.md, PROJECT_STATE.md, and ROADMAP.md consistent with one another") is partially violated. Severity: Medium because the drift is cosmetic and recoverable, but it is exactly the kind of inconsistency `AGENTS.md` warns against.
 
 ## Recommended Changes
 
-1. **Add `src/game/__tests__/Engine.test.ts` to the Phase 7 file list.** Mirror the `continueGame` describe block (lines 164–206) with a `startAtLevel` describe block. Cover: idle → startAtLevel(5) → status=playing, level=5, loop running; gameover state (via `setState`) → startAtLevel(3) → status=playing, level=3, loop running; clamping is the reducer's job (already covered in state tests), but assert that `startAtLevel(999)` ends with `state.level === LEVEL_COUNT` through the engine.
-2. **Add an `Engine.dispatch` persistence test.** In `Engine.test.ts`, add a describe block (or extend the existing `sound callback wiring` describe block) that:
-   - Sets up `localStorage.clear()` in `beforeEach`.
-   - On `won` (via `setState` + `dispatch({ type: 'MOVE_SNAKE' })` to crash on level 10), asserts `localStorage.getItem('snakeLastUnlockedLevel')` is updated.
-   - On `gameover`, asserts the same.
-   - On `levelComplete`, asserts the same.
-3. **Bump `package.json` version to `0.6.0`** as part of the "Final wrap-up" between Phase 7 and Phase 8, or as a new Phase 8d. Add `package.json` to the Phase 7/8 file list. Matches the prior milestone's release cadence.
-4. **Add `ARCHITECTURE.md` updates to Phase 8.** Two specific changes:
-   - Update the state machine diagram (lines 199–224) to add `START_AT_LEVEL(N) -> playing (level N)` to `idle`, `gameover`, and `won`.
-   - Update the testing count (line 251) from "143 unit tests" to the new post-milestone count (the plan targets ~160).
-5. **Add `SPEC.md §10.5 GameOver (shared component)` to the Phase 8a file list.** Update the description to: "Renders 'Continue from Level N' (primary, when `lastUnlockedLevel > 1`) and 'New Game' (secondary, always) buttons, or a single 'Play Again' button (when `lastUnlockedLevel === 1`). The Continue button is `autoFocus`d when present."
-6. **Update `SPEC.md §17` limitations** to also remove limitation #4 ("No undo or continue-after-death"). Add a one-line note that continue-after-death is now available via the localStorage persistence and the GameOver overlay's "Continue from Level N" button.
-7. **Reword DoD bullet 9.** Replace "No new architectural abstractions, state machine changes, or framework additions introduced" with "No new architectural abstractions or framework additions. Existing state machine shape preserved; one new transition (`START_AT_LEVEL`) and one new persisted field (`lastUnlockedLevel`) added."
-8. **Make `Game.test.tsx` Phase 7d step explicit.** "Add `startGameAtLevel: vi.fn()` to both `mockUseGame.mockReturnValue` calls (`src/components/__tests__/Game.test.tsx:47–56, 64–75`)."
-9. **Add a dev-select render-time test or skip-clarification to Phase 7d.** Either:
-   - Add a test that asserts the dev select is present in the Vitest render (since `import.meta.env.DEV` is `true`), or
-   - Add a sentence: "Tests that query buttons by name (e.g., `getByRole('button', { name: /pause game/i })`) are unaffected by the new dev select. Tests that count or iterate all buttons may need to filter by accessible name."
-10. **Tighten the in-game hint text in `GameOver.tsx`.** The current "Press Space to restart" hint is technically correct (Space = New Game = Level 1) but is now ambiguous: a player who has died and wants to continue may press Space expecting to continue, but Space restarts to Level 1. Recommend changing to "Press Space for new game — click Continue to resume" when `lastUnlockedLevel > 1`. Low priority, but cheap to address in Phase 4.
+1. **Fix the path error in Phase 5 (F-01).** Change `src/game/__tests__/levelData.test.ts` to `src/utils/__tests__/levelData.test.ts` in the Phase 5 file list and in any step that references the file. The data lives in `src/game/levels.ts`; the test consumes it via the `src/utils/levelData.ts` re-export.
+2. **Add an explicit `makeState` factory update step in Phase 5b (F-03).** Add a step before the test-case updates: "Add `foodEaten: 0` to the `makeState` factory at `src/game/__tests__/state.test.ts:6-24`. This is required to satisfy the new `GameState` type."
+3. **Replace Phase 5c's "no structural changes expected" with the correct guidance (F-02).** Rewrite Phase 5c to: "`Engine.test.ts` has the same test-setup pattern as `state.test.ts`. The `lastUnlockedLevel persistence` describe block (`Engine.test.ts:243-301`) sets `score: 40` and `score: 490` to trigger `levelComplete` and `won` respectively. After the change, these setups must use `foodEaten: 9` (for level 1) and `foodEaten: 29` (for level 10), with corresponding `score: 90` and `score: 290`. The `continueGame` describe block (`Engine.test.ts:165-207`) uses `setState` to set `status: 'levelComplete'` directly and is unaffected."
+4. **Add SPEC.md §6.4 to the Phase 6a update list (F-04).** Replace `LEVEL_COUNT * 50` with "when the level 10 food objective is reached". This is a one-line change in the same file as the §6.2 update.
+5. **Add ARCHITECTURE.md §110 to the Phase 6b update list (F-05).** Replace "150ms → 60ms" with "150ms → 100ms" in the "Dynamic speed based on current level" bullet. The plan already updates line 154 (speed ramp); line 110 is the parallel reference in the Game Loop Pattern section.
+6. **Add the state machine diagram update to Phase 6b (F-06).** Update `ARCHITECTURE.md:209-210` to use the food-objective terminology: "FOOD OBJECTIVE REACHED (levels 1-9) → LEVELCOMPLETE" and "LEVEL 10 FOOD OBJECTIVE REACHED → WON". The state machine diagram is referenced by new contributors; keeping it accurate matters more than any other doc section.
+7. **Specify the screen-reader announcement format in Phase 4b (F-07).** Add a sentence: "Update the screen-reader block to read: `{score > 0 && \`Score: ${score}. \`}{foodEaten > 0 && \`Food: ${foodEaten} of ${foodRequired}. \`}Level {level}.`" Mirrors the existing `score > 0` guard pattern.
+8. **Tighten Phase 5b's "won" guidance (F-08).** Add a step: "Update the two `won` test cases at `state.test.ts:245-260` and `state.test.ts:262-277` to set `foodEaten: 29` (one food away from level 10's `foodRequired: 30`) and `score: 290` instead of `score: 490`."
 
 ---
 
@@ -69,258 +56,157 @@
 
 ## Critical
 
-### F-01. `Engine.test.ts` is missing from the Phase 7 test-update list
+### F-01. Wrong test file path in Phase 5
+
 - **Severity:** Critical
-- **Description:** Phase 3a adds `Engine.startAtLevel(level: number): void` (line 178–183 in the plan) and modifies `Engine.dispatch()` to call `saveLastUnlockedLevel` on `gameover`/`won`/`levelComplete` (line 187–197). Neither change has a corresponding test. The plan's Phase 7 file list (`state.test.ts`, `storage.test.ts`, `GameOver.test.tsx`, `Game.test.tsx`) does not include `src/game/__tests__/Engine.test.ts`. The existing `continueGame` describe block (`src/game/__tests__/Engine.test.ts:164–206`) demonstrates the established pattern for testing engine methods that combine `dispatch` + `startLoop`. A `startAtLevel` describe block is the natural parallel. Additionally, a test for the new persistence side-effect (localStorage is written on terminal status transitions) is missing — this lives in `dispatch()`, not in the reducer, so `state.test.ts` cannot catch it.
-- **Recommendation:** Add `src/game/__tests__/Engine.test.ts` to the Phase 7 file list. New tests:
-  ```ts
-  describe('startAtLevel', () => {
-    it('starts game at requested level from idle', () => {
-      engine.startAtLevel(5);
-      expect(engine.getState().status).toBe('playing');
-      expect(engine.getState().level).toBe(5);
-    });
-
-    it('starts game at requested level from gameover', () => {
-      engine.setState({ ...getInitialState(), status: 'gameover', level: 3 });
-      engine.startAtLevel(2);
-      expect(engine.getState().status).toBe('playing');
-      expect(engine.getState().level).toBe(2);
-    });
-
-    it('runs the loop after startAtLevel', () => {
-      engine.startAtLevel(1);
-      const snakeBefore = engine.getState().snake;
-      vi.advanceTimersByTime(500);
-      expect(engine.getState().snake).not.toEqual(snakeBefore);
-    });
-
-    it('persists lastUnlockedLevel on gameover', () => {
-      // dispatch a state that produces gameover (e.g. wall collision at L3)
-      // assert localStorage.getItem('snakeLastUnlockedLevel') === '3'
-    });
-
-    it('persists lastUnlockedLevel on levelComplete', () => {
-      // dispatch a state that produces levelComplete at L4
-      // assert localStorage.getItem('snakeLastUnlockedLevel') === '5'
-    });
-  });
-  ```
-
-### F-02. `ARCHITECTURE.md` is not in the Phase 8 file list
-- **Severity:** Critical
-- **Description:** AGENTS.md says "Architecture changes: Update ARCHITECTURE.md" and "Keep SPEC.md, ARCHITECTURE.md, PROJECT_STATE.md, and ROADMAP.md consistent with one another". The plan updates `SPEC.md` and `ROADMAP.md` (implicitly, post-merge) and `PROJECT_STATE.md`. It does not list `ARCHITECTURE.md` in any phase. Two ARCHITECTURE.md items will go stale after the milestone:
-  1. **State machine diagram** (`ARCHITECTURE.md:199–224`) shows `idle -> START_GAME -> PLAYING`, `idle -> PAUSE_GAME -> PAUSED`, etc. After M6, the new transitions `idle -> START_AT_LEVEL(N) -> PLAYING`, `gameover -> START_AT_LEVEL(N) -> PLAYING`, `won -> START_AT_LEVEL(N) -> PLAYING` are missing.
-  2. **Testing count** (`ARCHITECTURE.md:251`) says "143 unit tests across 12 test files". After M6, the count is ~160 and the file count is unchanged.
-  Both create `AGENTS.md` "Documentation Consistency" drift.
-- **Recommendation:** Add `ARCHITECTURE.md` to Phase 8 file list. Two specific changes:
-  - Update the state machine diagram to add the three `START_AT_LEVEL` transitions.
-  - Update line 251 test count to the post-milestone value (use the actual `npm test` count, not the "~160" estimate).
+- **Description:** Phase 5 (`/Users/adityasingh/Documents/snake-run/plans/ACTIVE.md:239-287`) lists `src/game/__tests__/levelData.test.ts` in the Phase 5 file list (line 247) and in the Phase 5a sub-step (line 251). The actual test file is at `src/utils/__tests__/levelData.test.ts`. Verified via `find` and `Read`. The data source (`src/game/levels.ts`) is correctly identified, and the re-export (`src/utils/levelData.ts:1`) will propagate the rename transparently — but the test assertions live in the `src/utils/` file. An AI agent following the plan literally will:
+  - (a) Try to edit `src/game/__tests__/levelData.test.ts` (does not exist) — TypeScript/build errors or silent no-op.
+  - (b) Or use Glob/LS to discover the right file — possible, but not guaranteed.
+  - The plan's other file references in Phase 5 (`state.test.ts`, `Engine.test.ts`) are correct. Only `levelData.test.ts` has the wrong path.
+- **Recommendation:** Change the Phase 5 file list entry to `src/utils/__tests__/levelData.test.ts`. Change any sub-step that references the file. Add a one-line note in Phase 5 explaining that `src/utils/levelData.ts` is a re-export of `src/game/levels.ts`, so the test updates are independent of the data-layer change in Phase 1.
 
 ## High
 
-### F-03. `package.json` version not bumped
+### F-02. `Engine.test.ts` level-up tests use score-based setup that will silently fail
+
 - **Severity:** High
-- **Description:** `package.json:4` is `0.5.0`. `docs/PROJECT_STATE.md:5` is `v0.5.0`. The plan updates `PROJECT_STATE.md` (implicitly) to `v0.6.0` but does not list `package.json` in any phase. After the milestone, `package.json` and `PROJECT_STATE.md` will disagree on the version. The prior milestone's review (`plans/archive/2026-06-06-milestone-5-plan-review.md` F-07) flagged the same issue and the fix is a one-line bump.
-- **Recommendation:** Add `package.json` to the Phase 8 file list (or Phase 7 wrap-up): change `"version": "0.5.0"` to `"version": "0.6.0"`.
+- **Description:** `Engine.test.ts:248-301` (the `lastUnlockedLevel persistence` describe block) uses `engine.setState({ ...getInitialState(), status: 'playing', level: 1, score: 40, ... })` followed by `engine.testDispatch({ type: 'MOVE_SNAKE' })` to trigger `levelComplete` and assert persistence. After the change, `score: 40` is irrelevant to the level-up condition; the trigger is now `foodEaten >= foodRequired`. The test sets `foodEaten: 0` (from `getInitialState()`), and one food eaten yields `foodEaten: 1` — nowhere near level 1's `foodRequired: 10`. `MOVE_SNAKE` will not transition to `levelComplete`; the assertion will fail.
+  - Similarly, `Engine.test.ts:263-281` (won persistence) sets `score: 490` and `level: 10`. After the change, `foodEaten: 0` and one food eaten = `foodEaten: 1`, not the 30 required for level 10 win. Test will fail.
+  - The plan's Phase 5c says "Tests that verify level-up callbacks remain valid (conditions unchanged)" and "No structural changes expected — the engine's behavior is driven by the reducer." Both statements are wrong. The engine test setup *is* the issue: it does not go through the reducer to reach the level-up state; it relies on the `MOVE_SNAKE` reducer call to trigger the transition, and that reducer call now has a different condition.
+- **Recommendation:** Rewrite Phase 5c to: "Update the `lastUnlockedLevel persistence` describe block in `src/game/__tests__/Engine.test.ts:243-301`. Replace the score-based setups with foodEaten-based setups. For `levelComplete` at level 1, set `foodEaten: 9` and `score: 90` (one food away from `foodRequired: 10`). For `won` at level 10, set `foodEaten: 29` and `score: 290`. For `gameover`, the existing setup (`Engine.test.ts:248-261`) is unaffected because the collision path is independent of `foodEaten`. The `continueGame` describe block (`Engine.test.ts:165-207`) sets `status: 'levelComplete'` directly via `setState` and is unaffected. The `startAtLevel` describe block (`Engine.test.ts:209-241`) does not trigger level-up and is unaffected. The `sound callback wiring` describe block (`Engine.test.ts:109-163`) is unaffected."
 
-### F-04. `SPEC.md §10.5 GameOver (shared component)` description is not updated
+### F-03. `state.test.ts` `makeState` factory needs explicit `foodEaten: 0`
+
 - **Severity:** High
-- **Description:** The plan updates `§7.1`, `§7.2`, `§8.1`, `§12` (new `12.3`), and `§17` (limitations #2 and #3). It does not call out `§10.5` (`SPEC.md:282–288`). That section currently reads: "Both: Play Again button + 'Press Space to restart' hint" (line 287). After the milestone, `GameOver` renders either a single "Play Again" button (when `lastUnlockedLevel === 1`) or two buttons ("Continue from Level N" + "New Game") (when `lastUnlockedLevel > 1`). The current SPEC text is wrong for the `lastUnlockedLevel > 1` case.
-- **Recommendation:** Add a Phase 8a step: "Update `SPEC.md §10.5`: replace the second sentence ('Both: Play Again button + "Press Space to restart" hint') with a description of the dual-button layout: 'Renders "Continue from Level N" (primary, when `lastUnlockedLevel > 1`) and "New Game" (secondary, always when `lastUnlockedLevel > 1`) buttons. Falls back to a single "Play Again" button when `lastUnlockedLevel === 1`. The Continue button is `autoFocus`d when present.'"
+- **Description:** `state.test.ts:6-24` defines a `makeState` helper that returns a partial `GameState`. The returned object explicitly enumerates every field except `foodEaten`. After `GameState` gains `foodEaten: number` as a required field (`types.ts:19-30` will be updated in Phase 1), the `makeState` factory will fail TypeScript compilation with "Property 'foodEaten' is missing in type '{...}'". The plan's Phase 5b says: "Tests that check `initial state` shape — add `foodEaten: 0`". This is generic and could be interpreted as "update the explicit field assertions in each `it()` block" without touching the factory. The factory is the higher-leverage fix because every test that uses `makeState()` flows through it.
+- **Recommendation:** Add a new step at the start of Phase 5b: "Add `foodEaten: 0` to the `makeState` factory at `src/game/__tests__/state.test.ts:6-24`. This is required to satisfy the new `GameState` type and is the single change that makes 24+ existing tests compile." Then the existing per-test guidance applies on top.
 
-### F-05. `SPEC.md §17` limitation #4 is not removed
-- **Severity:** High
-- **Description:** The plan removes limitation #3 ("No difficulty scaling between games — each START_GAME resets to level 1") and updates #2 ("No leaderboard — high score is local only" → "High score is local only (no level progress sync across browsers/devices yet)"). It does not remove limitation #4 ("No undo or continue-after-death"). The entire purpose of this milestone is to provide continue-after-death. After M6, limitation #4 is stale.
-- **Recommendation:** Add to Phase 8a: "Remove `SPEC.md §17` limitation #4 ('No undo or continue-after-death') — addressed by the new Continue feature."
+### F-04. SPEC.md §6.4 (Win Condition) is not in the Phase 6a update list
 
-### F-06. `Engine.dispatch` persistence side-effect has no test
-- **Severity:** High
-- **Description:** The plan adds `saveLastUnlockedLevel(this.state.lastUnlockedLevel)` calls to `Engine.dispatch()` (lines 187–197). `state.test.ts` tests the reducer only, not the dispatch wrapper. A regression where the persistence call is removed (or the `levelComplete` branch is dropped) would not be caught. The persistence call is critical to the feature — if it is silently broken, the player progresses, dies, and sees "Play Again" with no Continue button, with no test failure.
-- **Recommendation:** Covered by F-01 (add to `Engine.test.ts`). Specifically:
-  ```ts
-  describe('lastUnlockedLevel persistence', () => {
-    beforeEach(() => localStorage.clear());
-
-    it('writes snakeLastUnlockedLevel on gameover', () => {
-      engine.setState({ ...getInitialState(), level: 4, status: 'playing' });
-      // dispatch a state that produces gameover (snake crashes on L4)
-      // assert localStorage.getItem('snakeLastUnlockedLevel') === '4'
-    });
-
-    it('writes snakeLastUnlockedLevel on levelComplete', () => {
-      // dispatch a state that produces levelComplete at L2
-      // assert localStorage.getItem('snakeLastUnlockedLevel') === '3'
-    });
-
-    it('writes snakeLastUnlockedLevel on won', () => {
-      // dispatch a state that produces won at L10
-      // assert localStorage.getItem('snakeLastUnlockedLevel') === '10'
-    });
-  });
-  ```
+- **Severity:** Medium
+- **Description:** `SPEC.md:140` reads: "When level `LEVEL_COUNT` target score is reached (`LEVEL_COUNT * 50` points)". After the change, the win condition is no longer score-based. This sentence is factually wrong. The plan's Phase 6a updates §6.2, §6.3, §10.4, §13 but does not list §6.4.
+- **Recommendation:** Add a step to Phase 6a: "**Section 6.4 (Win Condition, lines 139-144):** Replace `LEVEL_COUNT * 50` with a food-objective-based description: 'When the level 10 food objective is reached (30 food eaten at level 10)'. Keep the status-change and high-score-save behavior unchanged."
 
 ## Medium
 
-### F-07. `import.meta.env.DEV` is `true` in Vitest; the dev select renders in every test
-- **Severity:** Medium
-- **Description:** `import.meta.env.DEV` is Vite's built-in flag. In Vitest (jsdom), it evaluates to `true` because tests run in the dev environment. The plan's new dev select (`Game.tsx:367–388` in the plan) will render in every `Game.test.tsx` render. Existing tests in `Game.test.tsx` use targeted queries (`getByRole('button', { name: /pause game/i })`), so they should still pass — but a future test that uses `getAllByRole('button')` will see the new "Go" button, and the dev select's presence is a fact of the test environment that the plan does not document. Also, a test that asserts button *order* (e.g., the first button in the modal is "Continue") would need to be aware of the dev select's placement.
-- **Recommendation:** Add to Phase 7d: "Tests that query buttons by name (e.g., `getByRole('button', { name: /pause game/i })`) are unaffected by the new dev select. The dev select is rendered above the `ScoreBoard` (per Phase 5b placement: 'below the title, above the ScoreBoard') and contains a `<select>` element with 10 `<option>` children plus a "Go" button. Tests that count buttons or assert structure should account for these. Optionally, add a Vitest setup that mocks `import.meta.env.DEV = false` for the `Game.test.tsx` file."
+### F-05. ARCHITECTURE.md line 110 ("Dynamic speed") is not in the Phase 6b update list
 
-### F-08. The Definition of Done's "no state machine changes" claim is false
 - **Severity:** Medium
-- **Description:** DoD bullet 9 (line 28): "No new architectural abstractions, state machine changes, or framework additions introduced." The plan introduces a new `START_AT_LEVEL` action and a new `lastUnlockedLevel` field. Both are state machine / state shape changes. The bullet as written is contradictory with the rest of the plan (Phases 2–5 explicitly make these changes). The intent appears to be "no large structural changes", but the wording is wrong.
-- **Recommendation:** Reword to: "No new architectural abstractions or framework additions. State machine shape preserved (no new statuses); one new action (`START_AT_LEVEL`) and one new persisted field (`lastUnlockedLevel`) added."
+- **Description:** `ARCHITECTURE.md:110` reads: "**Dynamic speed** based on current level (150ms → 60ms)". After the change, the upper bound is 100ms, not 60ms. The plan updates `ARCHITECTURE.md:154` (speed ramp) but misses line 110. Two parallel references to the speed range will diverge.
+- **Recommendation:** Add a step to Phase 6b: "**Game Loop Pattern section (line 110):** Replace `150ms → 60ms` with `150ms → 100ms`. Mirrors the update to the speed ramp line at 154."
 
-### F-09. `Game.test.tsx` mock update is under-described
+### F-06. ARCHITECTURE.md state machine diagram is not in the Phase 6b update list
+
 - **Severity:** Medium
-- **Description:** The plan's Phase 7d says "Update existing tests to account for new GameOver props. Add test: `lastUnlockedLevel` is passed through to GameOver overlay." It does not list the `useGame` mock return value change. The mock (`src/components/__tests__/Game.test.tsx:47–56, 64–75`) currently returns `{ state, initAudio, startGame, pauseGame, resumeGame, changeDirection, resetGame, continueGame }`. After the plan's `useGame.ts` change, the hook returns `startGameAtLevel` too. The new `Game.tsx` destructure (`const { ..., startGameAtLevel, ... } = useGame();`) will receive `undefined` for `startGameAtLevel` if the mock is not updated, causing a runtime crash on first render in tests. (Vitest is loose enough that `vi.mocked(useGame).mockReturnValue({...})` may not enforce shape, so this could surface as `handleStartAtLevel` being undefined when the dev select's "Go" button is clicked in a test — which may or may not be exercised by current tests.)
-- **Recommendation:** Make the Phase 7d step explicit: "Add `startGameAtLevel: vi.fn()` to both `mockUseGame.mockReturnValue(...)` calls in `src/components/__tests__/Game.test.tsx:47–56, 64–75`."
+- **Description:** `ARCHITECTURE.md:199-224` contains a state machine diagram. Line 209 reads: "SCORE REACHES TARGET (levels 1-9) → LEVELCOMPLETE". Line 210 reads: "LEVEL 10 COMPLETE → WON". After the change, the trigger is food-based, not score-based. The diagram is the most-referenced artifact in ARCHITECTURE.md for new contributors; keeping it accurate matters.
+- **Recommendation:** Add a step to Phase 6b: "**State Machine diagram (lines 209-210):** Replace `SCORE REACHES TARGET (levels 1-9) → LEVELCOMPLETE` with `FOOD OBJECTIVE REACHED (levels 1-9) → LEVELCOMPLETE`. Replace `LEVEL 10 COMPLETE → WON` with `FOOD OBJECTIVE REACHED (level 10) → WON`."
 
-### F-10. `onLevelUp` callback fires when dev select jumps levels
-- **Severity:** Medium (latent, not a current bug)
-- **Description:** `Engine.dispatch()` (`src/game/Engine.ts:52–54`) fires `onLevelUp` whenever `state.level > prevLevel && state.status === 'playing'`. When `startAtLevel(5)` is called from idle (level 1), the level jumps 1 → 5 and `onLevelUp` fires once. The level-up sound plays once. This is correct (the player has moved to a new level) but is a side effect of the dev select that the plan does not acknowledge. In a future "mute the dev experience" change, this could be a surprise.
-- **Recommendation:** Add a one-line note to Phase 3a: "Note: `startAtLevel(N)` from a lower level fires `onLevelUp` once (the level-up sound). This is intentional — the player has moved to a new level. If the dev experience later needs silence, gate the callback on a dev flag."
+### F-07. Phase 4b screen-reader text format is unspecified
+
+- **Severity:** Low
+- **Description:** The plan says: "Update the screen-reader-only text to include food progress." The current `aria-live="assertive"` block (`ScoreBoard.tsx:21-24`) reads `{score > 0 && \`Score: ${score}. \`}Level {level}.`. The plan does not specify the new format, the placement of the food progress sentence, or whether the existing `score > 0` guard should be mirrored as `foodEaten > 0`. An implementer has to invent the format.
+- **Recommendation:** Tighten the Phase 4b step to: "Update the screen-reader block at `src/components/ScoreBoard.tsx:21-24` to read: `{score > 0 && \`Score: ${score}. \`}{foodEaten > 0 && \`Food: ${foodEaten} of ${foodRequired}. \`}Level {level}.` Mirrors the existing `score > 0` guard pattern so the announcement is silent on initial render."
+
+### F-08. Phase 5b "won" test updates are generic
+
+- **Severity:** Low
+- **Description:** The plan's Phase 5b guidance is correct in principle ("Tests that trigger `won` similarly") but does not enumerate the two specific test cases in `state.test.ts` that trigger won (lines 245-260 and 262-277). Both set `score: 490` and `level: 10` and move the snake to eat food at (10,10) to push score to 500. After the change, they need `foodEaten: 29` and `score: 290` (so eating the 30th food triggers win). A hurried implementer may miss the second test.
+- **Recommendation:** Add a step to Phase 5b: "Update the two `won` test cases at `src/game/__tests__/state.test.ts:245-260` and `:262-277` to set `foodEaten: 29` (one food away from level 10's `foodRequired: 30`) and `score: 290` instead of `score: 490`. The `MOVE_SNAKE` dispatch will increment both fields and trigger the level-10 win path."
 
 ## Low
 
-### F-11. `GameOver.tsx` "Press Space to restart" hint is now ambiguous
+### F-09. Plan does not mention the `lastUnlockedLevel` accumulator test
+
 - **Severity:** Low
-- **Description:** The current `<p>Press Space to restart</p>` (`src/components/GameOver.tsx:17`) is technically correct (Space → `handleRestart` → `resetGame()` → starts at Level 1 = New Game). But after M6, a player who has died and wants to continue may press Space expecting to continue, only to be sent back to Level 1. The plan updates the screen-reader announcement (`STATUS_ANNOUNCEMENTS`, Phase 6) to "Press Space for new game or click Continue" but does not update the visible hint.
-- **Recommendation:** Phase 4b step (new): "Update `GameOver.tsx` hint to 'Press Space for new game — click Continue to resume' when `lastUnlockedLevel > 1`. Keep the existing text when `lastUnlockedLevel === 1`." Low priority, but a small UX improvement.
+- **Description:** `state.test.ts:461-480` is a multi-step test that triggers two `MOVE_SNAKE` and one `CONTINUE_GAME` to verify `lastUnlockedLevel` accumulates correctly across multiple level completions. After the change, the first `MOVE_SNAKE` will not trigger levelComplete (because `foodEaten: 0` and one food eaten = `foodEaten: 1`, not 10). The test will fail. The plan's generic guidance covers it, but it is worth calling out specifically because the test is the only one in the file that exercises the multi-step accumulator behavior.
+- **Recommendation:** Add a step to Phase 5b: "Update the accumulator test at `src/game/__tests__/state.test.ts:461-480` to set `foodEaten: 9` and `score: 90` (instead of `score: 40`) so the first `MOVE_SNAKE` triggers `levelComplete` and `lastUnlockedLevel` increments from 1 to 2."
 
-### F-12. "Play Again" vs "New Game" button label inconsistency
+### F-10. Plan does not mention updating `Engine.test.ts:187-191` `setState` call
+
 - **Severity:** Low
-- **Description:** The plan renders "Play Again" when `lastUnlockedLevel === 1` (line 273) and "New Game" when `lastUnlockedLevel > 1` (line 267). Both buttons call `onRestart` and do the same thing (start at Level 1). The label difference is intentional — "New Game" pairs with "Continue from Level N" as a contrast — but a user who dies twice (once after passing L1, once on L1) sees two different labels for the same action. Inconsistency may confuse.
-- **Recommendation:** Either:
-  - Unify on "New Game" always (cleaner), or
-  - Unify on "Play Again" always (matches the original), or
-  - Keep the current scheme and add a one-line justification in the plan ("'New Game' is used as the contrast label to 'Continue from Level N'; the underlying action is identical").
-  The plan is silent on this. Pick one and document it.
-
-### F-13. Pre-existing latent landmine `getLevelData(state.level + 1)` at level 10
-- **Severity:** Low (pre-existing, not introduced by M6)
-- **Description:** `src/components/Game.tsx:183` does `getLevelData(state.level + 1).name` for the LevelTransition overlay. At level 10 the game transitions directly to `won` (no `levelComplete` overlay), so this code path is never called with `level = 10`. But a future bug that does show the overlay at L10 would throw via `getLevelData(11)`. Not a regression caused by the plan.
-- **Recommendation:** Optional. If a `getLevelData` guard is desired, add `Math.min(state.level + 1, LEVEL_COUNT)` at the call site. Out of scope for M6.
-
-### F-14. The "Continue from Level N" button calls `onContinueFromLevel(lastUnlockedLevel)` — prop is slightly looser than necessary
-- **Severity:** Low
-- **Description:** `GameOverProps.onContinueFromLevel: (level: number) => void` (line 236) implies the caller could pass any level. In practice, `Game.tsx:345,353` always passes `state.lastUnlockedLevel`. The prop signature is correct (callers may want flexibility) but currently only one value is used. If `GameOver` ever wanted to clamp or cap, the prop is the right place. No change needed; just a note.
-- **Recommendation:** None. The signature is fine.
-
-### F-15. `lastUnlockedLevel = max(current, level + 1)` in `levelComplete` is correct but worth a test
-- **Severity:** Low
-- **Description:** The plan sets `lastUnlockedLevel = Math.max(state.lastUnlockedLevel, state.level + 1)` on `levelComplete` (line 138). This is correct: after completing level 1, the player has unlocked level 2; after completing level 5, level 6. The `Math.max` guards against regression in case a future agent reorders transitions. Phase 7b mentions "Multiple level completions accumulate correctly (level 1 → 2, then 2 → 3)" — this is the test that exercises the `Math.max`. Good.
-- **Recommendation:** None. The test list covers the case.
-
-### F-16. Storage test file path is a re-export
-- **Severity:** Low
-- **Description:** The plan's Phase 7a says "Storage Tests (`src/utils/__tests__/storage.test.ts`)" and adds tests to the existing describe block. The file at `src/utils/__tests__/storage.test.ts` imports from `'../storage'` (relative), which resolves to `src/utils/storage.ts` (the legacy re-export at `src/utils/storage.ts:1`). The actual function lives in `src/game/storage.ts`. The test runs through the re-export, which is fine. The plan should be explicit about which `storage.ts` it means to avoid an implementing agent's confusion.
-- **Recommendation:** Add a one-line note: "Tests in `src/utils/__tests__/storage.test.ts` import through the legacy re-export `src/utils/storage.ts`. The new `loadLastUnlockedLevel` and `saveLastUnlockedLevel` must also be re-exported from `src/utils/storage.ts` to be testable through this path (or alternatively, add a new test file `src/game/__tests__/storage.test.ts` that imports directly from `'../storage'`)."
-
-### F-17. `Engine.startAtLevel` is public; could be `start(level?: number)` instead
-- **Severity:** Low (design choice)
-- **Description:** The plan adds a public `startAtLevel(level: number)` method to `Engine` (Phase 3a) alongside the existing `start()`. An alternative design is to make `start(level?: number)` accept an optional level. The plan's design is more explicit (no overload semantics, no `level === undefined` branch in the hook) but slightly more verbose at the call site.
-- **Recommendation:** None. The current design is fine; both are acceptable. Worth noting in case the implementer asks.
-
-### F-18. The plan does not address what happens to the snake's grown state on `START_AT_LEVEL`
-- **Severity:** Low (correctness, not a gap)
-- **Description:** `START_AT_LEVEL` (Phase 2b, lines 113–129) sets `snake: [...INITIAL_SNAKE]` — i.e., a fresh 3-segment snake at the canonical position. This matches the ROADMAP's "Reset snake state" requirement (line 313 of `docs/ROADMAP.md`) and matches the existing `CONTINUE_GAME` behaviour (`src/game/state.ts:101–120`). Good.
-- **Recommendation:** None. The behaviour is correct.
-
-### F-19. The plan's `Engine.dispatch` order puts `saveLastUnlockedLevel` inside the existing `if (gameover || won)` block
-- **Severity:** Low (style, not correctness)
-- **Description:** The plan shows:
-  ```ts
-  if (this.state.status === 'gameover' || this.state.status === 'won') {
-    saveHighScore(this.state.score);
-    saveLastUnlockedLevel(this.state.lastUnlockedLevel);
-  }
-  if (this.state.status === 'levelComplete') {
-    saveLastUnlockedLevel(this.state.lastUnlockedLevel);
-  }
-  ```
-  This is correct and groups the writes cleanly. An alternative is to unify on a single `if (gameover || won || levelComplete)` block, but the plan's split mirrors the existing pattern.
-- **Recommendation:** None. The split is fine.
-
-### F-20. `useGame` hook test file does not exist
-- **Severity:** Low (informational)
-- **Description:** There is no `src/hooks/__tests__/useGame.test.ts` — only `useTouch.test.tsx`. So the plan's `useGame` change (adding `startGameAtLevel` to the return value) has no test to update. This is consistent with the prior milestone's pattern.
-- **Recommendation:** None. No test exists, so no test to break.
+- **Description:** `Engine.test.ts:187-191` uses `engine.setState({ ...getInitialState(), status: 'levelComplete', level: 1, score: 50 })`. After the change, `getInitialState()` will include `foodEaten: 0` (from the Phase 2a update), so the `...getInitialState()` spread will include it. The setState call does not need updating. The plan correctly does not call this out, but a thorough implementation review would verify this. Verified manually: no update needed.
+- **Recommendation:** None (already correct). Add a note to Phase 5c verifying that `Engine.test.ts:187-191` and `Engine.test.ts:218-223` use `...getInitialState()` and are automatically covered by the Phase 2a `getInitialState()` change.
 
 ---
 
 # Handoff Assessment
 
-## Phase structure — **Strong**
+## Phase Structure
 
-Eight phases, each with a single goal and an explicit file list. Phase ordering is bottom-up (persistence → state → engine → UI → wiring → a11y → tests → docs) and produces a compilable state after every phase. The dependencies are clean: Phase 1 → 2 → 3, Phase 2 → 4 (types only), Phase 5 depends on 2–4, Phase 7 depends on 1–5, Phase 8 depends on 7. No circular dependencies. The optional Phase 6 (a11y) is independent and can be done at any point.
+**Rating: Good.**
 
-## Task decomposition — **Good with gaps**
+Six phases, logical bottom-up order. The "break the build by design" pattern in Phase 1 (type changes with no consumer update) is a deliberate TDD-style red step that verifies the type change is real. Phase 2 restores the build by updating the consumer. This is a Senior-level pattern and is correctly described.
 
-File lists per phase are mostly correct, with the following gaps:
-- **F-01:** `Engine.test.ts` is missing from the test-update list.
-- **F-02:** `ARCHITECTURE.md` is missing from the doc-update list.
-- **F-03:** `package.json` is missing.
-- **F-04:** `SPEC.md §10.5` is not called out.
-- **F-05:** `SPEC.md §17` limitation #4 removal is not called out.
-- **F-09:** `Game.test.tsx` mock update is under-described.
+The `Phase 3: Engine Review` step is unusual but valuable — it explicitly confirms zero changes are needed in `Engine.ts` and documents the reasoning. This pre-empts an over-zealous implementer who might add unnecessary code to the engine.
 
-The decomposition maps cleanly to the architecture: persistence → state → engine → UI → wiring → a11y → tests → docs. Task sizes are small (each phase is well under a day's work for an experienced agent).
+The `Phase 6: Documentation Updates` step is appropriately placed at the end. Documentation updates are an integration step that benefits from a working code state.
 
-## Verification strategy — **Adequate, can be tightened**
+## Task Decomposition
 
-Each phase names a verification step. Two gaps:
-1. **No "run all gates at the end" step.** The Definition of Done implies it, but a final `npm run lint && npm run build && npm test` line in Phase 8 (or a new "Phase 9: Final gates") would catch cross-phase regressions in one command. The current Review Checklist at the bottom (lines 600–613) covers this, but it's a self-assessment.
-2. **No "dev select absent in production" automated check.** The plan's Phase 5 verification says "In `npm run build` + `npm run preview`: dev select is absent." This is a manual check. A trivial Vitest assertion (`expect(import.meta.env.DEV).toBe(false)` under a prod-like setup, or a regex check on the built bundle for `'Developer level select'`) would be cheap insurance. Optional.
+**Rating: Mostly Good.**
 
-## Definition of Done — **Strong, with two errors**
+Each step is small, verifiable, and references a specific line range. The line numbers I verified against the current source are accurate (`state.ts:9-24`, `state.ts:56-104`, `state.ts:106-125`, `state.ts:127-142`, `types.ts:10-17`, `types.ts:19-30`, `Game.tsx:153`, `components.ts:20-25`). The `levelData.test.ts` path is the one error (F-01).
 
-The milestone DoD (lines 19–28) has 10 items covering persistence, UI, dev gate, behaviour, tests, build, lint, docs, and architecture. Strengths: test count is pinned (143 → ~160), build/lint are explicit, documentation is named.
+Phase 5 (tests) is the weakest decomposition. The `state.test.ts` update guidance is generic; specific test cases that need updating are not enumerated. Phase 5c is factually wrong about `Engine.test.ts` (F-02).
 
-Gaps:
-- **F-08:** The "no state machine changes" claim is wrong.
-- **F-03:** `package.json` version bump is not in the DoD.
-- **F-04 / F-05:** `SPEC.md §10.5` and `§17` limitation #4 are not in the DoD.
-- **F-01 / F-06:** `Engine.test.ts` is not in the DoD.
+## Verification Strategy
 
-## AI-agent execution readiness — **Moderate**
+**Rating: Good.**
 
-The plan is detailed enough that a competent agent can execute it without re-reading the codebase top to bottom, **provided** the agent has read `SPEC.md`, `ARCHITECTURE.md`, `ROADMAP.md`, `AGENTS.md`, and the test files listed in Phase 7. The risk is in the small-but-fatal omissions:
-- **F-01 / F-06:** Engine test gaps — an implementer following the plan literally will not add Engine tests.
-- **F-02:** An implementer will not update ARCHITECTURE.md.
-- **F-09:** An implementer may not update the `Game.test.tsx` mock, leading to a test render failure on the dev select's "Go" click.
+Each phase ends with explicit verification:
+- Phase 1: `npm run build` (expected to fail).
+- Phase 2: `npm run build`, `npm run lint`.
+- Phase 3: Manual play-test.
+- Phase 4: `npm run build`, `npm run lint`, visual check.
+- Phase 5: `npm test`, `npm run build`, `npm run lint`.
+- Phase 6: `git diff` review.
 
-A new agent should be able to:
-1. Apply Phase 1 to add the storage functions.
-2. Apply Phase 2 to add the state field and `START_AT_LEVEL` action.
-3. Apply Phase 3 to add `Engine.startAtLevel()` and the persistence call, **and** add the `Engine.test.ts` tests (per F-01).
-4. Apply Phase 4 to update `GameOver`, **and** add `Engine.test.ts` mock updates (per F-09).
-5. Apply Phase 5 to wire `Game.tsx` and add the dev select.
-6. Apply Phase 6 to update status announcements.
-7. Apply Phase 7 to add the state / storage / component / Game tests, **and** the Engine tests.
-8. Apply Phase 8 to update `SPEC.md`, `ROADMAP.md`, `PROJECT_STATE.md`, **`ARCHITECTURE.md`** (per F-02), and **`package.json`** (per F-03).
+The `npm test` gate in Phase 5 is the most important verification — it catches all the test setup incompatibilities (F-02, F-03, F-08, F-09). The plan correctly states "Expected test count: 173+ (same or slightly more due to new foodEaten tests)". I verified the baseline of 173 via `npm test`.
 
-Resolve F-01 and F-02 before the agent starts.
+## Definition of Done
+
+**Rating: Good, with one reword needed.**
+
+11 explicit bullets, mostly concrete. DoD bullet 9 is good: "No new architectural abstractions, packages, or framework additions introduced. Existing state machine shape preserved; one new state field (`foodEaten`) added and two data fields renamed (`targetScore` → `foodRequired`)." This is accurate and a model for future milestone plans.
+
+DoD bullet 11 ("`package.json` version bumped to `0.7.0`") is good. Verified `package.json:4` is currently `0.6.0`.
+
+DoD bullets 6-8 (lint, build, test gates) are the right gates. The plan does not state a specific test count target beyond "173+"; a tighter statement would be "All existing 173 tests pass + 3+ new `foodEaten` tests added (counter increment, level-up trigger, reset behavior)."
+
+## AI-Agent Execution Readiness
+
+**Rating: At risk.**
+
+The plan is detailed enough that an AI agent could execute it end-to-end, *if* the implementer double-checks the test file path (F-01) and understands that the Engine.test.ts and state.test.ts updates are non-trivial (F-02, F-03, F-08, F-09). The current text of Phase 5 is generic enough to allow an implementer to "complete" Phase 5 without actually fixing the test setups, because:
+
+- Phase 5b says "Replace score-based setup" generically.
+- Phase 5c says "no structural changes expected" (wrong).
+- The factory update for `makeState` is implicit.
+
+The `npm test` gate will catch the failures, but only if the implementer runs `npm test` and reads the failure output carefully. A more defensive plan would include a Phase 5 verification sub-step: "Run `npm test` and confirm that the test names that previously asserted `score >= targetScore` (specifically: 'transitions to levelComplete when score reaches target', 'sets won status when level 10 is completed', 'preserves high score on levelComplete', 'sets lastUnlockedLevel = level + 1 on levelComplete', 'accumulates correctly across multiple level completions', plus the three `Engine.test.ts` lastUnlockedLevel persistence tests) now pass with the foodEaten-based setup."
 
 ---
 
 # Final Recommendation
 
-## **Approve with Major Changes**
+**Approve with Minor Changes.**
 
-The plan is structurally sound, well-grounded in the codebase, and aligned with `AGENTS.md`'s "ship the game" philosophy. The phasing, file lists, and verification steps are good enough to hand off to another agent after the changes below land.
+The plan is well-conceived, tightly scoped, and aligned with the project's principles (small changes, simple solutions, maintainable code, playable progress). The implementation strategy is sound. The new data tables are correct. The phase ordering is right. The Definition of Done is appropriate.
 
-The **critical** issues are:
-1. **F-01 (Critical):** `Engine.test.ts` is missing from the test-update list. The new `startAtLevel` method and the new dispatch persistence side-effect have no tests. A new describe block mirroring the `continueGame` block plus a persistence side-effect test is required.
-2. **F-02 (Critical):** `ARCHITECTURE.md` is not in the Phase 8 file list. The state machine diagram and testing count will go stale, violating AGENTS.md's "Documentation Consistency" rule.
+The blocking issues are:
 
-The **high** issues that should be folded in:
-- **F-03:** Bump `package.json` to `0.6.0`.
-- **F-04:** Update `SPEC.md §10.5` for the new dual-button layout.
-- **F-05:** Remove `SPEC.md §17` limitation #4 (continue-after-death is now implemented).
-- **F-06:** Add a persistence side-effect test (lives in `Engine.test.ts`, covered by F-01).
+1. **F-01** (Critical): Wrong test file path in Phase 5. A one-line fix.
+2. **F-02** (High): Phase 5c is factually wrong about `Engine.test.ts`. Needs a rewrite of one paragraph.
+3. **F-03** (High): `state.test.ts` `makeState` factory update is implicit. Needs a one-line addition.
+4. **F-04, F-05, F-06** (Medium): Three documentation sections are missed. Each is a one-line addition to Phase 6a/6b.
+5. **F-07, F-08, F-09, F-10** (Low): Minor clarifications.
 
-The **medium / low** issues are improvements (F-07 dev-select test-env clarity, F-08 DoD wording, F-09 mock update, F-10 onLevelUp note, F-11/F-12 UX polish) that an experienced agent can fold in as they implement.
+None of these require redesign. All are small, localized corrections. After these are applied, the plan is ready to execute with high confidence that the next AI agent will:
+- Edit the correct test files.
+- Update the correct test setups.
+- Produce a passing test suite of 173+ tests.
+- Update the correct documentation sections.
+- Bump the package.json version.
+- Produce a consistent documentation set across SPEC.md, ARCHITECTURE.md, PROJECT_STATE.md, and ROADMAP.md.
 
-**Net assessment:** Simplicity, maintainability, and repository alignment are all served by this plan once F-01 and F-02 are resolved. The plan favours executable, minimal changes — the right instinct. Approve after the two critical fixes and the four high-priority fixes land; the rest can ride along as the agent implements.
+The plan honors AGENTS.md's "small changes, simple solutions, maintainable code, playable progress" principles. It does not introduce new abstractions, packages, or framework changes. It is a model for future behavior-change milestones.

@@ -125,6 +125,13 @@ Planned packaging technology:
 - Developer level select (dev-only, tree-shaken from production)
 - 173 unit tests passing
 
+### Milestone 7 - Difficulty Rebalance
+
+- Food-objective progression system (10–30 food per level)
+- Speed curve rebalanced (150ms → 100ms)
+- ScoreBoard displays food progress
+- 178 unit tests passing
+
 ---
 
 ## In Progress
@@ -133,7 +140,6 @@ Planned packaging technology:
 
 ## Not Started
 
-- Difficulty rebalance
 - Visual identity
 - Replayability systems
 - Gameplay expansion
@@ -213,7 +219,7 @@ Each level contains:
 - id
 - name
 - description
-- targetScore
+- foodRequired
 - speed
 
 ---
@@ -361,7 +367,7 @@ This feature is not exposed in production builds.
 
 ---
 
-# Milestone 7 - Difficulty Rebalance
+# Milestone 7 - Difficulty Rebalance ✅
 
 Goal:
 
@@ -375,7 +381,7 @@ Difficulty relies too heavily on speed increases.
 
 ---
 
-## Feature: Food Objective System
+## Feature: Food Objective System ✅
 
 Replace score-based progression.
 
@@ -396,7 +402,7 @@ Target progression:
 
 ---
 
-## Feature: Speed Curve Rebalance
+## Feature: Speed Curve Rebalance ✅
 
 Current speed progression is too aggressive.
 
@@ -419,11 +425,13 @@ Difficulty should come primarily from layouts rather than reaction limits.
 
 ---
 
-## Success Criteria
+## Success Criteria ✅
 
-- Levels last longer
-- Mobile remains playable
-- Difficulty feels fair
+- Levels last longer ✅
+- Mobile remains playable ✅
+- Difficulty feels fair ✅
+
+Completed: 2026-06-06
 
 ---
 

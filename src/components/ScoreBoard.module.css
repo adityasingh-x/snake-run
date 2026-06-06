@@ -24,3 +24,8 @@
 .highScore .value {
   color: #fbbf24;
 }
+
+.foodProgress {
+  display: flex;
+  gap: 8px;
+}

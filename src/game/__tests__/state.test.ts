@@ -19,6 +19,7 @@ function makeState(overrides: Partial<GameState> = {}): GameState {
     level: 1,
     obstacles: [],
     lastUnlockedLevel: 1,
+    foodEaten: 0,
     ...overrides,
   };
 }
@@ -204,13 +205,56 @@ describe('gameReducer', () => {
       const next = gameReducer(state, { type: 'MOVE_SNAKE' });
       expect(next.highScore).toBe(100);
     });
+
+    it('increments foodEaten by 1 when food is eaten', () => {
+      const state = makeState({
+        foodEaten: 3,
+        snake: [
+          { x: 9, y: 10 },
+          { x: 8, y: 10 },
+          { x: 7, y: 10 },
+        ],
+        food: { x: 10, y: 10 },
+        nextDirection: 'RIGHT',
+      });
+      const next = gameReducer(state, { type: 'MOVE_SNAKE' });
+      expect(next.foodEaten).toBe(4);
+    });
+
+    it('does not increment foodEaten when no food is eaten', () => {
+      const state = makeState({
+        foodEaten: 3,
+        nextDirection: 'RIGHT',
+      });
+      const next = gameReducer(state, { type: 'MOVE_SNAKE' });
+      expect(next.foodEaten).toBe(3);
+    });
+
+    it('levelComplete fires when foodEaten reaches foodRequired, not based on score', () => {
+      const state = makeState({
+        level: 1,
+        score: 5,
+        foodEaten: 9,
+        snake: [
+          { x: 9, y: 10 },
+          { x: 8, y: 10 },
+          { x: 7, y: 10 },
+        ],
+        food: { x: 10, y: 10 },
+        nextDirection: 'RIGHT',
+      });
+      const next = gameReducer(state, { type: 'MOVE_SNAKE' });
+      expect(next.status).toBe('levelComplete');
+      expect(next.foodEaten).toBe(10);
+    });
   });
 
   describe('level up', () => {
-    it('transitions to levelComplete when score reaches target', () => {
+    it('transitions to levelComplete when foodEaten reaches foodRequired', () => {
       const state = makeState({
         level: 1,
-        score: 40,
+        score: 90,
+        foodEaten: 9,
         snake: [
           { x: 9, y: 10 },
           { x: 8, y: 10 },
@@ -222,13 +266,15 @@ describe('gameReducer', () => {
       const next = gameReducer(state, { type: 'MOVE_SNAKE' });
       expect(next.status).toBe('levelComplete');
       expect(next.level).toBe(1);
-      expect(next.score).toBe(50);
+      expect(next.score).toBe(100);
+      expect(next.foodEaten).toBe(10);
     });
 
     it('does not reset snake on level up', () => {
       const state = makeState({
         level: 1,
-        score: 40,
+        score: 90,
+        foodEaten: 9,
         snake: [
           { x: 9, y: 10 },
           { x: 8, y: 10 },
@@ -245,7 +291,8 @@ describe('gameReducer', () => {
     it('sets won status when level 10 is completed', () => {
       const state = makeState({
         level: 10,
-        score: 490,
+        score: 290,
+        foodEaten: 29,
         snake: [
           { x: 9, y: 10 },
           { x: 8, y: 10 },
@@ -262,8 +309,9 @@ describe('gameReducer', () => {
     it('updates high score on win', () => {
       const state = makeState({
         level: 10,
-        score: 490,
-        highScore: 400,
+        score: 290,
+        foodEaten: 29,
+        highScore: 200,
         snake: [
           { x: 9, y: 10 },
           { x: 8, y: 10 },
@@ -273,13 +321,14 @@ describe('gameReducer', () => {
         nextDirection: 'RIGHT',
       });
       const next = gameReducer(state, { type: 'MOVE_SNAKE' });
-      expect(next.highScore).toBe(500);
+      expect(next.highScore).toBe(300);
     });
 
     it('preserves high score on levelComplete (no save)', () => {
       const state = makeState({
         level: 1,
-        score: 40,
+        score: 90,
+        foodEaten: 9,
         highScore: 100,
         snake: [
           { x: 9, y: 10 },
@@ -356,6 +405,27 @@ describe('gameReducer', () => {
       const next = gameReducer(state, { type: 'CONTINUE_GAME' });
       expect(next).toBe(state);
     });
+
+    it('resets foodEaten to 0', () => {
+      const state = makeState({
+        level: 1,
+        score: 50,
+        foodEaten: 10,
+        snake: [
+          { x: 10, y: 10 },
+          { x: 9, y: 10 },
+          { x: 8, y: 10 },
+          { x: 7, y: 10 },
+        ],
+        food: { x: 15, y: 15 },
+        direction: 'RIGHT',
+        nextDirection: 'RIGHT',
+        status: 'levelComplete',
+        obstacles: [],
+      });
+      const next = gameReducer(state, { type: 'CONTINUE_GAME' });
+      expect(next.foodEaten).toBe(0);
+    });
   });
 
   describe('default action', () => {
@@ -401,13 +471,20 @@ describe('gameReducer', () => {
       expect(next.highScore).toBe(200);
       expect(next.lastUnlockedLevel).toBe(5);
     });
+
+    it('resets foodEaten to 0', () => {
+      const state = makeState({ status: 'gameover', foodEaten: 7 });
+      const next = gameReducer(state, { type: 'START_AT_LEVEL', payload: 3 });
+      expect(next.foodEaten).toBe(0);
+    });
   });
 
   describe('lastUnlockedLevel tracking', () => {
     it('sets lastUnlockedLevel = level + 1 on levelComplete', () => {
       const state = makeState({
         level: 1,
-        score: 40,
+        score: 90,
+        foodEaten: 9,
         lastUnlockedLevel: 1,
         snake: [
           { x: 9, y: 10 },
@@ -437,7 +514,8 @@ describe('gameReducer', () => {
     it('preserves lastUnlockedLevel >= current level on won', () => {
       const state = makeState({
         level: 10,
-        score: 490,
+        score: 290,
+        foodEaten: 29,
         lastUnlockedLevel: 8,
         snake: [
           { x: 9, y: 10 },
@@ -461,7 +539,8 @@ describe('gameReducer', () => {
     it('accumulates correctly across multiple level completions', () => {
       let state = makeState({
         level: 1,
-        score: 40,
+        score: 90,
+        foodEaten: 9,
         lastUnlockedLevel: 1,
         snake: [
           { x: 9, y: 10 },
