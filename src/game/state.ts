@@ -3,7 +3,7 @@ import { INITIAL_SNAKE, POINTS_PER_FOOD, DIRECTION_OPPOSITE, LEVEL_COUNT } from 
 import { positionsEqual, isCollision } from './collision';
 import { spawnFood } from './food';
 import { calculateNewHead } from './snake';
-import { loadHighScore } from './storage';
+import { loadHighScore, loadLastUnlockedLevel } from './storage';
 import { getLevelData, generateObstacles } from './levels';
 
 export function getInitialState(): GameState {
@@ -19,6 +19,7 @@ export function getInitialState(): GameState {
     highScore: loadHighScore(),
     level: 1,
     obstacles,
+    lastUnlockedLevel: loadLastUnlockedLevel(),
   };
 }
 
@@ -27,6 +28,7 @@ function markGameOver(state: GameState): GameState {
     ...state,
     status: 'gameover',
     highScore: Math.max(state.highScore, state.score),
+    lastUnlockedLevel: Math.max(state.lastUnlockedLevel, state.level),
   };
 }
 
@@ -34,7 +36,8 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
     case 'START_GAME':
     case 'RESET': {
-      return { ...getInitialState(), status: 'playing' };
+      const initial = getInitialState();
+      return { ...initial, status: 'playing', lastUnlockedLevel: state.lastUnlockedLevel };
     }
 
     case 'PAUSE_GAME':
@@ -76,6 +79,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
             direction: state.nextDirection,
             status: 'won',
             highScore: Math.max(state.highScore, newScore),
+            lastUnlockedLevel: Math.max(state.lastUnlockedLevel, state.level),
           };
         }
 
@@ -86,6 +90,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
           score: newScore,
           direction: state.nextDirection,
           status: 'levelComplete',
+          lastUnlockedLevel: Math.max(state.lastUnlockedLevel, state.level + 1),
         };
       }
 
@@ -116,6 +121,23 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         nextDirection: 'RIGHT',
         status: 'playing',
         obstacles: nextObstacles,
+      };
+    }
+
+    case 'START_AT_LEVEL': {
+      const level = Math.min(Math.max(1, action.payload), LEVEL_COUNT);
+      const obstacles = generateObstacles(level);
+      const food = spawnFood(INITIAL_SNAKE, obstacles);
+      return {
+        ...state,
+        snake: [...INITIAL_SNAKE],
+        food,
+        direction: 'RIGHT',
+        nextDirection: 'RIGHT',
+        status: 'playing',
+        score: 0,
+        level,
+        obstacles,
       };
     }
 

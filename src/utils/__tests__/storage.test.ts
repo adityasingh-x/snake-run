@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { loadHighScore, saveHighScore } from '../storage';
+import { loadHighScore, saveHighScore, loadLastUnlockedLevel, saveLastUnlockedLevel } from '../storage';
 
 const STORAGE_KEY = 'snakeHighScore';
+const LAST_UNLOCKED_KEY = 'snakeLastUnlockedLevel';
 
 describe('loadHighScore', () => {
   beforeEach(() => {
@@ -54,5 +55,54 @@ describe('saveHighScore', () => {
     localStorage.setItem(STORAGE_KEY, '100');
     saveHighScore(100);
     expect(localStorage.getItem(STORAGE_KEY)).toBe('100');
+  });
+});
+
+describe('loadLastUnlockedLevel', () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  it('returns 1 when no value stored', () => {
+    expect(loadLastUnlockedLevel()).toBe(1);
+  });
+
+  it('returns stored value', () => {
+    localStorage.setItem(LAST_UNLOCKED_KEY, '5');
+    expect(loadLastUnlockedLevel()).toBe(5);
+  });
+
+  it('returns 1 for corrupted data', () => {
+    localStorage.setItem(LAST_UNLOCKED_KEY, 'not-a-number');
+    expect(loadLastUnlockedLevel()).toBe(1);
+  });
+});
+
+describe('saveLastUnlockedLevel', () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  it('saves level when no previous value', () => {
+    saveLastUnlockedLevel(3);
+    expect(localStorage.getItem(LAST_UNLOCKED_KEY)).toBe('3');
+  });
+
+  it('saves level when higher than stored', () => {
+    localStorage.setItem(LAST_UNLOCKED_KEY, '2');
+    saveLastUnlockedLevel(5);
+    expect(localStorage.getItem(LAST_UNLOCKED_KEY)).toBe('5');
+  });
+
+  it('does not overwrite when level is lower than stored', () => {
+    localStorage.setItem(LAST_UNLOCKED_KEY, '5');
+    saveLastUnlockedLevel(3);
+    expect(localStorage.getItem(LAST_UNLOCKED_KEY)).toBe('5');
+  });
+
+  it('does not overwrite when level equals stored', () => {
+    localStorage.setItem(LAST_UNLOCKED_KEY, '3');
+    saveLastUnlockedLevel(3);
+    expect(localStorage.getItem(LAST_UNLOCKED_KEY)).toBe('3');
   });
 });

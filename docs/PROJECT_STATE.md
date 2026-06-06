@@ -2,33 +2,33 @@
 
 ## Current Version
 
-v0.5.0
+v0.6.0
 
 ---
 
 ## Current Status
 
-Progress Persistence & Developer Experience In Progress
+Difficulty Rebalance In Progress
 
-The milestone focus has shifted to progress persistence and developer experience improvements. Difficulty rebalance remains a planned future milestone.
+The milestone focus is on rebalancing food objectives and speed curves for longer, more meaningful gameplay sessions. Progress persistence (M6) is complete.
 
 ---
 
 ## Current Milestone
 
-Milestone 6 - Progress Persistence & Developer Experience
+Milestone 7 - Difficulty Rebalance
 
 Current Goal:
 
-Reduce friction when replaying and testing levels.
+Create longer and more meaningful gameplay sessions.
 
 ---
 
 ## Current Priorities
 
-1. Allow players to continue from the most recently unlocked level
-2. Provide a New Game option to restart from Level 1
-3. Implement developer-only level selection for faster iteration
+1. Replace score-based progression with food-objective system (10, 12, 14, ... 30 food per level)
+2. Rebalance speed curve (150ms → 100ms, less aggressive ramp)
+3. Ensure mobile remains playable with longer levels
 
 ---
 
@@ -122,6 +122,15 @@ Planned Focus:
 - Determinism tests for all 10 levels
 - 142 unit tests passing
 
+### Progress Persistence & Developer Experience (Milestone 6)
+
+- `lastUnlockedLevel` persisted to localStorage (`snakeLastUnlockedLevel` key)
+- GameOver/Win screens show "Continue from Level N" button when `lastUnlockedLevel > 1`
+- "New Game" button starts from Level 1
+- Dev level select (dropdown + Go button) gated by `import.meta.env.DEV`, absent from production builds
+- `START_AT_LEVEL` action in state machine for jumping to any level
+- 173 unit tests passing
+
 ### Testing
 
 - Automated testing infrastructure
@@ -130,7 +139,7 @@ Planned Focus:
 
 ## In Progress
 
-- Progress persistence & developer experience (Milestone 6)
+- Difficulty rebalance (Milestone 7)
 
 ---
 
@@ -196,20 +205,22 @@ Milestone 5 success criteria (completed):
 - Obstacles influence player decisions ✅
 - Levels become memorable ✅
 
-Milestone 6 success criteria (in progress):
+Milestone 6 success criteria (completed):
 
-- Players can quickly resume progress after failure
-- Players can choose to restart from Level 1
-- Developers can instantly test any level
-- Testing and balancing workflows become faster
+- Players can quickly resume progress after failure ✅
+- Players can choose to restart from Level 1 ✅
+- Developers can instantly test any level ✅
+- Testing and balancing workflows become faster ✅
 
 ---
 
 ## Important Notes
 
-The current objective is Milestone 6 — Progress Persistence & Developer Experience.
+The current objective is Milestone 7 — Difficulty Rebalance.
 
 The PWA is live at `https://adityasingh-x.github.io/snake-run/` and can be installed on phones and desktops.
+
+Milestone 6 (Progress Persistence & Developer Experience) is complete. Players can continue from their last unlocked level, and developers have a level select for faster iteration.
 
 Milestone 5 (Obstacle Redesign) is complete. All 10 levels now have handcrafted obstacle layouts with deterministic placement.
 

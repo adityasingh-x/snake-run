@@ -438,3 +438,19 @@ Allowed Types: `feat`, `fix`, `chore`, `docs`, `refactor`, `test`, `style`
 - **Commit Message:** [Generated commit message]
 - **PR Title:** [Generated PR title]
 - **PR Body:** [Populated Markdown PR template block]
+
+# RTK Usage
+
+Use RTK only as a wrapper around existing shell commands.
+
+Correct:
+rtk npm run build
+rtk npm test
+rtk git diff
+
+Incorrect:
+rtk build
+rtk test
+rtk diff
+
+RTK does not create new commands. It only compresses the output of the command that follows it.

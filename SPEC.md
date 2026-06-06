@@ -150,7 +150,8 @@ Level metadata is displayed in:
 ### 7.1 State Machine
 ```
 idle
-  START_GAME -> playing
+  START_GAME -> playing (level 1)
+  START_AT_LEVEL(N) -> playing (level N)
   PAUSE_GAME -> paused
   RESET -> playing
 
@@ -169,10 +170,12 @@ levelComplete
   SPACE -> CONTINUE_GAME -> playing
 
 gameover
-  RESTART -> RESET -> playing
+  RESTART -> RESET -> playing (level 1)          [New Game]
+  START_AT_LEVEL(N) -> playing (level N)         [Continue from Level N]
 
 won
-  RESTART -> RESET -> playing
+  RESTART -> RESET -> playing (level 1)          [New Game]
+  START_AT_LEVEL(N) -> playing (level N)         [Continue from Level N]
 ```
 
 ### 7.2 State Descriptions
@@ -182,8 +185,8 @@ won
 | `playing` | Active gameplay, snake moving | Full board visible | None |
 | `paused` | Game paused by user | Board visible (frozen) | "Paused" with Resume button |
 | `levelComplete` | Level completed, waiting for player to continue | Board visible (frozen) | LevelTransition with completed/next level info |
-| `gameover` | Player lost | Board visible (frozen) | "Game Over!" with score + Play Again |
-| `won` | Player completed level 10 | Board visible (frozen) | "You Win!" with score + Play Again |
+| `gameover` | Player lost | Board visible (frozen) | "Game Over!" with score + "Continue from Level N" (if unlocked) + "New Game" |
+| `won` | Player completed level 10 | Board visible (frozen) | "You Win!" with score + "Continue from Level N" (if unlocked) + "New Game" |
 
 ---
 
@@ -196,8 +199,9 @@ won
   - `playing` -> pause
   - `paused` -> resume
   - `levelComplete` -> continue to next level
-  - `gameover` -> restart
-  - `won` -> restart
+  - `gameover` -> restart (New Game, Level 1)
+  - `won` -> restart (New Game, Level 1)
+- **Note:** Space on gameover/won triggers "New Game" (Level 1). "Continue from Level N" requires a click/tap.
 - **Key prevention:** Arrow keys and WASD prevent default browser behavior (scrolling)
 - **Ref-based tracking:** latest direction and status stored in refs for closure stability
 
@@ -284,7 +288,7 @@ won
 - Accepts `variant` prop: `"gameover"` (default) or `"win"`
 - `gameover`: "Game Over!" in red, "Your score: {score}"
 - `win`: "You Win!" in green, "You completed the game! Score: {score}"
-- Both: Play Again button + "Press Space to restart" hint
+- Renders a single "Play Again" button when `lastUnlockedLevel === 1`. When `lastUnlockedLevel > 1`, renders "Continue from Level N" (primary, green, `autoFocus`) and "New Game" (secondary, muted) buttons. The hint text adapts: "Press Space for new game — click Continue to resume" when a continue option is available, otherwise "Press Space to restart".
 - Win state styled via `data-win` attribute on modal
 
 ### 10.6 LevelTransition
@@ -331,6 +335,14 @@ won
 - **Load:** on module init; defaults to `true` if missing
 - **Save:** on toggle
 
+### 12.3 Level Progress
+- **Storage key:** `snakeLastUnlockedLevel`
+- **Type:** number (string in localStorage)
+- **Default:** 1
+- **Save:** When player reaches `levelComplete`, `gameover`, or `won`
+- **Value:** Highest level the player has unlocked (the next level after a completed level, or the current level on gameover/win)
+- **Load:** On game init via `loadLastUnlockedLevel()`
+
 ---
 
 ## 13. Environment Configuration
@@ -371,12 +383,12 @@ won
 ## 15. Testing
 
 - **Framework:** Vitest with jsdom environment
-- **143 unit tests** across 12 test files:
-  - `state.test.ts` (31 tests): gameReducer state transitions (START, RESET, PAUSE, RESUME, CHANGE_DIRECTION, MOVE_SNAKE, collisions, levelComplete, CONTINUE_GAME, win, high score)
-  - `Engine.test.ts` (18 tests): Engine class behavior (start, pause, resume, reset, continueGame, loop management, subscriptions, destroy, sound callback wiring)
+- **173 unit tests** across 13 test files:
+  - `state.test.ts` (43 tests): gameReducer state transitions (START, RESET, PAUSE, RESUME, CHANGE_DIRECTION, MOVE_SNAKE, collisions, levelComplete, CONTINUE_GAME, win, high score, START_AT_LEVEL, lastUnlockedLevel tracking)
+  - `Engine.test.ts` (26 tests): Engine class behavior (start, pause, resume, reset, continueGame, startAtLevel, loop management, subscriptions, destroy, sound callback wiring, lastUnlockedLevel persistence)
   - `gameLogic.test.ts` (31 tests): positionsEqual, calculateNewHead, isWallCollision, isSelfCollision, isObstacleCollision, isCollision, spawnFood
   - `levelData.test.ts` (20 tests): getLevelData, generateObstacles, level metadata (name, description), layout validity
-  - `storage.test.ts` (8 tests): loadHighScore, saveHighScore with localStorage mock
+  - `storage.test.ts` (13 tests): loadHighScore, saveHighScore, loadLastUnlockedLevel, saveLastUnlockedLevel with localStorage mock
   - `Cell.test.tsx` (4 tests): Cell component rendering, accessibility, and direction styling
   - `touch.test.ts` (12 tests): Gesture recognizer with axis locking, cooldown, progress, disabled state
   - `useTouch.test.tsx` (2 tests): Hook integration with touch events
@@ -384,6 +396,7 @@ won
   - `Board.test.tsx` (3 tests): Board rendering and responsive sizing
   - `pwa.test.ts` (6 tests): PWA build output verification (service worker, manifest, registration, HTML title, HTML manifest/SW links, manifest values)
   - `LevelTransition.test.tsx` (5 tests): LevelTransition component rendering, interaction, and accessibility
+  - `GameOver.test.tsx` (5 tests): GameOver component rendering with continue/new game buttons, callback verification, and win variant
 
 ---
 
@@ -401,14 +414,12 @@ won
 ## 17. Known Limitations
 
 1. No difficulty selection — levels are sequential only
-2. No leaderboard — high score is local only
-3. No difficulty scaling between games — each START_GAME resets to level 1
-4. No undo or continue-after-death
-5. Sound effects are simple oscillators — no music or complex audio
-6. No analytics or scoring history
-7. Grid size is fixed — not responsive to screen size beyond viewport constraints
-8. `user-scalable=no` prevents browser-level text zoom (documented accessibility trade-off)
-9. `overscroll-behavior: none` requires iOS Safari 16+ or Chrome 95+ for full support
+2. High score is local only (no level progress sync across browsers/devices yet)
+3. Sound effects are simple oscillators — no music or complex audio
+4. No analytics or scoring history
+5. Grid size is fixed — not responsive to screen size beyond viewport constraints
+6. `user-scalable=no` prevents browser-level text zoom (documented accessibility trade-off)
+7. `overscroll-behavior: none` requires iOS Safari 16+ or Chrome 95+ for full support
 
 ## 18. PWA Support
 

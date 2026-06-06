@@ -53,6 +53,24 @@
   transform: scale(1.05);
 }
 
+.secondaryButton {
+  background: transparent;
+  color: #94a3b8;
+  border: 2px solid #475569;
+  padding: 12px 32px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 8px;
+}
+
+.secondaryButton:hover {
+  background: rgba(71, 85, 105, 0.3);
+  color: #f8fafc;
+}
+
 .hint {
   color: #64748b;
   font-size: 0.85rem;

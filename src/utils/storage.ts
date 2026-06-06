@@ -1,1 +1,1 @@
-export { loadHighScore, saveHighScore } from '../game';
+export { loadHighScore, saveHighScore, loadLastUnlockedLevel, saveLastUnlockedLevel } from '../game';

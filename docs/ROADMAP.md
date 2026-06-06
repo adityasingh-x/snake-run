@@ -118,17 +118,21 @@ Planned packaging technology:
 - Deterministic obstacle placement per level
 - Level names and descriptions updated to match layouts
 
+### Milestone 6 - Progress Persistence & Developer Experience
+
+- Continue from last reached level (localStorage persistence)
+- New Game option on Game Over and Win screens
+- Developer level select (dev-only, tree-shaken from production)
+- 173 unit tests passing
+
 ---
 
 ## In Progress
-
-### Milestone 6 - Progress Persistence & Developer Experience
 
 ---
 
 ## Not Started
 
-- Progress persistence & developer experience
 - Difficulty rebalance
 - Visual identity
 - Replayability systems
@@ -283,7 +287,7 @@ Read:
 
 ---
 
-# Milestone 6 - Progress Persistence & Developer Experience
+# Milestone 6 - Progress Persistence & Developer Experience ✅
 
 Goal:
 
@@ -299,7 +303,7 @@ Both issues slow down gameplay iteration and development.
 
 ---
 
-## Feature: Continue From Last Reached Level
+## Feature: Continue From Last Reached Level ✅
 
 Allow players to continue from the most recently unlocked level.
 
@@ -317,18 +321,18 @@ Continuing should:
 
 ---
 
-## Feature: New Game Option
+## Feature: New Game Option ✅
 
 Allow players to explicitly restart progression from Level 1.
 
-This option should be available from:
+This option is available from:
 
 - Game Over screen
 - Victory screen
 
 ---
 
-## Feature: Developer Level Select
+## Feature: Developer Level Select ✅
 
 Provide a development-only level selection mechanism.
 
@@ -344,11 +348,11 @@ Purpose:
 - Faster balancing
 - Faster obstacle layout iteration
 
-This feature should not be exposed in production builds.
+This feature is not exposed in production builds.
 
 ---
 
-## Success Criteria
+## Success Criteria ✅
 
 - Players can quickly resume progress after failure
 - Players can choose to restart from Level 1

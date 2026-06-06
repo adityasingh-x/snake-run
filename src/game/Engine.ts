@@ -1,7 +1,7 @@
 import type { GameState, GameAction, Direction } from './types';
 import { getInitialState, gameReducer } from './state';
 import { getLevelData } from './levels';
-import { saveHighScore } from './storage';
+import { saveHighScore, saveLastUnlockedLevel } from './storage';
 
 export type GameEventListener = (state: GameState) => void;
 
@@ -35,6 +35,11 @@ export class Engine {
 
     if (this.state.status === 'gameover' || this.state.status === 'won') {
       saveHighScore(this.state.score);
+      saveLastUnlockedLevel(this.state.lastUnlockedLevel);
+    }
+
+    if (this.state.status === 'levelComplete') {
+      saveLastUnlockedLevel(this.state.lastUnlockedLevel);
     }
 
     this.listeners.forEach(listener => listener(this.state));
@@ -91,9 +96,19 @@ export class Engine {
     this.startLoop();
   }
 
+  startAtLevel(level: number): void {
+    this.dispatch({ type: 'START_AT_LEVEL', payload: level });
+    this.startLoop();
+  }
+
   /** Test-only: set internal state for testing purposes. */
   setState(state: GameState): void {
     this.state = state;
+  }
+
+  /** Test-only: dispatch an action for testing purposes. */
+  testDispatch(action: GameAction): void {
+    this.dispatch(action);
   }
 
   private startLoop(): void {

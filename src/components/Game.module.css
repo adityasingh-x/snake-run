@@ -19,6 +19,35 @@
   text-shadow: 0 0 10px rgba(74, 222, 128, 0.5);
 }
 
+.devSelect {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.devSelectDropdown {
+  background: rgba(15, 23, 42, 0.7);
+  color: #f8fafc;
+  border: 2px solid #475569;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.devSelectBtn {
+  background: #4ade80;
+  color: #0f172a;
+  border: none;
+  padding: 6px 16px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
 .controlsRow {
   display: flex;
   align-items: center;

@@ -27,6 +27,8 @@ export interface ScoreBoardProps {
 export interface GameOverProps {
   score: number;
   onRestart: () => void;
+  onContinueFromLevel: (level: number) => void;
+  lastUnlockedLevel: number;
   variant?: 'gameover' | 'win';
 }
 

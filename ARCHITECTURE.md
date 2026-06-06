@@ -26,7 +26,7 @@ src/
 │   ├── food.ts               # Food spawning logic
 │   ├── snake.ts              # Snake movement helpers
 │   ├── levels.ts             # Level data and obstacle generation
-│   ├── storage.ts            # High score persistence
+│   ├── storage.ts            # High score and level progress persistence
 │   └── index.ts              # Barrel exports
 ├── platform/                 # Platform-specific adapters
 │   ├── keyboard.ts           # Keyboard event handling
@@ -198,15 +198,16 @@ dispatch action → gameReducer → new state → subscribe → React re-render
 
 ```
 START (idle)
-    ├── START_GAME → PLAYING
+    ├── START_GAME → PLAYING (level 1)
+    ├── START_AT_LEVEL(N) → PLAYING (level N)
     ├── PAUSE_GAME → PAUSED
     └── RESET → IDLE
 
 PLAYING
     ├── PAUSE_GAME → PAUSED
-    ├── COLLISION → GAMEOVER (save high score)
-    ├── SCORE REACHES TARGET (levels 1-9) → LEVELCOMPLETE
-    └── LEVEL 10 COMPLETE → WON (save high score)
+    ├── COLLISION → GAMEOVER (save high score, update lastUnlockedLevel)
+    ├── SCORE REACHES TARGET (levels 1-9) → LEVELCOMPLETE (update lastUnlockedLevel)
+    └── LEVEL 10 COMPLETE → WON (save high score, update lastUnlockedLevel)
 
 PAUSED
     ├── RESUME_GAME → PLAYING
@@ -217,10 +218,29 @@ LEVELCOMPLETE
     └── SPACE → CONTINUE_GAME → PLAYING
 
 GAMEOVER
-    └── RESTART → RESET → IDLE
+    ├── RESTART → RESET → PLAYING (level 1)          [New Game]
+    └── START_AT_LEVEL(N) → PLAYING (level N)        [Continue from Level N]
 
 WON
-    └── RESTART → RESET → IDLE
+    ├── RESTART → RESET → PLAYING (level 1)          [New Game]
+    └── START_AT_LEVEL(N) → PLAYING (level N)        [Continue from Level N]
+```
+
+## State Shape
+
+```typescript
+interface GameState {
+  snake: Position[];
+  food: Position;
+  direction: Direction;
+  nextDirection: Direction;
+  status: GameStatus;
+  score: number;
+  highScore: number;
+  level: number;
+  obstacles: Position[];
+  lastUnlockedLevel: number;  // Persisted to localStorage
+}
 ```
 
 ## Important Constants
@@ -248,7 +268,7 @@ WON
 ## Testing
 
 - **Framework:** Vitest with jsdom
-- **143 unit tests** across 12 test files
+- **173 unit tests** across 13 test files
 - **Coverage:** game/ modules, Engine, hooks, utilities, touch recognizer, components (Game, Board, Cell, LevelTransition)
 - **Run:** `npm test` or `npm run test:watch`
 
