@@ -122,12 +122,13 @@ Planned packaging technology:
 
 ## In Progress
 
-### Milestone 6 - Difficulty Rebalance
+### Milestone 6 - Progress Persistence & Developer Experience
 
 ---
 
 ## Not Started
 
+- Progress persistence & developer experience
 - Difficulty rebalance
 - Visual identity
 - Replayability systems
@@ -282,7 +283,81 @@ Read:
 
 ---
 
-# Milestone 6 - Difficulty Rebalance
+# Milestone 6 - Progress Persistence & Developer Experience
+
+Goal:
+
+Reduce friction when replaying and testing levels.
+
+Problem Statement:
+
+Players currently must restart from Level 1 after every game over.
+
+Developers must replay earlier levels to test later content.
+
+Both issues slow down gameplay iteration and development.
+
+---
+
+## Feature: Continue From Last Reached Level
+
+Allow players to continue from the most recently unlocked level.
+
+When a run ends, provide options to:
+
+- Continue from last unlocked level
+- Start a completely new game
+
+Continuing should:
+
+- Start at the beginning of the selected level
+- Reset snake state
+- Reset score and level-specific progress
+- Preserve the intended challenge of the level
+
+---
+
+## Feature: New Game Option
+
+Allow players to explicitly restart progression from Level 1.
+
+This option should be available from:
+
+- Game Over screen
+- Victory screen
+
+---
+
+## Feature: Developer Level Select
+
+Provide a development-only level selection mechanism.
+
+Capabilities:
+
+- Jump directly to any level
+- Start gameplay immediately
+- Bypass normal progression requirements
+
+Purpose:
+
+- Faster testing
+- Faster balancing
+- Faster obstacle layout iteration
+
+This feature should not be exposed in production builds.
+
+---
+
+## Success Criteria
+
+- Players can quickly resume progress after failure
+- Players can choose to restart from Level 1
+- Developers can instantly test any level
+- Testing and balancing workflows become faster
+
+---
+
+# Milestone 7 - Difficulty Rebalance
 
 Goal:
 
@@ -348,7 +423,7 @@ Difficulty should come primarily from layouts rather than reaction limits.
 
 ---
 
-# Milestone 7 - Visual Identity
+# Milestone 8 - Visual Identity
 
 Goal:
 
@@ -424,7 +499,7 @@ Define:
 
 ---
 
-# Milestone 8 - Replayability Systems
+# Milestone 9 - Replayability Systems
 
 Goal:
 
@@ -459,7 +534,7 @@ Success Criteria:
 
 ---
 
-# Milestone 9 - Gameplay Expansion
+# Milestone 10 - Gameplay Expansion
 
 Goal:
 
@@ -497,7 +572,7 @@ Success Criteria:
 
 ---
 
-# Milestone 10 - Feedback & Balancing
+# Milestone 11 - Feedback & Balancing
 
 Goal:
 
@@ -517,7 +592,7 @@ Success Criteria:
 
 ---
 
-# Milestone 11 - Game Polish
+# Milestone 12 - Game Polish
 
 Goal:
 
@@ -538,7 +613,7 @@ Success Criteria:
 
 ---
 
-# Milestone 12 - Mobile App Release
+# Milestone 13 - Mobile App Release
 
 Technology:
 
@@ -551,7 +626,7 @@ Success Criteria:
 
 ---
 
-# Milestone 13 - Desktop Release
+# Milestone 14 - Desktop Release
 
 Technology:
 
