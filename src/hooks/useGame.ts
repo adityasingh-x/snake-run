@@ -74,10 +74,15 @@ export function useGame() {
     engineRef.current?.continueGame();
   }, []);
 
+  const startGameAtLevel = useCallback((level: number) => {
+    engineRef.current?.startAtLevel(level);
+  }, []);
+
   return {
     state,
     initAudio,
     startGame,
+    startGameAtLevel,
     pauseGame,
     resumeGame,
     changeDirection,

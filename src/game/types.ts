@@ -26,6 +26,7 @@ export interface GameState {
   highScore: number;
   level: number;
   obstacles: Position[];
+  lastUnlockedLevel: number;
 }
 
 export type GameAction =
@@ -35,4 +36,5 @@ export type GameAction =
   | { type: 'MOVE_SNAKE' }
   | { type: 'CHANGE_DIRECTION'; payload: Direction }
   | { type: 'RESET' }
-  | { type: 'CONTINUE_GAME' };
+  | { type: 'CONTINUE_GAME' }
+  | { type: 'START_AT_LEVEL'; payload: number };

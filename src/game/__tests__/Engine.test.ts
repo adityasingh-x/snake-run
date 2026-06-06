@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { Engine } from '../Engine';
 import { getInitialState } from '../state';
+import { LEVEL_COUNT } from '../constants';
 
 describe('Engine', () => {
   let engine: Engine;
@@ -202,6 +203,101 @@ describe('Engine', () => {
       expect(snakeAfter).not.toEqual(snakeBefore);
       // (d) onLevelUp callback fired
       expect(onLevelUp).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('startAtLevel', () => {
+    it('starts playing at level 5 from idle', () => {
+      engine.startAtLevel(5);
+      expect(engine.getState().status).toBe('playing');
+      expect(engine.getState().level).toBe(5);
+      expect(engine.getState().score).toBe(0);
+    });
+
+    it('starts playing at level 3 from gameover', () => {
+      engine.setState({
+        ...getInitialState(),
+        status: 'gameover',
+        level: 2,
+        score: 50,
+      });
+      engine.startAtLevel(3);
+      expect(engine.getState().status).toBe('playing');
+      expect(engine.getState().level).toBe(3);
+    });
+
+    it('clamps level to LEVEL_COUNT for high values', () => {
+      engine.startAtLevel(999);
+      expect(engine.getState().level).toBe(LEVEL_COUNT);
+    });
+
+    it('loop starts after startAtLevel — snake moves after advanceTimers', () => {
+      engine.startAtLevel(1);
+      const snakeBefore = engine.getState().snake;
+      vi.advanceTimersByTime(500);
+      const snakeAfter = engine.getState().snake;
+      expect(snakeAfter).not.toEqual(snakeBefore);
+    });
+  });
+
+  describe('lastUnlockedLevel persistence', () => {
+    beforeEach(() => {
+      localStorage.clear();
+    });
+
+    it('persists lastUnlockedLevel on gameover', () => {
+      engine.setState({
+        ...getInitialState(),
+        status: 'playing',
+        level: 4,
+        score: 100,
+        lastUnlockedLevel: 1,
+        snake: [{ x: 0, y: 5 }],
+        nextDirection: 'LEFT',
+      });
+      engine.testDispatch({ type: 'MOVE_SNAKE' });
+      expect(engine.getState().status).toBe('gameover');
+      expect(localStorage.getItem('snakeLastUnlockedLevel')).toBe('4');
+    });
+
+    it('persists lastUnlockedLevel on won', () => {
+      engine.setState({
+        ...getInitialState(),
+        status: 'playing',
+        level: 10,
+        score: 490,
+        lastUnlockedLevel: 1,
+        snake: [
+          { x: 9, y: 10 },
+          { x: 8, y: 10 },
+          { x: 7, y: 10 },
+        ],
+        food: { x: 10, y: 10 },
+        nextDirection: 'RIGHT',
+      });
+      engine.testDispatch({ type: 'MOVE_SNAKE' });
+      expect(engine.getState().status).toBe('won');
+      expect(localStorage.getItem('snakeLastUnlockedLevel')).toBe('10');
+    });
+
+    it('persists lastUnlockedLevel on levelComplete', () => {
+      engine.setState({
+        ...getInitialState(),
+        status: 'playing',
+        level: 1,
+        score: 40,
+        lastUnlockedLevel: 1,
+        snake: [
+          { x: 9, y: 10 },
+          { x: 8, y: 10 },
+          { x: 7, y: 10 },
+        ],
+        food: { x: 10, y: 10 },
+        nextDirection: 'RIGHT',
+      });
+      engine.testDispatch({ type: 'MOVE_SNAKE' });
+      expect(engine.getState().status).toBe('levelComplete');
+      expect(localStorage.getItem('snakeLastUnlockedLevel')).toBe('2');
     });
   });
 });

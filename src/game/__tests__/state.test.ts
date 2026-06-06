@@ -18,6 +18,7 @@ function makeState(overrides: Partial<GameState> = {}): GameState {
     highScore: 0,
     level: 1,
     obstacles: [],
+    lastUnlockedLevel: 1,
     ...overrides,
   };
 }
@@ -362,6 +363,120 @@ describe('gameReducer', () => {
       const state = makeState();
       const next = gameReducer(state, { type: 'UNKNOWN' } as unknown as GameAction);
       expect(next).toBe(state);
+    });
+  });
+
+  describe('START_AT_LEVEL', () => {
+    it('sets level, score=0, status=playing, resets snake', () => {
+      const state = makeState({ status: 'gameover', score: 100, level: 5 });
+      const next = gameReducer(state, { type: 'START_AT_LEVEL', payload: 3 });
+      expect(next.status).toBe('playing');
+      expect(next.level).toBe(3);
+      expect(next.score).toBe(0);
+      expect(next.snake).toHaveLength(3);
+      expect(next.direction).toBe('RIGHT');
+    });
+
+    it('generates correct obstacles for the level', () => {
+      const state = makeState({ status: 'idle' });
+      const next = gameReducer(state, { type: 'START_AT_LEVEL', payload: 3 });
+      expect(next.obstacles.length).toBeGreaterThan(0);
+    });
+
+    it('clamps level to LEVEL_COUNT for high values', () => {
+      const state = makeState({ status: 'idle' });
+      const next = gameReducer(state, { type: 'START_AT_LEVEL', payload: 999 });
+      expect(next.level).toBe(10);
+    });
+
+    it('clamps level to 1 for zero', () => {
+      const state = makeState({ status: 'idle' });
+      const next = gameReducer(state, { type: 'START_AT_LEVEL', payload: 0 });
+      expect(next.level).toBe(1);
+    });
+
+    it('preserves highScore and lastUnlockedLevel', () => {
+      const state = makeState({ status: 'gameover', highScore: 200, lastUnlockedLevel: 5 });
+      const next = gameReducer(state, { type: 'START_AT_LEVEL', payload: 3 });
+      expect(next.highScore).toBe(200);
+      expect(next.lastUnlockedLevel).toBe(5);
+    });
+  });
+
+  describe('lastUnlockedLevel tracking', () => {
+    it('sets lastUnlockedLevel = level + 1 on levelComplete', () => {
+      const state = makeState({
+        level: 1,
+        score: 40,
+        lastUnlockedLevel: 1,
+        snake: [
+          { x: 9, y: 10 },
+          { x: 8, y: 10 },
+          { x: 7, y: 10 },
+        ],
+        food: { x: 10, y: 10 },
+        nextDirection: 'RIGHT',
+      });
+      const next = gameReducer(state, { type: 'MOVE_SNAKE' });
+      expect(next.status).toBe('levelComplete');
+      expect(next.lastUnlockedLevel).toBe(2);
+    });
+
+    it('preserves lastUnlockedLevel >= current level on gameover', () => {
+      const state = makeState({
+        level: 5,
+        lastUnlockedLevel: 3,
+        snake: [{ x: 0, y: 5 }],
+        nextDirection: 'LEFT',
+      });
+      const next = gameReducer(state, { type: 'MOVE_SNAKE' });
+      expect(next.status).toBe('gameover');
+      expect(next.lastUnlockedLevel).toBe(5);
+    });
+
+    it('preserves lastUnlockedLevel >= current level on won', () => {
+      const state = makeState({
+        level: 10,
+        score: 490,
+        lastUnlockedLevel: 8,
+        snake: [
+          { x: 9, y: 10 },
+          { x: 8, y: 10 },
+          { x: 7, y: 10 },
+        ],
+        food: { x: 10, y: 10 },
+        nextDirection: 'RIGHT',
+      });
+      const next = gameReducer(state, { type: 'MOVE_SNAKE' });
+      expect(next.status).toBe('won');
+      expect(next.lastUnlockedLevel).toBe(10);
+    });
+
+    it('START_GAME preserves lastUnlockedLevel', () => {
+      const state = makeState({ lastUnlockedLevel: 7 });
+      const next = gameReducer(state, { type: 'START_GAME' });
+      expect(next.lastUnlockedLevel).toBe(7);
+    });
+
+    it('accumulates correctly across multiple level completions', () => {
+      let state = makeState({
+        level: 1,
+        score: 40,
+        lastUnlockedLevel: 1,
+        snake: [
+          { x: 9, y: 10 },
+          { x: 8, y: 10 },
+          { x: 7, y: 10 },
+        ],
+        food: { x: 10, y: 10 },
+        nextDirection: 'RIGHT',
+      });
+      state = gameReducer(state, { type: 'MOVE_SNAKE' });
+      expect(state.lastUnlockedLevel).toBe(2);
+
+      state = gameReducer(state, { type: 'CONTINUE_GAME' });
+      expect(state.level).toBe(2);
+      expect(state.lastUnlockedLevel).toBe(2);
     });
   });
 });

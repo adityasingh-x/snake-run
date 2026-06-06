@@ -4,6 +4,7 @@ import { useKeyboard } from '../hooks/useKeyboard';
 import { useTouch } from '../hooks/useTouch';
 import { sharedSoundManager } from '../platform/sound';
 import { getLevelData } from '../game/levels';
+import { LEVEL_COUNT } from '../game/constants';
 import { Board } from './Board';
 import { ScoreBoard } from './ScoreBoard';
 import { GameOver } from './GameOver';
@@ -17,8 +18,8 @@ const STATUS_ANNOUNCEMENTS: Record<string, string> = {
   playing: 'Game started. Use arrow keys or WASD to move.',
   paused: 'Game paused. Press Space or click Resume to continue.',
   levelComplete: 'Level complete! Press Space to continue.',
-  gameover: 'Game over!',
-  won: 'You won! You completed the game!',
+  gameover: 'Game over! Press Space for new game or click Continue.',
+  won: 'You won! Press Space for new game or click Continue.',
 };
 
 export const Game = () => {
@@ -26,6 +27,7 @@ export const Game = () => {
     state,
     initAudio,
     startGame,
+    startGameAtLevel,
     pauseGame,
     resumeGame,
     changeDirection,
@@ -84,6 +86,13 @@ export const Game = () => {
     continueGame();
   }, [initAudio, continueGame]);
 
+  const handleStartAtLevel = useCallback((level: number) => {
+    initAudio();
+    startGameAtLevel(level);
+  }, [initAudio, startGameAtLevel]);
+
+  const [devLevel, setDevLevel] = useState(1);
+
   const handleDpadUp = useCallback(() => changeDirection('UP'), [changeDirection]);
   const handleDpadDown = useCallback(() => changeDirection('DOWN'), [changeDirection]);
   const handleDpadLeft = useCallback(() => changeDirection('LEFT'), [changeDirection]);
@@ -120,6 +129,27 @@ export const Game = () => {
   return (
     <div className={styles.gameContainer}>
       <h1 className={styles.title}>Snake Run</h1>
+      {import.meta.env.DEV && (
+        <div className={styles.devSelect}>
+          <select
+            className={styles.devSelectDropdown}
+            value={devLevel}
+            onChange={(e) => setDevLevel(Number(e.target.value))}
+            aria-label="Developer level select"
+          >
+            {Array.from({ length: LEVEL_COUNT }, (_, i) => i + 1).map((n) => (
+              <option key={n} value={n}>Level {n}</option>
+            ))}
+          </select>
+          <button
+            className={styles.devSelectBtn}
+            onClick={() => handleStartAtLevel(devLevel)}
+            type="button"
+          >
+            Go
+          </button>
+        </div>
+      )}
       <ScoreBoard score={state.score} highScore={state.highScore} level={state.level} levelName={getLevelData(state.level).name} />
       <div className={styles.controlsRow}>
         <button
@@ -187,10 +217,10 @@ export const Game = () => {
           />
         )}
         {state.status === 'gameover' && (
-          <GameOver score={state.score} onRestart={handleRestart} />
+          <GameOver score={state.score} onRestart={handleRestart} onContinueFromLevel={handleStartAtLevel} lastUnlockedLevel={state.lastUnlockedLevel} />
         )}
         {state.status === 'won' && (
-          <GameOver score={state.score} onRestart={handleRestart} variant="win" />
+          <GameOver score={state.score} onRestart={handleRestart} onContinueFromLevel={handleStartAtLevel} lastUnlockedLevel={state.lastUnlockedLevel} variant="win" />
         )}
       </div>
       <div className={`${styles.dpad} ${(state.status === 'playing' || state.status === 'paused') && dpadOn ? '' : styles.dpadHidden}`}>

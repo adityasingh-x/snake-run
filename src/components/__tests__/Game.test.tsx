@@ -32,6 +32,7 @@ const makePlayingState = () => ({
   highScore: 0,
   level: 1,
   obstacles: [],
+  lastUnlockedLevel: 1,
 });
 
 const makeIdleState = () => ({
@@ -48,6 +49,7 @@ describe('Game Component', () => {
       state: makePlayingState(),
       initAudio: vi.fn(),
       startGame: vi.fn(),
+      startGameAtLevel: vi.fn(),
       pauseGame: mockPauseGame,
       resumeGame: vi.fn(),
       changeDirection: vi.fn(),
@@ -67,6 +69,7 @@ describe('Game Component', () => {
       state: makeIdleState(),
       initAudio: vi.fn(),
       startGame: vi.fn(),
+      startGameAtLevel: vi.fn(),
       pauseGame: mockPauseGame,
       resumeGame: vi.fn(),
       changeDirection: vi.fn(),
@@ -84,5 +87,34 @@ describe('Game Component', () => {
     const pauseButton = screen.getByRole('button', { name: /pause game/i });
     await user.click(pauseButton);
     expect(mockPauseGame).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders dev level select and calls startGameAtLevel on Go click', async () => {
+    const mockStartAtLevel = vi.fn();
+    mockUseGame.mockReturnValue({
+      state: makeIdleState(),
+      initAudio: vi.fn(),
+      startGame: vi.fn(),
+      startGameAtLevel: mockStartAtLevel,
+      pauseGame: vi.fn(),
+      resumeGame: vi.fn(),
+      changeDirection: vi.fn(),
+      resetGame: vi.fn(),
+      continueGame: vi.fn(),
+    });
+
+    const user = userEvent.setup();
+    render(<Game />);
+
+    const select = screen.getByRole('combobox', { name: 'Developer level select' });
+    expect(select).toBeInTheDocument();
+    expect(select).toHaveValue('1');
+
+    await user.selectOptions(select, '5');
+    expect(select).toHaveValue('5');
+
+    const goButton = screen.getByRole('button', { name: 'Go' });
+    await user.click(goButton);
+    expect(mockStartAtLevel).toHaveBeenCalledWith(5);
   });
 });
