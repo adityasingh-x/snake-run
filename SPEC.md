@@ -40,19 +40,9 @@ A classic single-player Snake Run. The player controls a snake on a 20x20 grid. 
 
 ### 3.3 Obstacles
 - **Appearance:** indigo (`#6366f1`) with lighter border (`#818cf8`) and glow (`box-shadow: 0 0 8px`)
-- **Generation per level:** `min(max(1, floor(level * 0.5)), 8)` obstacles
-  - Level 1: 1 obstacle
-  - Level 2: 1 obstacle
-  - Level 3: 1 obstacle
-  - Level 4: 2 obstacles
-  - Level 5: 2 obstacles
-  - Level 6: 3 obstacles
-  - Level 7: 3 obstacles
-  - Level 8: 4 obstacles
-  - Level 9: 4 obstacles
-  - Level 10: 5 obstacles
-- **Placement:** random positions avoiding snake and food; no duplicates
-- **Persistence:** new set generated on each level-up; obstacles do NOT carry over between levels
+- **Layout:** Each level has a predefined handcrafted obstacle layout defined in level metadata
+- **No randomness:** Obstacle positions are authored, not generated randomly
+- **Persistence:** Layout changes based on the level definition on each level-up; obstacles do NOT carry over between levels
 
 ---
 
@@ -133,10 +123,11 @@ Each level is defined as a data-driven object with the following structure:
 ```ts
 {
   id: number;        // 1-10
-  name: string;      // 1-3 word label (e.g., "First Steps", "Final Run")
+  name: string;      // 1-3 word label (e.g., "First Meal", "Final Run")
   description: string; // One-sentence flavor text
   targetScore: number; // Score threshold for level completion
   speed: number;       // Tick interval in milliseconds
+  layout: Position[];   // Predefined obstacle positions for the level
 }
 ```
 
@@ -283,7 +274,7 @@ won
 ### 10.4 ScoreBoard
 
 - Displays: Level (with level name), Score, High Score
-- Level display format: "Level: {id} — {name}" (e.g., "Level: 1 — First Steps")
+- Level display format: "Level: {id} — {name}" (e.g., "Level: 1 — First Meal")
 - Sound toggle button (speaker emoji, toggles between enabled/disabled)
 - `aria-live="polite"` for score/level changes
 - Screen-reader-only `aria-live="assertive"` region announces score and level
@@ -380,11 +371,11 @@ won
 ## 15. Testing
 
 - **Framework:** Vitest with jsdom environment
-- **140 unit tests** across 12 test files:
+- **143 unit tests** across 12 test files:
   - `state.test.ts` (31 tests): gameReducer state transitions (START, RESET, PAUSE, RESUME, CHANGE_DIRECTION, MOVE_SNAKE, collisions, levelComplete, CONTINUE_GAME, win, high score)
   - `Engine.test.ts` (18 tests): Engine class behavior (start, pause, resume, reset, continueGame, loop management, subscriptions, destroy, sound callback wiring)
   - `gameLogic.test.ts` (31 tests): positionsEqual, calculateNewHead, isWallCollision, isSelfCollision, isObstacleCollision, isCollision, spawnFood
-  - `levelData.test.ts` (17 tests): getLevelData, generateObstacles, level metadata (name, description)
+  - `levelData.test.ts` (20 tests): getLevelData, generateObstacles, level metadata (name, description), layout validity
   - `storage.test.ts` (8 tests): loadHighScore, saveHighScore with localStorage mock
   - `Cell.test.tsx` (4 tests): Cell component rendering, accessibility, and direction styling
   - `touch.test.ts` (12 tests): Gesture recognizer with axis locking, cooldown, progress, disabled state

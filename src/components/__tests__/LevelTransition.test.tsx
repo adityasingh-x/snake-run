@@ -7,9 +7,9 @@ import { LevelTransition } from '../LevelTransition';
 describe('LevelTransition Component', () => {
   const defaultProps = {
     completedLevelId: 1,
-    completedLevelName: 'First Steps',
-    nextLevelName: 'Tight Spaces',
-    nextLevelDescription: 'Navigate around the growing obstacles.',
+    completedLevelName: 'First Meal',
+    nextLevelName: 'Pillar Run',
+    nextLevelDescription: 'Navigate around the central pillar.',
     score: 50,
     onContinue: vi.fn(),
   };
@@ -17,13 +17,13 @@ describe('LevelTransition Component', () => {
   it('renders completed level info', () => {
     render(<LevelTransition {...defaultProps} />);
     expect(screen.getByText('Level 1 Complete')).toBeInTheDocument();
-    expect(screen.getByText('First Steps')).toBeInTheDocument();
+    expect(screen.getByText('First Meal')).toBeInTheDocument();
   });
 
   it('renders next level info', () => {
     render(<LevelTransition {...defaultProps} />);
-    expect(screen.getByText('Next: Tight Spaces')).toBeInTheDocument();
-    expect(screen.getByText('Navigate around the growing obstacles.')).toBeInTheDocument();
+    expect(screen.getByText('Next: Pillar Run')).toBeInTheDocument();
+    expect(screen.getByText('Navigate around the central pillar.')).toBeInTheDocument();
   });
 
   it('renders score', () => {

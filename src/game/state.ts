@@ -7,7 +7,7 @@ import { loadHighScore } from './storage';
 import { getLevelData, generateObstacles } from './levels';
 
 export function getInitialState(): GameState {
-  const obstacles = generateObstacles(1, INITIAL_SNAKE, { x: 0, y: 0 });
+  const obstacles = generateObstacles(1);
   const food = spawnFood(INITIAL_SNAKE, obstacles);
   return {
     snake: [...INITIAL_SNAKE],
@@ -104,7 +104,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       }
 
       const nextLevel = state.level + 1;
-      const nextObstacles = generateObstacles(nextLevel, INITIAL_SNAKE, { x: 0, y: 0 });
+      const nextObstacles = generateObstacles(nextLevel);
       const nextFood = spawnFood(INITIAL_SNAKE, nextObstacles);
 
       return {
