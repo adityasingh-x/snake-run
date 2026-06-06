@@ -110,17 +110,24 @@ Planned packaging technology:
 - Two-step level transition (freeze → continue)
 - Keyboard and button support for advancing between levels
 
+### Milestone 5 - Obstacle Redesign
+
+- Handcrafted obstacle layouts for all 10 levels
+- Predefined `layout` arrays in level metadata
+- Random obstacle generation replaced with layout lookup
+- Deterministic obstacle placement per level
+- Level names and descriptions updated to match layouts
+
 ---
 
 ## In Progress
 
-### Milestone 5 - Obstacle Redesign
+### Milestone 6 - Difficulty Rebalance
 
 ---
 
 ## Not Started
 
-- Obstacle redesign
 - Difficulty rebalance
 - Visual identity
 - Replayability systems
@@ -237,7 +244,7 @@ Current level name displayed alongside level number in ScoreBoard.
 
 ---
 
-# Milestone 5 - Obstacle Redesign
+# Milestone 5 - Obstacle Redesign ✅
 
 Goal:
 
@@ -249,7 +256,7 @@ Current single-tile obstacles rarely influence gameplay.
 
 ---
 
-## Feature: Handcrafted Layout System
+## Feature: Handcrafted Layout System ✅
 
 Create predefined obstacle layouts.
 
@@ -267,7 +274,7 @@ Read:
 
 ---
 
-## Success Criteria
+## Success Criteria ✅
 
 - Every level feels different
 - Obstacles influence decisions

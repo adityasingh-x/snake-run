@@ -152,7 +152,7 @@ dispatch action → gameReducer → new state → subscribe → React re-render
 - **10 levels** with data-driven metadata (name, description)
 - **Progression:** target score = 50 x level number
 - **Speed ramp:** 150ms → 60ms (10ms per level)
-- **Obstacles:** `floor(level * 0.5)`, capped at 8
+- **Obstacles:** predefined handcrafted layouts per level (see `LEVEL_DESIGN.md`)
 - **Level-up (two-step):**
   1. Score reaches target → status = `levelComplete`, game freezes, overlay appears
   2. Player clicks Continue or presses Space → `CONTINUE_GAME` → level increments, snake resets, game resumes
@@ -248,7 +248,7 @@ WON
 ## Testing
 
 - **Framework:** Vitest with jsdom
-- **140 unit tests** across 12 test files
+- **143 unit tests** across 12 test files
 - **Coverage:** game/ modules, Engine, hooks, utilities, touch recognizer, components (Game, Board, Cell, LevelTransition)
 - **Run:** `npm test` or `npm run test:watch`
 

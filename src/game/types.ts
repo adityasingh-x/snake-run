@@ -13,6 +13,7 @@ export interface Level {
   description: string;
   targetScore: number;
   speed: number;
+  layout: Position[];
 }
 
 export interface GameState {

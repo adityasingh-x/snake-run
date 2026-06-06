@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { getLevelData, generateObstacles } from '../levelData';
 import { GRID_SIZE } from '../constants';
+import { INITIAL_SNAKE } from '../../game/constants';
 
 describe('getLevelData', () => {
   it('returns correct data for level 1', () => {
@@ -34,60 +35,101 @@ describe('getLevelData', () => {
 });
 
 describe('generateObstacles', () => {
-  const snake = [
-    { x: 10, y: 10 },
-    { x: 9, y: 10 },
-    { x: 8, y: 10 },
-  ];
-  const food = { x: 5, y: 5 };
-
-  it('generates obstacles that do not overlap with snake', () => {
-    const obstacles = generateObstacles(1, snake, food);
-    for (const obs of obstacles) {
-      const onSnake = snake.some(s => s.x === obs.x && s.y === obs.y);
-      expect(onSnake).toBe(false);
-    }
+  it('Level 1 has zero obstacles', () => {
+    expect(generateObstacles(1)).toEqual([]);
   });
 
-  it('generates obstacles that do not overlap with food', () => {
-    const obstacles = generateObstacles(1, snake, food);
-    for (const obs of obstacles) {
-      expect(obs.x === food.x && obs.y === food.y).toBe(false);
+  it('levels 2-10 have non-empty layouts', () => {
+    for (let i = 2; i <= 10; i++) {
+      const obstacles = generateObstacles(i);
+      expect(obstacles.length).toBeGreaterThan(0);
     }
   });
 
   it('generates obstacles within grid bounds', () => {
-    const obstacles = generateObstacles(5, snake, food);
-    for (const obs of obstacles) {
-      expect(obs.x).toBeGreaterThanOrEqual(0);
-      expect(obs.x).toBeLessThan(GRID_SIZE);
-      expect(obs.y).toBeGreaterThanOrEqual(0);
-      expect(obs.y).toBeLessThan(GRID_SIZE);
+    for (let i = 1; i <= 10; i++) {
+      const obstacles = generateObstacles(i);
+      for (const obs of obstacles) {
+        expect(obs.x).toBeGreaterThanOrEqual(0);
+        expect(obs.x).toBeLessThan(GRID_SIZE);
+        expect(obs.y).toBeGreaterThanOrEqual(0);
+        expect(obs.y).toBeLessThan(GRID_SIZE);
+      }
     }
   });
 
   it('generates no duplicate obstacle positions', () => {
-    const obstacles = generateObstacles(10, snake, food);
-    const keys = obstacles.map(o => `${o.x},${o.y}`);
-    const uniqueKeys = new Set(keys);
-    expect(uniqueKeys.size).toBe(obstacles.length);
+    for (let i = 1; i <= 10; i++) {
+      const obstacles = generateObstacles(i);
+      const keys = obstacles.map(o => `${o.x},${o.y}`);
+      const uniqueKeys = new Set(keys);
+      expect(uniqueKeys.size).toBe(obstacles.length);
+    }
   });
 
-  it('generates correct count for level 1 (floor(1*0.5)=0, min 1)', () => {
-    const obstacles = generateObstacles(1, snake, food);
-    expect(obstacles.length).toBeGreaterThanOrEqual(1);
-    expect(obstacles.length).toBeLessThanOrEqual(8);
+  it('is deterministic for all 10 levels', () => {
+    for (let i = 1; i <= 10; i++) {
+      expect(generateObstacles(i)).toEqual(generateObstacles(i));
+      expect(generateObstacles(i)).toEqual(getLevelData(i).layout);
+    }
+  });
+});
+
+describe('layout validity', () => {
+  it('no layout tile overlaps with INITIAL_SNAKE starting positions', () => {
+    const snakeKeys = new Set(INITIAL_SNAKE.map(p => `${p.x},${p.y}`));
+    for (let i = 1; i <= 10; i++) {
+      const obstacles = generateObstacles(i);
+      for (const obs of obstacles) {
+        const key = `${obs.x},${obs.y}`;
+        expect(snakeKeys.has(key)).toBe(false);
+      }
+    }
   });
 
-  it('generates correct count for level 10 (floor(10*0.5)=5)', () => {
-    const obstacles = generateObstacles(10, snake, food);
-    expect(obstacles.length).toBeGreaterThanOrEqual(1);
-    expect(obstacles.length).toBeLessThanOrEqual(8);
+  it('no layout tile is directly in front of initial snake head (RIGHT direction)', () => {
+    const forbidden = { x: 11, y: 10 };
+    for (let i = 1; i <= 10; i++) {
+      const obstacles = generateObstacles(i);
+      for (const obs of obstacles) {
+        expect(obs.x === forbidden.x && obs.y === forbidden.y).toBe(false);
+      }
+    }
   });
 
-  it('generates correct count for level 4 (floor(4*0.5)=2)', () => {
-    const obstacles = generateObstacles(4, snake, food);
-    expect(obstacles.length).toBe(2);
+  it('all layout tiles are within grid bounds [0, GRID_SIZE)', () => {
+    for (let i = 1; i <= 10; i++) {
+      const obstacles = generateObstacles(i);
+      for (const obs of obstacles) {
+        expect(obs.x).toBeGreaterThanOrEqual(0);
+        expect(obs.x).toBeLessThan(GRID_SIZE);
+        expect(obs.y).toBeGreaterThanOrEqual(0);
+        expect(obs.y).toBeLessThan(GRID_SIZE);
+      }
+    }
+  });
+
+  it('no duplicate tiles within any single layout', () => {
+    for (let i = 1; i <= 10; i++) {
+      const obstacles = generateObstacles(i);
+      const keys = obstacles.map(o => `${o.x},${o.y}`);
+      const uniqueKeys = new Set(keys);
+      expect(uniqueKeys.size).toBe(obstacles.length);
+    }
+  });
+
+  it('at least two of three legal first-tick directions are survivable', () => {
+    const firstTickNeighbors = [
+      { x: 11, y: 10 },
+      { x: 10, y: 9 },
+      { x: 10, y: 11 },
+    ];
+    for (let i = 1; i <= 10; i++) {
+      const obstacles = generateObstacles(i);
+      const obstacleKeys = new Set(obstacles.map(o => `${o.x},${o.y}`));
+      const blocked = firstTickNeighbors.filter(n => obstacleKeys.has(`${n.x},${n.y}`));
+      expect(blocked.length).toBeLessThan(2);
+    }
   });
 });
 
@@ -108,7 +150,7 @@ describe('level metadata', () => {
 
   it('returns correct name for level 1', () => {
     const data = getLevelData(1);
-    expect(data.name).toBe('First Steps');
+    expect(data.name).toBe('First Meal');
   });
 
   it('returns correct name for level 10', () => {

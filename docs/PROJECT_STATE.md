@@ -2,46 +2,45 @@
 
 ## Current Version
 
-v0.4.0
+v0.5.0
 
 ---
 
 ## Current Status
 
-Level Progression System Complete
+Obstacle Redesign Complete
 
-The game now has visible level transitions with a combined overlay showing level completion and next level preview. Players can see when a level ends and what's coming next.
+All 10 levels now have handcrafted obstacle layouts that create distinct, memorable gameplay experiences. Level 1 is obstacle-free, and each subsequent level introduces a unique obstacle pattern.
 
 ---
 
 ## Current Milestone
 
-Milestone 5 - Obstacle Redesign
+Milestone 6 - Difficulty Rebalance
 
 Current Goal:
 
-Make levels memorable with handcrafted obstacle layouts.
+Create longer and more meaningful gameplay sessions.
 
 ---
 
 ## Current Priorities
 
-1. Design handcrafted obstacle layouts for each level
-2. Replace random obstacle generation with predefined layouts
-3. Make each level feel distinct
-4. Ensure obstacles influence player decisions
+1. Replace score-based progression with food-objective system
+2. Rebalance speed curve for fairer mobile play
+3. Extend level duration so difficulty comes from layouts, not just speed
 
 ---
 
 ## Next Milestone
 
-Milestone 5 - Obstacle Redesign
+Milestone 6 - Difficulty Rebalance
 
 Planned Focus:
 
-- Handcrafted obstacle layouts
-- Level-specific obstacle configurations
-- Make levels feel distinct and memorable
+- Food-objective progression (10, 12, 14, ... 30 food per level)
+- Speed curve rebalance (150ms → 100ms, less aggressive)
+- Longer, more meaningful gameplay sessions
 
 ---
 
@@ -112,6 +111,17 @@ Planned Focus:
 - Keyboard and button support for advancing between levels
 - 140 unit tests passing
 
+### Obstacle Redesign (Milestone 5)
+
+- Handcrafted obstacle layouts for all 10 levels
+- Level data includes `layout: Position[]` field
+- `generateObstacles` returns predefined layouts (no randomness)
+- Level names and descriptions updated per LEVEL_DESIGN.md
+- Level 1 has zero obstacles
+- Layout validation tests (bounds, duplicates, snake overlap)
+- Determinism tests for all 10 levels
+- 142 unit tests passing
+
 ### Testing
 
 - Automated testing infrastructure
@@ -120,7 +130,7 @@ Planned Focus:
 
 ## In Progress
 
-- Handcrafted obstacle layout design (Milestone 5)
+- Difficulty rebalance (Milestone 6)
 
 ---
 
@@ -179,21 +189,27 @@ Milestone 4 success criteria (completed):
 - All 140 tests pass ✅
 - SPEC.md, ROADMAP.md, PROJECT_STATE.md, and ARCHITECTURE.md updated ✅
 
-Milestone 5 success criteria (in progress):
+Milestone 5 success criteria (completed):
 
-- Handcrafted obstacle layouts for all 10 levels
-- Each level feels distinct
-- Obstacles influence player decisions
-- Levels become memorable
+- Handcrafted obstacle layouts for all 10 levels ✅
+- Each level feels distinct ✅
+- Obstacles influence player decisions ✅
+- Levels become memorable ✅
+
+Milestone 6 success criteria (in progress):
+
+- Levels last longer
+- Mobile remains playable
+- Difficulty feels fair
 
 ---
 
 ## Important Notes
 
-The current objective is Milestone 5 — Obstacle Redesign.
+The current objective is Milestone 6 — Difficulty Rebalance.
 
 The PWA is live at `https://adityasingh-x.github.io/snake-run/` and can be installed on phones and desktops.
 
-Milestone 4 (Level Progression System) is complete. Level transitions are now visible and intentional with a combined overlay showing level completion and next level preview.
+Milestone 5 (Obstacle Redesign) is complete. All 10 levels now have handcrafted obstacle layouts with deterministic placement.
 
 AI-generated gameplay and content systems remain a future consideration and are not part of the current milestone.
