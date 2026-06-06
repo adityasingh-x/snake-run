@@ -7,22 +7,22 @@ describe('getLevelData', () => {
   it('returns correct data for level 1', () => {
     const data = getLevelData(1);
     expect(data.id).toBe(1);
-    expect(data.targetScore).toBe(50);
+    expect(data.foodRequired).toBe(10);
     expect(data.speed).toBe(150);
   });
 
   it('returns correct data for level 5', () => {
     const data = getLevelData(5);
     expect(data.id).toBe(5);
-    expect(data.targetScore).toBe(250);
-    expect(data.speed).toBe(110);
+    expect(data.foodRequired).toBe(18);
+    expect(data.speed).toBe(115);
   });
 
   it('returns correct data for level 10', () => {
     const data = getLevelData(10);
     expect(data.id).toBe(10);
-    expect(data.targetScore).toBe(500);
-    expect(data.speed).toBe(60);
+    expect(data.foodRequired).toBe(30);
+    expect(data.speed).toBe(100);
   });
 
   it('throws error for invalid level', () => {

@@ -20,6 +20,7 @@ export function getInitialState(): GameState {
     level: 1,
     obstacles,
     lastUnlockedLevel: loadLastUnlockedLevel(),
+    foodEaten: 0,
   };
 }
 
@@ -66,9 +67,10 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         ? [newHead, ...state.snake]
         : [newHead, ...state.snake.slice(0, -1)];
       const newScore = ateFood ? state.score + POINTS_PER_FOOD : state.score;
+      const newFoodEaten = ateFood ? state.foodEaten + 1 : state.foodEaten;
 
       const currentConfig = getLevelData(state.level);
-      const shouldLevelUp = ateFood && newScore >= currentConfig.targetScore;
+      const shouldLevelUp = ateFood && newFoodEaten >= currentConfig.foodRequired;
 
       if (shouldLevelUp) {
         if (state.level >= LEVEL_COUNT) {
@@ -80,6 +82,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
             status: 'won',
             highScore: Math.max(state.highScore, newScore),
             lastUnlockedLevel: Math.max(state.lastUnlockedLevel, state.level),
+            foodEaten: newFoodEaten,
           };
         }
 
@@ -91,6 +94,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
           direction: state.nextDirection,
           status: 'levelComplete',
           lastUnlockedLevel: Math.max(state.lastUnlockedLevel, state.level + 1),
+          foodEaten: newFoodEaten,
         };
       }
 
@@ -100,6 +104,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         food: ateFood ? spawnFood(newSnake, state.obstacles) : state.food,
         score: newScore,
         direction: state.nextDirection,
+        foodEaten: newFoodEaten,
       };
     }
 
@@ -121,6 +126,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         nextDirection: 'RIGHT',
         status: 'playing',
         obstacles: nextObstacles,
+        foodEaten: 0,
       };
     }
 
@@ -138,6 +144,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         score: 0,
         level,
         obstacles,
+        foodEaten: 0,
       };
     }
 

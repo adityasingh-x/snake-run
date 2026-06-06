@@ -22,6 +22,8 @@ export interface ScoreBoardProps {
   highScore: number;
   level: number;
   levelName?: string;
+  foodEaten: number;
+  foodRequired: number;
 }
 
 export interface GameOverProps {

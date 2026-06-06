@@ -11,7 +11,7 @@ export interface Level {
   id: number;
   name: string;
   description: string;
-  targetScore: number;
+  foodRequired: number;
   speed: number;
   layout: Position[];
 }
@@ -27,6 +27,7 @@ export interface GameState {
   level: number;
   obstacles: Position[];
   lastUnlockedLevel: number;
+  foodEaten: number;
 }
 
 export type GameAction =

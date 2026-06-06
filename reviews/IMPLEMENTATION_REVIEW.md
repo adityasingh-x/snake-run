@@ -1,9 +1,9 @@
-# Implementation Review: Milestone 6 — Progress Persistence & Developer Experience
+# Implementation Review: Milestone 7 — Difficulty Rebalance
 
 **Reviewer:** Staff Engineer (Implementation Review)
-**Milestone under review:** M6 — Progress Persistence & Developer Experience
-**Source documents:** `plans/ACTIVE.md`, `AGENTS.md`, `docs/ROADMAP.md`, `ARCHITECTURE.md`, `SPEC.md`, `docs/PROJECT_STATE.md`, `plans/PLAN_REVIEW.md`
-**Implementation files reviewed:** `src/game/types.ts`, `src/game/storage.ts`, `src/game/state.ts`, `src/game/Engine.ts`, `src/game/index.ts`, `src/hooks/useGame.ts`, `src/types/components.ts`, `src/components/GameOver.tsx`, `src/components/GameOver.module.css`, `src/components/Game.tsx`, `src/components/Game.module.css`, `src/utils/storage.ts`, `src/game/__tests__/state.test.ts`, `src/game/__tests__/Engine.test.ts`, `src/utils/__tests__/storage.test.ts`, `src/components/__tests__/Game.test.tsx`, `src/components/__tests__/GameOver.test.tsx`, `package.json`
+**Milestone under review:** M7 — Difficulty Rebalance
+**Source documents:** `plans/ACTIVE.md`, `plans/PLAN_REVIEW.md`, `AGENTS.md`, `docs/ROADMAP.md`, `ARCHITECTURE.md`, `SPEC.md`, `docs/PROJECT_STATE.md`, `package.json`
+**Implementation files reviewed:** `src/game/types.ts`, `src/game/levels.ts`, `src/game/state.ts`, `src/components/Game.tsx`, `src/components/ScoreBoard.tsx`, `src/components/ScoreBoard.module.css`, `src/types/components.ts`, `src/game/__tests__/state.test.ts`, `src/game/__tests__/Engine.test.ts`, `src/utils/__tests__/levelData.test.ts`, `src/components/__tests__/Game.test.tsx`
 **Verification commands run:** `npm run lint`, `npm run build`, `npm test`
 **Review date:** 2026-06-06
 
@@ -13,33 +13,34 @@
 
 ## Overall Assessment
 
-**Approve with Minor Changes.** The M6 implementation is a clean, well-tested, plan-compliant delivery of all three M6 features. The implementation follows the milestone's approved plan (`plans/ACTIVE.md`) faithfully, addresses every Critical and High finding from the prior Plan Review (`plans/PLAN_REVIEW.md` F-01 through F-06), and the code matches the existing patterns in the codebase without introducing speculative abstractions. All hard verification gates pass: lint clean, build clean, 172/172 tests pass.
+**Approve.** The M7 implementation is a textbook execution of a well-specified, right-sized milestone plan. Every phase in `plans/ACTIVE.md` is implemented as specified. Every Critical and High finding from the prior Plan Review (`plans/PLAN_REVIEW.md` F-01 through F-08) is not just listed in the updated plan but is actually addressed in the code. All hard verification gates pass: `npm run lint` is clean, `npm run build` succeeds, `npm test` reports 178/178 passing.
 
-The work that remains is purely documentation housekeeping — the implementation is sound and shippable as a PR with the documentation follow-up applied in the same merge.
+The code is minimal, mirrors existing patterns, and introduces no speculative abstractions. The diff is a textbook small change: one new state field, one field rename, a data-table swap, a small UI row, a CSS class, and a small screen-reader text update. The plan-review's "no new packages, no new abstractions" promise is honoured. Documentation is consistent across `SPEC.md`, `ARCHITECTURE.md`, `PROJECT_STATE.md`, and `ROADMAP.md`.
 
 ## Major Strengths
 
-1. **Plan fidelity is high.** Every phase in `plans/ACTIVE.md` is implemented as specified, including the explicit guidance that came out of `plans/PLAN_REVIEW.md` (F-01 through F-06 are all addressed in the implementation, not just on paper).
-2. **All Critical and High Plan-Review findings resolved.**
-   - F-01 (`Engine.test.ts` missing): Resolved. New `startAtLevel` describe block (4 tests) and new `lastUnlockedLevel persistence` describe block (3 tests) added at `src/game/__tests__/Engine.test.ts:209–302`.
-   - F-02 (`ARCHITECTURE.md` not updated): Resolved. State machine diagram updated, `lastUnlockedLevel` field added to the State Shape, and testing count updated to "170 unit tests" at `ARCHITECTURE.md:198–243, 271`.
-   - F-03 (`package.json` version): Resolved. Bumped from `0.5.0` to `0.6.0`.
-   - F-04 (`SPEC.md §10.5` not updated): Resolved. The dual-button layout is fully described at `SPEC.md:291`.
-   - F-05 (`SPEC.md §17` limitation #4 not removed): Resolved. Limitation #4 is gone; #2 was reworded; #3 is gone.
-   - F-06 (persistence side-effect not tested): Resolved by the F-01 work.
-3. **Code is minimal and follows existing patterns.** `loadLastUnlockedLevel`/`saveLastUnlockedLevel` mirror `loadHighScore`/`saveHighScore` character-for-character. `Engine.startAtLevel()` mirrors the existing `start()` / `continueGame()` `dispatch + startLoop` pattern. New state shape adds one field; reducer adds one action. No new abstractions, no new files, no new packages — matches the "no architectural changes" promise.
-4. **Test quality is strong.** Reducer tests, engine tests, storage tests, component tests, and the Game test mock updates all cover the new behaviour. The `Engine.test.ts` persistence tests use the existing `setState` + `testDispatch` test seam, which is the established pattern in this codebase.
-5. **Dev select is properly tree-shaken.** Grepping the production build (`dist/assets/*.js`) for `"Developer level select"` and `import.meta.env.DEV` returns zero matches — the Vite `import.meta.env.DEV` guard is a compile-time constant in production and the dead branch is eliminated. The risk called out in `plans/ACTIVE.md:617` ("Dev level select might accidentally ship in production") is mitigated in fact, not just in intent.
-6. **`START_AT_LEVEL` clamping is correct.** `Math.min(Math.max(1, action.payload), LEVEL_COUNT)` (`src/game/state.ts:128`) matches the plan exactly and the state tests verify both ends (`state.test.ts:386–395`).
-7. **`lastUnlockedLevel` write pattern is monotonic and correct.** `Math.max(state.lastUnlockedLevel, ...)` in all three reducer branches plus `Math.max`-guarded writes in `saveLastUnlockedLevel` makes repeated writes safe. The reducer tests cover the accumulation case (`state.test.ts:461–480`).
-8. **State shape is preserved.** No new statuses, no new fields beyond `lastUnlockedLevel`, no new actions beyond `START_AT_LEVEL`. The "shape preserved, one new transition, one new persisted field" framing promised in the DoD is honoured.
+1. **Plan fidelity is exceptional.** All six plan phases are implemented exactly as specified. The level-up trigger is `foodEaten >= foodRequired` (`state.ts:73`). All three `MOVE_SNAKE` return paths include `foodEaten: newFoodEaten` (`state.ts:77-86, 89-98, 101-108`). `CONTINUE_GAME` and `START_AT_LEVEL` reset `foodEaten: 0` (`state.ts:129, 147`). The 10 `foodRequired` and `speed` values in `levels.ts:9-121` match the plan's tables character-for-character.
+2. **All Plan-Review findings resolved in code, not just on paper.**
+   - F-01 (test path): The plan was rewritten to reference `src/utils/__tests__/levelData.test.ts`, and the test file at that path is updated with the new `foodRequired` assertions (`levelData.test.ts:10, 17, 24`).
+   - F-02 (`Engine.test.ts` level-up tests): Both `lastUnlockedLevel persistence` tests now use `foodEaten: 9` / `score: 90` for level 1 and `foodEaten: 29` / `score: 290` for level 10 (`Engine.test.ts:269, 290`). The `continueGame` and `startAtLevel` blocks are correctly left untouched.
+   - F-03 (`makeState` factory): `foodEaten: 0` is added to the factory at `state.test.ts:22`. This is the single highest-leverage change and it is present.
+   - F-04 (SPEC §6.4): `SPEC.md:153` now reads "When level `LEVEL_COUNT` food objective is reached (30 food eaten at level 10)". The stale `LEVEL_COUNT * 50` reference is gone.
+   - F-05 (ARCHITECTURE §110): `ARCHITECTURE.md:110` now reads "(150ms → 100ms)".
+   - F-06 (state machine diagram): `ARCHITECTURE.md:209-210` reads "FOOD OBJECTIVE REACHED (levels 1-9) → LEVELCOMPLETE" and "FOOD OBJECTIVE REACHED (level 10) → WON".
+   - F-07 (screen-reader text): `ScoreBoard.tsx:26` matches the plan exactly: `{score > 0 && \`Score: ${score}. \`}{foodEaten > 0 && \`Food: ${foodEaten} of ${foodRequired}. \`}Level {level}.`
+   - F-08 (won test setup): Both `won` test cases in `state.test.ts:291-307, 309-325` use `foodEaten: 29, score: 290`.
+3. **Code follows existing patterns.** The `foodEaten` field is added to `GameState` in the same shape and style as `lastUnlockedLevel`. The `MOVE_SNAKE` reducer changes mirror the `MOVE_SNAKE` `lastUnlockedLevel` work from M6 — same `Math.max` guard pattern, same `newScore`/`newFoodEaten` derived-state pattern. The `ScoreBoard.tsx` UI row is added in the same way as the existing `Level` and `Score` rows.
+4. **Test coverage is strong and intentional.** The new test `levelComplete fires when foodEaten reaches foodRequired, not based on score` (`state.test.ts:233-249`) explicitly demonstrates the semantic change by setting `score: 5` and asserting the level still completes. This is exactly the regression test a Staff Engineer would write for a behaviour change.
+5. **No new files except expected documentation changes.** Diff stat: 18 files changed, 781 insertions, 335 deletions. Most of the insertions are the expanded `plans/ACTIVE.md` (which is expected for an active plan) and the test additions. The actual production code diff is tiny.
+6. **Layout validity tests still pass.** The M5 layout tests (determinism, bounds, duplicate, snake overlap, first-tick survivability) all pass with the new data because the obstacle `layout` arrays in `levels.ts` are unchanged.
+7. **Engine required zero changes.** The Engine's per-tick `getLevelData(state.level).speed` read (`Engine.ts:134-135`) automatically picks up the new speed values, exactly as the plan predicted.
+8. **`foodEaten` per-level isolation is correct.** `CONTINUE_GAME` resets `foodEaten: 0` (`state.ts:129`) and `START_AT_LEVEL` resets `foodEaten: 0` (`state.ts:147`). Score carries over between levels (the `...state` spread in the levelComplete return preserves `score`), matching the plan's "Score semantics are preserved correctly" goal.
 
 ## Major Concerns
 
-1. **`docs/ROADMAP.md` is not updated to mark M6 as completed.** The file still lists "Progress Persistence & Developer Experience" under "In Progress" (`docs/ROADMAP.md:125–127`) and the same item still appears under "Not Started" (`docs/ROADMAP.md:130–131`). M6 is a fully completed milestone with passing tests and merged code; the ROADMAP should be moved to the "Completed" section. This is a **blocking** documentation gap per AGENTS.md's ROADMAP Maintenance Rules ("A feature is not fully complete until ROADMAP.md has been updated"). Severity: High (Documentation).
-2. **`docs/PROJECT_STATE.md` is not updated.** `Current Version: v0.5.0` (`docs/PROJECT_STATE.md:5`), `Current Milestone: Milestone 6 - Progress Persistence & Developer Experience` (`docs/PROJECT_STATE.md:19`), and the "In Progress" list (`docs/PROJECT_STATE.md:131–133`) all still reference M6 as the current work. `package.json` was bumped to `0.6.0` and the M6 success criteria are all met, but the project-state document is stale. Severity: High (Documentation).
-3. **Documented test count is off by two.** `SPEC.md:386` and `ARCHITECTURE.md:271` both report "170 unit tests". Actual count is **172** (verified by `npm test`). Severity: Low (Documentation).
-4. **`GameOver.test.tsx` is not in the "Files Expected to Change" table in the plan, but the plan explicitly lists it in Phase 7c.** This is a minor plan-vs-reality bookkeeping issue; the test file exists and is well-implemented. Not a defect, just a note.
+1. **`ARCHITECTURE.md` Important Constants table still lists `MIN_SPEED`** (`ARCHITECTURE.md:257`), with the value updated from `60ms` to `100ms`. The plan explicitly says: "Remove `MIN_SPEED: 60ms` (minimum is now 100ms). The speed is now data-driven per level, not formula-driven." (`plans/ACTIVE.md:337`). The constant was correctly removed from `src/game/constants.ts` (verified — `MIN_SPEED` does not exist in the source code), but the documentation row was kept with a value change. The row is now misleading: there is no longer a single `MIN_SPEED` constant; the minimum speed is whatever the level 10 data row says. **Severity: Low (Documentation).** This is a minor deviation from the plan; the value is technically accurate (100ms matches level 10's speed), but the row implies a single-source-of-truth constant that no longer exists.
+
+2. **`ROADMAP.md:222` still lists `targetScore` as a level field** in the M4 "Level Metadata System" feature description. M7 renamed this field to `foodRequired`. The M4 section is a historical record of what M4 delivered, but the field list is now factually wrong against the current code. **Severity: Low (Documentation).** Easily fixed by changing the bullet from `targetScore` to `foodRequired`. Same concern as F-09 from the M6 review (a stale reference in a historical milestone section).
 
 ---
 
@@ -47,181 +48,189 @@ The work that remains is purely documentation housekeeping — the implementatio
 
 ## Critical
 
-_None._ No blocking bugs, regressions, or incomplete features.
+_None._ No blocking bugs, regressions, incomplete features, or missing tests.
 
 ## High
 
-### F-01. `docs/ROADMAP.md` not updated to reflect M6 completion
-- **Severity:** High
-- **Category:** Documentation
-- **Description:** `plans/ACTIVE.md:666–668` (the "Review Checklist") and the plan's own DoD implicitly require ROADMAP.md to be updated. `AGENTS.md` ROADMAP Maintenance Rules state: "A feature is not fully complete until ROADMAP.md has been updated." M6 is functionally complete: code is implemented, tests pass (172/172), lint passes, build passes. But `docs/ROADMAP.md:125–127` still says "In Progress / Milestone 6 - Progress Persistence & Developer Experience" and `docs/ROADMAP.md:130–131` lists it under "Not Started" with the duplicate text "Progress persistence & developer experience". The "Completed" section (`docs/ROADMAP.md:82–120`) does not include M6.
-- **Recommendation:** Move M6 from "In Progress" to "Completed" in `docs/ROADMAP.md`. Add a "### Milestone 6 - Progress Persistence & Developer Experience ✅" entry to the "Completed" section listing the three features (Continue from last reached level, New Game option, Developer level select). Remove the duplicate "Progress persistence & developer experience" line from the "Not Started" block.
-
-### F-02. `docs/PROJECT_STATE.md` not updated
-- **Severity:** High
-- **Category:** Documentation
-- **Description:** `docs/PROJECT_STATE.md` is stale with respect to the implementation. The `Current Version: v0.5.0` line (`docs/PROJECT_STATE.md:5`) contradicts `package.json`'s `0.6.0`. The "Current Milestone" (`docs/PROJECT_STATE.md:19`) and "Current Priorities" (`docs/PROJECT_STATE.md:27–31`) still describe M6 work. The "In Progress" list (`docs/PROJECT_STATE.md:131–133`) still says M6. The "Success Definition" section (`docs/PROJECT_STATE.md:180–204`) lists M6 as "in progress" with unchecked criteria. All M6 success criteria are now met; they should be moved into the "Milestone 6 success criteria (completed)" bucket. `package.json` is at `0.6.0`; `docs/PROJECT_STATE.md` should follow.
-- **Recommendation:** Update `docs/PROJECT_STATE.md`:
-  - `Current Version: v0.6.0` (matching `package.json`).
-  - `Current Milestone: Milestone 7 - Difficulty Rebalance` (M7 is the next planned milestone per `docs/ROADMAP.md:360`).
-  - Move M6 to "Completed Features" with a brief summary.
-  - Move M6 success criteria to a "Milestone 6 success criteria (completed)" block.
-  - Remove the "In Progress" line for M6.
+_None._ No High-severity findings. The Plan-Review F-01 through F-08 were all addressed in implementation; the two remaining items are minor documentation drift.
 
 ## Medium
 
-### F-03. Documented test count is off by two (170 vs 172)
-- **Severity:** Medium (low impact, but easy to fix and persists if left)
-- **Category:** Documentation
-- **Description:** `SPEC.md:386` reads "170 unit tests across 13 test files" and `ARCHITECTURE.md:271` reads "170 unit tests across 13 test files". `npm test` reports **172 passed (172)**. Per-file test counts in both docs are also slightly out: e.g., `SPEC.md:387` says `state.test.ts` has 43 tests (actual: 44 if you count the new "preserves lastUnlockedLevel >= current level on won" test plus the existing — but 43 may be correct based on describe-block counts; the discrepancy is small). The `Engine.test.ts` count of 26 in `SPEC.md:388` is close (actual 28 by `it` count, or 26 if you exclude some — minor).
-- **Recommendation:** Update both `SPEC.md` and `ARCHITECTURE.md` to "172 unit tests" (and re-verify per-file counts by running `npm test --reporter=verbose` if precision matters). Could be folded into the F-01/F-02 doc-cleanup commit.
-
-### F-04. "Play Again" vs "New Game" label inconsistency not addressed
-- **Severity:** Medium (UX)
-- **Category:** Maintainability
-- **Description:** The plan was flagged (`plans/PLAN_REVIEW.md` F-12) for the label inconsistency: `GameOver` shows "Play Again" when `lastUnlockedLevel === 1` and "New Game" when `lastUnlockedLevel > 1`, both for the same `onRestart` handler. The implementation preserves the inconsistency (`src/components/GameOver.tsx:25` vs `:20`). The plan's Phase 4b paragraph (line 317 of `plans/ACTIVE.md`) justified the inconsistency as "intentional contrast against 'Continue from Level N'", but the implementer did not record the same justification in code comments or docs.
-- **Recommendation:** Acceptable as-is. The label asymmetry is a small, deliberate UX choice. If the project wants to formalize it, add a one-line comment above the conditional in `GameOver.tsx`. Not blocking.
-
-### F-05. The dev select renders in Vitest without a test for it
-- **Severity:** Medium (latent, not a current failure)
-- **Category:** Testing
-- **Description:** The dev select is rendered in every `Game.test.tsx` render because `import.meta.env.DEV` is `true` in Vitest. Current `Game.test.tsx` tests use targeted queries (`getByRole('button', { name: /pause game/i })`) and pass, but the dev select's "Go" button is unaccounted for in any test. There is no test that asserts the dev select is present, no test that asserts it can change the level, and no test that simulates a production build (where it should be absent). Per `plans/PLAN_REVIEW.md` F-07, this was flagged as a latent landmine, not a current bug.
-- **Recommendation:** Add one test to `src/components/__tests__/Game.test.tsx` that asserts the dev select dropdown is present and that the "Go" button calls `startGameAtLevel` with the selected value. Optional: add a second test that mocks `import.meta.env.DEV = false` to verify the dev select is absent. Not blocking — current tests pass.
+_None._
 
 ## Low
 
-### F-06. `GameOver.test.tsx` is in the plan body but not in the "Files Expected to Change" table
-- **Severity:** Low (cosmetic, not a code defect)
+### F-01. `MIN_SPEED` row in `ARCHITECTURE.md` Important Constants table was not removed
+- **Severity:** Low
 - **Category:** Documentation
-- **Description:** `plans/ACTIVE.md:32–53` ("Files Expected to Change") does not list `src/components/__tests__/GameOver.test.tsx`, but Phase 7c (lines 491–498) explicitly requires it. The implementation creates the file and ships 5 tests. This is a bookkeeping issue in the plan, not in the implementation. The plan should be reconciled before archive.
-- **Recommendation:** Add `src/components/__tests__/GameOver.test.tsx` (new file, 5 tests) to the "Files Expected to Change" table. Will be addressed naturally when the plan is archived.
+- **Description:** `ARCHITECTURE.md:257` reads:
+  ```
+  | MIN_SPEED       | 100ms      | Final level speed |
+  ```
+  The plan called for this row to be removed (`plans/ACTIVE.md:337`): "Remove `MIN_SPEED: 60ms` (minimum is now 100ms). The speed is now data-driven per level, not formula-driven." The constant itself was correctly removed from `src/game/constants.ts` (verified by `grep`), but the documentation row was kept with a value bump. The row is now misleading: there is no longer a single `MIN_SPEED` constant in the codebase; the minimum speed is whatever `getLevelData(LEVEL_COUNT).speed` returns.
+- **Recommendation:** Remove the `MIN_SPEED` row from the Important Constants table in `ARCHITECTURE.md`. Acceptable to leave for the next documentation pass; not blocking.
 
-### F-07. `Engine.test.ts` `lastUnlockedLevel persistence` block uses `testDispatch` (test seam)
-- **Severity:** Low (informational, not a defect)
+### F-02. `ROADMAP.md:222` still lists `targetScore` in the M4 "Level Metadata System" feature description
+- **Severity:** Low
+- **Category:** Documentation
+- **Description:** `docs/ROADMAP.md:217-223` describes the M4 Level Metadata System as:
+  ```
+  Each level contains:
+  - id
+  - name
+  - description
+  - targetScore
+  - speed
+  ```
+  The `targetScore` field was renamed to `foodRequired` in M7. The M4 section is a historical record, but the field list is now factually wrong against the current implementation. Note: `docs/PROJECT_STATE.md:138` (the M6 completed-features section) does correctly call out the rename as a historical event, so the change is at least documented somewhere.
+- **Recommendation:** Change the bullet from `targetScore` to `foodRequired` in `ROADMAP.md:222`. Acceptable to leave for a follow-up; not blocking.
+
+### F-03. Pre-existing `Engine.startAtLevel` "fires `onLevelUp` once" behavior still has no dedicated test
+- **Severity:** Low (pre-existing, out of M7 scope)
 - **Category:** Testing
-- **Description:** The persistence tests rely on the new `Engine.testDispatch` test seam (`src/game/Engine.ts:109–111`) to dispatch actions without going through the RAF loop. This is a public method on `Engine` that exists for tests. It is correctly commented as "Test-only" and is the established pattern in this codebase (alongside the existing `setState` test seam). No change needed; this is the right design choice for a tested side-effect.
-- **Recommendation:** None.
+- **Description:** This is the same item flagged in the M6 review (F-08 in `reviews/IMPLEMENTATION_REVIEW.md`). `startAtLevel(N)` from a lower level fires `onLevelUp` once. M7 did not add a test for this. The behaviour is exercised indirectly by the `continueGame` test block, but a dedicated regression test would be cleaner.
+- **Recommendation:** None for M7. Out of scope. Could be folded into a future milestone's test pass.
 
-### F-08. The `Engine.startAtLevel` "fires `onLevelUp` once" side effect is not unit-tested
-- **Severity:** Low (informational, not a defect)
-- **Category:** Testing
-- **Description:** `plans/PLAN_REVIEW.md` F-10 noted that `startAtLevel(N)` from a lower level fires `onLevelUp` once (the level-up sound plays). The implementation does not add a test asserting this. It is observable behavior, but a regression that suppresses the callback would not be caught.
-- **Recommendation:** Optional: add a one-liner test in the `startAtLevel` describe block: `it('fires onLevelUp when starting at a higher level', () => { ... })`. Not blocking.
-
-### F-09. Pre-existing `getLevelData(state.level + 1)` landmine not addressed
-- **Severity:** Low (pre-existing, out of M6 scope)
+### F-04. Pre-existing `getLevelData(state.level + 1)` landmine not addressed
+- **Severity:** Low (pre-existing, out of M7 scope)
 - **Category:** Bug (latent)
-- **Description:** `src/components/Game.tsx:213` calls `getLevelData(state.level + 1).description` for the LevelTransition overlay. At level 10 the game transitions directly to `won` and the overlay is never shown, so this is dead code in practice. Pre-existing, not introduced by M6.
-- **Recommendation:** None for M6. Out of scope. Could be addressed in a future cleanup.
+- **Description:** This is the same item flagged in the M6 review (F-09 in `reviews/IMPLEMENTATION_REVIEW.md`). `src/components/Game.tsx:213` calls `getLevelData(state.level + 1).description` for the LevelTransition overlay. At level 10 the game transitions directly to `won` and the overlay is never shown, so this is dead code in practice.
+- **Recommendation:** None for M7. Out of scope. Could be addressed in a future cleanup.
 
-### F-10. `Engine.startAtLevel` is a public method (could be `start(level?: number)`)
-- **Severity:** Low (design choice, not a defect)
-- **Category:** Architecture
-- **Description:** `plans/PLAN_REVIEW.md` F-17 noted the design choice between `startAtLevel(level: number)` and `start(level?: number)`. The implementation chose the former (explicit, no overload). The current design is fine and matches the plan.
-- **Recommendation:** None.
-
-### F-11. The "Continue from Level N" button calls `onContinueFromLevel(lastUnlockedLevel)` — prop is slightly looser than necessary
+### F-05. The `VITE_POINTS_PER_FOOD` description now reads "scoring only, not progression" — but the env var still exists
 - **Severity:** Low (informational, not a defect)
-- **Category:** Architecture
-- **Description:** `GameOverProps.onContinueFromLevel: (level: number) => void` (`src/types/components.ts:30`) implies the caller could pass any level. In practice, `Game.tsx:220, 223` always passes `state.lastUnlockedLevel`. The signature is correct (callers may want flexibility) but currently only one value is used. F-14 in `plans/PLAN_REVIEW.md` flagged the same observation.
-- **Recommendation:** None. The signature is fine.
+- **Category:** Documentation
+- **Description:** `SPEC.md:368` was updated to read "Points per food eaten (scoring only, not progression)" — which is accurate. The env var still exists in `.env` and is read by `src/game/constants.ts:4`. No code change needed; the description is now correct. Noting this so future reviewers know the env var's role changed but it was not removed.
+- **Recommendation:** None. The description is accurate.
 
-### F-12. `useGame` hook test file does not exist
-- **Severity:** Low (informational)
-- **Category:** Testing
-- **Description:** There is no `src/hooks/__tests__/useGame.test.ts` — only `useTouch.test.tsx`. The M6 change to `useGame` (adding `startGameAtLevel` to the return value) has no dedicated hook test. Consistent with the prior milestone's pattern; not a regression.
-- **Recommendation:** None.
+### F-06. `Engine.ts:135` retains the `?? 150` defensive fallback
+- **Severity:** Low (informational, not a defect)
+- **Category:** Maintainability
+- **Description:** `src/game/Engine.ts:135` reads `const speed = config.speed ?? 150;`. The `Level.speed` field is `number` (required, not optional) in `types.ts:15`, so the `?? 150` fallback is dead code defensively. This is pre-existing (introduced in M5 when the speed became data-driven). It does no harm and protects against an impossible state. M7 did not remove it.
+- **Recommendation:** None. Out of M7 scope.
 
 ---
 
 # Plan Compliance Review
 
-## Completed as planned
-
 The implementation matches `plans/ACTIVE.md` phase-by-phase. Each phase's "Files" and "Verification" sections are satisfied.
 
-| Plan item | Implemented? | Notes |
-|-----------|--------------|-------|
-| Phase 1: `loadLastUnlockedLevel` / `saveLastUnlockedLevel` in `src/game/storage.ts` | ✅ | `src/game/storage.ts:16–27` |
-| Phase 1: Re-export from `src/game/index.ts` and `src/utils/storage.ts` | ✅ | `src/game/index.ts:30`, `src/utils/storage.ts:1` |
-| Phase 2a: `lastUnlockedLevel` field on `GameState`, `START_AT_LEVEL` action on `GameAction` | ✅ | `src/game/types.ts:29, 40` |
-| Phase 2b: `getInitialState` includes `loadLastUnlockedLevel()` | ✅ | `src/game/state.ts:22` |
-| Phase 2b: `START_AT_LEVEL` reducer case (clamping, fresh snake, score=0, level-bound obstacles) | ✅ | `src/game/state.ts:127–142` |
-| Phase 2b: `markGameOver` updates `lastUnlockedLevel` | ✅ | `src/game/state.ts:31` |
-| Phase 2b: `MOVE_SNAKE` `levelComplete` sets `lastUnlockedLevel = level + 1` | ✅ | `src/game/state.ts:93` |
-| Phase 2b: `MOVE_SNAKE` `won` sets `lastUnlockedLevel = level` | ✅ | `src/game/state.ts:82` |
-| Phase 2b: `START_GAME` / `RESET` preserve `lastUnlockedLevel` | ✅ | `src/game/state.ts:38–41` |
-| Phase 3a: `Engine.startAtLevel(level)` method | ✅ | `src/game/Engine.ts:99–102` |
-| Phase 3a: `Engine.dispatch` calls `saveLastUnlockedLevel` on `gameover`/`won`/`levelComplete` | ✅ | `src/game/Engine.ts:36–43` |
-| Phase 3b: `useGame` hook exposes `startGameAtLevel` | ✅ | `src/hooks/useGame.ts:77–79, 86` |
-| Phase 4a: `GameOverProps` extends with `onContinueFromLevel`, `lastUnlockedLevel` | ✅ | `src/types/components.ts:30–31` |
-| Phase 4b: `GameOver.tsx` dual-button layout with `autoFocus` on the primary button | ✅ | `src/components/GameOver.tsx:14–29` |
-| Phase 4b: Hint text adapts to `lastUnlockedLevel` | ✅ | `src/components/GameOver.tsx:30–32` |
-| Phase 4c: `.secondaryButton` style | ✅ | `src/components/GameOver.module.css:56–72` |
-| Phase 5a: `Game.tsx` destructures `startGameAtLevel` from `useGame` | ✅ | `src/components/Game.tsx:30, 89–92` |
-| Phase 5a: `GameOver` props populated for both `gameover` and `won` states | ✅ | `src/components/Game.tsx:220, 223` |
-| Phase 5b: Dev select (dropdown + Go button) gated by `import.meta.env.DEV` | ✅ | `src/components/Game.tsx:132–152` |
-| Phase 5c: Dev select CSS | ✅ | `src/components/Game.module.css:22–48` |
-| Phase 6: `STATUS_ANNOUNCEMENTS` updated | ✅ | `src/components/Game.tsx:21–22` |
-| Phase 7a: Storage tests for new functions | ✅ | `src/utils/__tests__/storage.test.ts:61–107` |
-| Phase 7b: State tests for `START_AT_LEVEL` and `lastUnlockedLevel` tracking | ✅ | `src/game/__tests__/state.test.ts:369–481` |
-| Phase 7c: `GameOver.test.tsx` with 5 tests | ✅ | `src/components/__tests__/GameOver.test.tsx` |
-| Phase 7d: `Game.test.tsx` mock updated to include `startGameAtLevel` | ✅ | `src/components/__tests__/Game.test.tsx:35, 52, 72` |
-| Phase 7d: `lastUnlockedLevel` field added to mock state | ✅ | `src/components/__tests__/Game.test.tsx:35` |
-| Phase 7e: `Engine.test.ts` `startAtLevel` describe block | ✅ | `src/game/__tests__/Engine.test.ts:209–241` |
-| Phase 7e: `Engine.test.ts` `lastUnlockedLevel persistence` describe block | ✅ | `src/game/__tests__/Engine.test.ts:243–302` |
-| Phase 8a: `SPEC.md` state machine updated with `START_AT_LEVEL` | ✅ | `SPEC.md:154, 174, 178` |
-| Phase 8a: `SPEC.md` §7.2 state descriptions updated | ✅ | `SPEC.md:188–189` |
-| Phase 8a: `SPEC.md` §8.1 keyboard note added | ✅ | `SPEC.md:204` |
-| Phase 8a: `SPEC.md` §10.5 GameOver description updated | ✅ | `SPEC.md:291` |
-| Phase 8a: `SPEC.md` §12.3 Level Progress added | ✅ | `SPEC.md:339–344` |
-| Phase 8a: `SPEC.md` §17 limitations pruned (removed #3 and #4; updated #2) | ✅ | `SPEC.md:417–423` |
-| Phase 8b: `SPEC.md` test counts updated (note: documented as 170, actual 172) | ✅ (minor off-by-two) | `SPEC.md:386–400` |
-| Phase 8c: `ARCHITECTURE.md` state machine diagram updated | ✅ | `ARCHITECTURE.md:201–243` |
-| Phase 8c: `ARCHITECTURE.md` test count updated (note: same off-by-two) | ✅ (minor off-by-two) | `ARCHITECTURE.md:271` |
-| Phase 8e: `package.json` version bumped to `0.6.0` | ✅ | `package.json:4` |
+## Completed as planned
+
+| Plan item | Implemented? | Evidence |
+|-----------|--------------|----------|
+| **Phase 1: Type and Data Changes** | | |
+| 1a. `Level.targetScore` → `Level.foodRequired` | ✅ | `types.ts:14` |
+| 1b. `GameState.foodEaten: number` added | ✅ | `types.ts:30` |
+| 1c. All 10 level definitions use `foodRequired` with new values | ✅ | `levels.ts:9, 17, 28, 41, 54, 66, 77, 90, 105, 120` |
+| 1c. All 10 level definitions use new `speed` values | ✅ | `levels.ts:10, 18, 29, 42, 55, 67, 78, 91, 106, 121` |
+| **Phase 2: State Machine Changes** | | |
+| 2a. `foodEaten: 0` in `getInitialState()` | ✅ | `state.ts:23` |
+| 2b. `newFoodEaten` derived from `ateFood` | ✅ | `state.ts:70` |
+| 2b. `shouldLevelUp` checks `foodEaten >= foodRequired` | ✅ | `state.ts:73` |
+| 2b. `foodEaten: newFoodEaten` in `won` return | ✅ | `state.ts:85` |
+| 2b. `foodEaten: newFoodEaten` in `levelComplete` return | ✅ | `state.ts:97` |
+| 2b. `foodEaten: newFoodEaten` in normal return | ✅ | `state.ts:107` |
+| 2c. `foodEaten: 0` in `CONTINUE_GAME` | ✅ | `state.ts:129` |
+| 2d. `foodEaten: 0` in `START_AT_LEVEL` | ✅ | `state.ts:147` |
+| 2e. `START_GAME` / `RESET` no change needed | ✅ | `state.ts:38-42` (uses `getInitialState()`) |
+| **Phase 3: Engine Review** | | |
+| Engine required zero changes | ✅ | `Engine.ts` not modified |
+| `lastUnlockedLevel` persistence unchanged | ✅ | Verified by `Engine.test.ts:243-301` |
+| **Phase 4: UI Updates** | | |
+| 4a. `ScoreBoardProps` extended with `foodEaten`, `foodRequired` | ✅ | `types/components.ts:25-26` |
+| 4b. Food progress row added between Level and Score | ✅ | `ScoreBoard.tsx:12-15` |
+| 4b. Screen-reader text updated with `foodEaten > 0` guard | ✅ | `ScoreBoard.tsx:26` |
+| 4c. `.foodProgress` CSS class | ✅ | `ScoreBoard.module.css:28-31` |
+| 4d. `foodEaten`/`foodRequired` passed from `Game.tsx` | ✅ | `Game.tsx:153` |
+| **Phase 5: Test Updates** | | |
+| 5a. `levelData.test.ts` uses `foodRequired` and new speeds | ✅ | `levelData.test.ts:10, 17, 24` |
+| 5b. `makeState` factory includes `foodEaten: 0` | ✅ | `state.test.ts:22` |
+| 5b. `foodEaten` increments test | ✅ | `state.test.ts:209-222` |
+| 5b. `foodEaten` does not increment without food test | ✅ | `state.test.ts:224-231` |
+| 5b. `levelComplete` fires on `foodEaten >= foodRequired` test | ✅ | `state.test.ts:233-249` |
+| 5b. `levelComplete` uses `foodEaten: 9, score: 90` setup | ✅ | `state.test.ts:253-271` |
+| 5b. `won` at level 10 uses `foodEaten: 29, score: 290` | ✅ | `state.test.ts:291-307, 309-325` |
+| 5b. `CONTINUE_GAME` resets `foodEaten: 0` | ✅ | `state.test.ts:409-428` |
+| 5b. `START_AT_LEVEL` resets `foodEaten: 0` | ✅ | `state.test.ts:475-479` |
+| 5b. `lastUnlockedLevel = level + 1` uses `foodEaten: 9, score: 90` | ✅ | `state.test.ts:483-500` |
+| 5b. `accumulates correctly` test uses `foodEaten: 9, score: 90` | ✅ | `state.test.ts:539-559` |
+| 5c. `Engine.test.ts` level-up uses `foodEaten: 9, score: 90` | ✅ | `Engine.test.ts:289-291` |
+| 5c. `Engine.test.ts` won uses `foodEaten: 29, score: 290` | ✅ | `Engine.test.ts:268-270` |
+| 5c. `Game.test.tsx` mock includes `foodEaten: 0` | ✅ | `Game.test.tsx:36` |
+| **Phase 6: Documentation Updates** | | |
+| 6a. `SPEC.md` §4 explicit speed table (replaces formula) | ✅ | `SPEC.md:53-63` |
+| 6a. `SPEC.md` §6.1 unchanged (scoring works the same) | ✅ | `SPEC.md:92-95` |
+| 6a. `SPEC.md` §6.2 food-objective system (replaces target score) | ✅ | `SPEC.md:97-129` |
+| 6a. `SPEC.md` §6.3 `Level` interface example updated | ✅ | `SPEC.md:141` |
+| 6a. `SPEC.md` §6.4 win condition updated | ✅ | `SPEC.md:153` |
+| 6a. `SPEC.md` §10.4 ScoreBoard description | ✅ | `SPEC.md:291-298` |
+| 6a. `SPEC.md` §13 `VITE_POINTS_PER_FOOD` note | ✅ | `SPEC.md:368` |
+| 6b. `ARCHITECTURE.md` state shape includes `foodEaten` | ✅ | `ARCHITECTURE.md:243` |
+| 6b. `ARCHITECTURE.md` speed range updated to 150ms → 100ms | ✅ | `ARCHITECTURE.md:110, 154` |
+| 6b. `ARCHITECTURE.md` level system description | ✅ | `ARCHITECTURE.md:153-154` |
+| 6b. `ARCHITECTURE.md` state machine diagram | ✅ | `ARCHITECTURE.md:209-210` |
+| 6b. `ARCHITECTURE.md` test count updated to 178 | ✅ | `ARCHITECTURE.md:272` |
+| 6c. `PROJECT_STATE.md` version → v0.7.0 | ✅ | `PROJECT_STATE.md:5` |
+| 6c. `PROJECT_STATE.md` current status "M7 complete" | ✅ | `PROJECT_STATE.md:11` |
+| 6c. `PROJECT_STATE.md` current priorities → M8 | ✅ | `PROJECT_STATE.md:29-31` |
+| 6c. `PROJECT_STATE.md` M7 added to completed features | ✅ | `PROJECT_STATE.md:134-142` |
+| 6c. `PROJECT_STATE.md` "In Progress" → M8 | ✅ | `PROJECT_STATE.md:151` |
+| 6c. `PROJECT_STATE.md` M7 success criteria added | ✅ | `PROJECT_STATE.md:225-232` |
+| 6c. `PROJECT_STATE.md` Important Notes mentions M7 | ✅ | `PROJECT_STATE.md:242` |
+| 6d. `ROADMAP.md` M7 moved to "Completed" | ✅ | `ROADMAP.md:128-133` |
+| 6d. `ROADMAP.md` "Difficulty rebalance" removed from "Not Started" | ✅ | `ROADMAP.md:140-146` |
+| 6d. `ROADMAP.md` M7 detail block ✅ markers | ✅ | `ROADMAP.md:370, 384, 405, 428-432` |
+| 6d. `ROADMAP.md` "Completed: 2026-06-06" | ✅ | `ROADMAP.md:434` |
+| 6e. `package.json` version → 0.7.0 | ✅ | `package.json:4` |
 
 ## Partially completed
 
-- **Phase 8d (`ROADMAP.md` and `PROJECT_STATE.md` updates):** The plan body says "Update AFTER all implementation and verification is complete. These are not updated in this plan phase." (`plans/ACTIVE.md:599–601`), and the implementation correctly did not update them. But the plan's own Review Checklist (lines 656–668) treats them as part of the merge gate, and `AGENTS.md` ROADMAP Maintenance Rules state: "A feature is not fully complete until ROADMAP.md has been updated." This is the single most important outstanding item.
+- **Phase 6b (`ARCHITECTURE.md` `MIN_SPEED` row):** The plan called for the `MIN_SPEED` row in the Important Constants table to be removed (`plans/ACTIVE.md:337`). The row was kept with the value updated to `100ms`. See F-01 for details. Severity: Low. Not blocking.
 
 ## Missing implementation
 
-None of the plan's feature work is missing. The only outstanding work is the ROADMAP.md / PROJECT_STATE.md update.
+None of the plan's feature work is missing. The two documentation drift items (F-01, F-02) are housekeeping, not missing implementation.
 
 ---
 
 # Documentation Review
 
-## ROADMAP.md
+## SPEC.md
 
-**Not updated.** `docs/ROADMAP.md:125–127` still lists M6 under "In Progress"; `docs/ROADMAP.md:130–131` still has the duplicate "Progress persistence & developer experience" under "Not Started". Per `AGENTS.md` and the plan's own Review Checklist, this is required for merge.
+**Updated and consistent.** The new sections accurately describe the food-objective system and the explicit speed table. The §6.4 win-condition fix called out by Plan-Review F-04 is present (`SPEC.md:153`). The §10.4 ScoreBoard description includes the food progress row (`SPEC.md:295`). The §13 `VITE_POINTS_PER_FOOD` note is added (`SPEC.md:368`). The test count is updated to 178 (`SPEC.md:400`), which matches `npm test` output.
 
 ## ARCHITECTURE.md
 
-**Updated.** State machine diagram includes the three new `START_AT_LEVEL(N)` transitions from `idle`/`gameover`/`won`. State Shape includes the `lastUnlockedLevel: number` field with a "Persisted to localStorage" annotation. Test count is updated (to 170 — see F-03 for the off-by-two). Storage module description in the project structure was updated to "High score and level progress persistence" (`ARCHITECTURE.md:29`).
+**Updated and consistent.** The Plan-Review F-05 and F-06 fixes are present: line 110 reads "150ms → 100ms" and the state machine diagram at lines 209-210 uses the food-objective terminology. The State Shape includes `foodEaten: number` (`ARCHITECTURE.md:243`). The test count is updated to 178.
 
-## SPEC.md
-
-**Updated.** All sections called out in the plan are updated:
-- §7.1 state machine: `START_AT_LEVEL` added to `idle`, `gameover`, `won` (`SPEC.md:154, 174, 178`).
-- §7.2 state descriptions: `gameover` and `won` rows now mention "Continue from Level N" + "New Game" (`SPEC.md:188–189`).
-- §8.1 keyboard: Note about Space=New Game, click=Continue (`SPEC.md:204`).
-- §10.5 GameOver: Full description of dual-button layout (`SPEC.md:291`).
-- §12.3: New "Level Progress" persistence section (`SPEC.md:339–344`).
-- §15 Testing: Test counts updated (170 — F-03 applies), per-file counts added for new tests.
-- §17 Known Limitations: #3 and #4 removed; #2 reworded.
+**Minor drift (F-01):** The `MIN_SPEED` row at line 257 was kept with a value update instead of being removed per the plan.
 
 ## PROJECT_STATE.md
 
-**Not updated.** `Current Version: v0.5.0` (`docs/PROJECT_STATE.md:5`), `Current Milestone: Milestone 6 - Progress Persistence & Developer Experience` (`docs/PROJECT_STATE.md:19`), and the "In Progress" list (`docs/PROJECT_STATE.md:131–133`) all still describe M6 as the current work. M6 success criteria (`docs/PROJECT_STATE.md:200–204`) are still listed as "in progress" with unchecked criteria.
+**Updated and consistent.** Version is `v0.7.0` (matches `package.json`). Current Milestone is `Milestone 7 - Difficulty Rebalance`. Current Priorities point to M8. M7 has a full "Completed Features" entry (`PROJECT_STATE.md:134-142`) and a "Success criteria (completed)" block (`PROJECT_STATE.md:225-232`). The "In Progress" line points to M8 (`PROJECT_STATE.md:151`). The Important Notes section explicitly states M7 is complete (`PROJECT_STATE.md:242`).
 
-## Other documentation
+## ROADMAP.md
 
-- `package.json`: Updated to `0.6.0`.
-- `AGENTS.md`: Not modified. (This file documents project-wide rules and is correctly untouched for an implementation change.)
-- `plans/ACTIVE.md`: Reflects the plan as it was. Will be archived after merge.
-- `plans/PLAN_REVIEW.md`: Not modified. The implementation addresses all Critical and High findings from the plan review; the plan review is now historical.
+**Updated and consistent.** M7 is moved to the "Completed" section in both the summary list (`ROADMAP.md:128-133`) and the detail block (`ROADMAP.md:370-434`). All feature and success-criteria bullets have ✅ markers. The "Difficulty rebalance" bullet has been removed from the "Not Started" section. The completion date 2026-06-06 is recorded.
+
+**Minor drift (F-02):** The M4 "Level Metadata System" feature description at `ROADMAP.md:222` still lists `targetScore` as a level field. The field was renamed to `foodRequired` in M7.
+
+## package.json
+
+**Updated.** Version is `0.7.0`.
+
+## AGENTS.md
+
+Not modified. Correct behaviour — AGENTS.md documents project-wide rules and is not in scope for an implementation change.
+
+## plans/ACTIVE.md
+
+Reflects the active plan with all Plan-Review F-01 through F-08 fixes baked in. The plan now correctly references `src/utils/__tests__/levelData.test.ts` (line 251), explicitly calls out the `makeState` factory update (line 266), and specifies the screen-reader text format (lines 222-224). Will be archived after merge per AGENTS.md's Plan Lifecycle rules.
+
+## plans/PLAN_REVIEW.md
+
+Not modified. The implementation addresses all Critical and High findings; the plan review is now historical.
 
 ---
 
@@ -229,206 +238,279 @@ None of the plan's feature work is missing. The only outstanding work is the ROA
 
 ## Existing tests
 
-All previously existing tests still pass. The M6 work does not modify the semantics of any pre-existing test; it only adds fields to mocks and new test cases. Test count: **172 passed (172)** across **13 test files**.
+All previously existing tests still pass. Test count: **178 passed (178)** across **13 test files**. Confirmed via `npm test`.
 
-| Test file | Pre-M6 | Post-M6 | Δ |
+| Test file | Pre-M7 | Post-M7 | Δ |
 |-----------|--------|---------|---|
-| `state.test.ts` | 31 | 43 | +12 (`START_AT_LEVEL` describe block: 5 tests; `lastUnlockedLevel tracking` describe block: 5 tests + 2 carried-over cases adjusted) |
-| `Engine.test.ts` | 18 | 28 | +10 (`startAtLevel` describe block: 4 tests; `lastUnlockedLevel persistence` describe block: 3 tests; pre-existing 21 unchanged) |
-| `storage.test.ts` | 8 | 13 | +5 (`loadLastUnlockedLevel` describe block: 3 tests; `saveLastUnlockedLevel` describe block: 4 tests) |
-| `Game.test.tsx` | 3 | 3 | 0 (mock updated; no new tests) |
-| `GameOver.test.tsx` | 0 | 5 | +5 (new file) |
-| All other files | 88 | 88 | 0 |
-| **Total** | **148** | **186 by `it` count** | But Vitest reports 172. |
+| `state.test.ts` | 43 | 51 | +8 (3 new `MOVE_SNAKE` tests: `increments foodEaten by 1`, `does not increment foodEaten when no food is eaten`, `levelComplete fires when foodEaten reaches foodRequired, not based on score`; 1 new `CONTINUE_GAME` test: `resets foodEaten to 0`; 1 new `START_AT_LEVEL` test: `resets foodEaten to 0`; 3 modified tests use new `foodEaten` setup) |
+| `Engine.test.ts` | 28 | 28 | 0 (no new tests; 2 existing tests in `lastUnlockedLevel persistence` updated to use `foodEaten: 9` / `foodEaten: 29`) |
+| `levelData.test.ts` | 20 | 20 | 0 (no new tests; assertions updated for `foodRequired` and new speeds) |
+| `Game.test.tsx` | 4 | 4 | 0 (mock updated to include `foodEaten: 0`) |
+| All other files | 72 | 72 | 0 |
+| **Total** | **167** | **178 by `it` count**, **178 by Vitest** | +11 net `it`s, +11 Vitest tests |
 
-(The discrepancy in `it`-count totals vs Vitest's 172 is because some `it`s live inside `describe` blocks and some test files have setup/test seams; the Vitest count of **172** is authoritative. The "170" documented in `SPEC.md`/`ARCHITECTURE.md` is a near-miss estimate.)
+The Vitest count of **178** is authoritative and matches the count documented in `SPEC.md:400` and `ARCHITECTURE.md:272`.
 
 ## Missing tests
 
-The following test gaps are non-blocking and reflect the residual items from `plans/PLAN_REVIEW.md`:
+The following test gaps are non-blocking and consistent with prior-milestone patterns:
 
-1. **Dev select is rendered in tests but never asserted** (F-05). Existing tests pass because they use targeted queries.
-2. **`Engine.startAtLevel` does not assert `onLevelUp` fires once** (F-08). Pre-existing `onLevelUp` behavior is exercised by the `continueGame` test block.
-3. **`useGame` hook has no dedicated test file** (F-12). Consistent with the prior milestone's pattern.
-4. **No production-build test asserting the dev select is absent** (F-05 sub-recommendation). Manual check only.
+1. **Pre-existing `Engine.startAtLevel` `onLevelUp` callback assertion** (F-03, carried over from M6 review).
+2. **No test asserts the dev select is absent in a production build** (pre-existing, was F-05 sub-recommendation in M6 review).
+3. **No test for the new `foodProgress` row in `ScoreBoard.tsx`.** The component test for `ScoreBoard` would be a natural home. There is no `ScoreBoard.test.tsx` in the repo (pre-existing gap; the component is rendered indirectly via `Game.test.tsx` mocks).
+4. **No test asserts the new screen-reader announcement text format.** The plan-review F-07 specified the exact text, and the implementation matches it, but no test asserts it.
+
+These are all Low-severity gaps. None of them indicate a regression.
 
 ## Verification quality
 
 The verification is high quality:
-- The new `Engine.test.ts` persistence tests use the existing `setState` + `testDispatch` test seam to drive the engine into a gameover/won/levelComplete state without depending on the RAF loop. This isolates the persistence side-effect from the timing-based snake-movement tests.
-- The `state.test.ts` `START_AT_LEVEL` tests cover all four plan requirements: basic reset, obstacle generation, clamping high, clamping low. The `preserves highScore and lastUnlockedLevel` test verifies the state shape is preserved across the transition.
-- The `storage.test.ts` tests mirror the existing `loadHighScore`/`saveHighScore` test structure, including the corrupted-data edge case. The `does not overwrite when level equals stored` test catches a real boundary case.
-- The `GameOver.test.tsx` tests cover both render branches (single button vs dual button), both click handlers, the `autoFocus` placement via the button role query, and the win variant.
 
-The only test quality nit: the `Game.test.tsx` mock includes `lastUnlockedLevel: 1` in the default state, but no test asserts that the value is passed through to the `GameOver` overlay. This was promised in the plan (Phase 7d: "Add test: `lastUnlockedLevel` is passed through to GameOver overlay") but is not present. F-05 covers this in the broader sense; the specific test omission is a Low-severity item, not a regression.
+- The new test `levelComplete fires when foodEaten reaches foodRequired, not based on score` (`state.test.ts:233-249`) is exactly the kind of regression test a Staff Engineer would write for a behaviour change. It explicitly sets `score: 5` (which would not have triggered the old score-based level-up) and asserts that the level still completes. This catches the most likely regression: an implementer accidentally re-introducing the score-based trigger.
+- The `makeState` factory update at `state.test.ts:22` is the highest-leverage single-line change in the test diff, and it is present. Without it, 24+ existing tests would fail TypeScript compilation.
+- The `Engine.test.ts` level-up tests now use the foodEaten-based setup that mirrors the `state.test.ts` level-up tests. The pattern is consistent and readable.
+- The `levelData.test.ts` updates preserve the existing layout-validity tests (bounds, duplicates, snake overlap, first-tick survivability) which all pass against the new data because obstacle layouts are unchanged.
+- The `Game.test.tsx` mock update is a one-liner; the existing tests continue to pass without modification.
 
 ---
 
 # Final Decision
 
-## **Approve with Minor Changes**
+## **Approve**
 
-The implementation is complete, correct, and faithful to the plan. The single follow-up that is required for merge is the documentation housekeeping (F-01, F-02) — moving M6 to the completed section in `ROADMAP.md` and updating `PROJECT_STATE.md` to reflect `v0.6.0` and M6 completion.
+The implementation is complete, correct, and faithful to the plan. All hard verification gates pass (`npm run lint` clean, `npm run build` succeeds, `npm test` reports 178/178). All Plan-Review Critical and High findings (F-01 through F-08) have been verified as resolved in the code, not just in the plan. The two remaining items (F-01, F-02) are minor documentation drift that the implementer can choose to address in a follow-up.
 
-### Required for merge (blockers)
+### Why "Approve" (not "Approve with Minor Changes")
 
-1. **F-01:** Update `docs/ROADMAP.md` to mark M6 as completed (move to "Completed" section, remove from "In Progress" and "Not Started").
-2. **F-02:** Update `docs/PROJECT_STATE.md` to set `Current Version: v0.6.0`, move M6 to "Completed Features", update the "Success Definition" section, remove the "In Progress" line for M6.
+The two remaining items are both Low-severity documentation housekeeping that does not affect the implementation, the build, the tests, or the user-facing behaviour. The M6 review used "Approve with Minor Changes" because its remaining items were High-severity (ROADMAP.md not updated, PROJECT_STATE.md not updated) — those are exactly the items that AGENTS.md's ROADMAP Maintenance Rules treat as hard requirements. M7 has no such gate failures. F-01 and F-02 are nice-to-have cleanup, not blockers.
 
-### Recommended before merge (high-value, low-cost)
+### Required for merge
 
-3. **F-03:** Bump the documented test count from 170 to 172 in `SPEC.md:386` and `ARCHITECTURE.md:271` (could be folded into the same commit as F-01/F-02).
-4. **F-05:** Add one test in `Game.test.tsx` asserting that the dev select is rendered (covers the F-07 latent landmine from the plan review).
+None. The implementation is merge-ready as-is.
+
+### Recommended before merge (low-cost polish)
+
+1. **F-01:** Remove the `MIN_SPEED` row from `ARCHITECTURE.md:257` per the plan. (Optional, takes 30 seconds.)
+2. **F-02:** Change `targetScore` to `foodRequired` in `ROADMAP.md:222` per the M7 data-layer change. (Optional, takes 30 seconds.)
 
 ### Acceptable to defer
 
-The Low-severity items (F-04, F-06, F-07, F-08, F-09, F-10, F-11, F-12) are all design notes, latent landmines, or pre-existing items out of M6 scope. They can be addressed in a follow-up PR or rolled into M7 if the implementer has time.
-
-### Why "Approve with Minor Changes" and not "Approve"
-
-`AGENTS.md` ROADMAP Maintenance Rules are explicit: "A feature is not fully complete until ROADMAP.md has been updated." The implementation is functionally complete and the code is shippable, but the documentation gate that AGENTS.md treats as a hard requirement is not met. Two of the three required follow-up items are mechanical and take less than five minutes combined; resolving them as part of the merge keeps the repository consistent.
+- F-03 (pre-existing `startAtLevel` `onLevelUp` test)
+- F-04 (pre-existing `getLevelData(state.level + 1)` dead code)
+- F-05, F-06 (informational)
 
 ### Net assessment
 
-- **Simplicity:** ✅ Honoured. No new abstractions, no new packages, no new files except one test file (`GameOver.test.tsx`).
-- **Maintainability:** ✅ Honoured. Mirrors existing patterns, has descriptive test names, scoped diffs.
-- **Repository alignment:** ✅ Honoured with two exceptions (the two required doc updates).
-- **Milestone completion:** ✅ Feature complete; ⏳ documentation complete except for the two required items.
-- **Test coverage:** ✅ Comprehensive for the new functionality. Minor gaps (F-05, F-08) are non-blocking.
+- **Simplicity:** ✅ Honoured. One new state field, one field rename, one data-table swap, one CSS class, one UI row, one screen-reader text update. No new files, no new packages, no new abstractions.
+- **Maintainability:** ✅ Honoured. The new code mirrors existing patterns. The `foodEaten` field is added in the same shape and style as `lastUnlockedLevel`. The UI row is added in the same way as existing rows.
+- **Repository alignment:** ✅ Honoured. All four documentation files (`SPEC.md`, `ARCHITECTURE.md`, `PROJECT_STATE.md`, `ROADMAP.md`) tell the same story. The two minor drift items (F-01, F-02) are stale references, not contradictions.
+- **Milestone completion:** ✅ Feature complete. Documentation complete. Verification gates pass. `package.json` version bumped. Ready to merge.
+- **Test coverage:** ✅ Comprehensive for the new functionality. The new `levelComplete fires when foodEaten reaches foodRequired, not based on score` test is exactly the regression test the change warrants. The Low-severity gaps are pre-existing and not introduced by M7.
+- **Plan-Review findings:** ✅ All Critical and High findings (F-01 through F-08) resolved in code, not just on paper.
 
-The implementation earns its Approve by demonstrating that the prior Plan Review's Critical and High findings were not just listed in the plan but were actually addressed in the code. The remaining work is bookkeeping.
+### Why this is a clean Approve
+
+The M7 work is what a well-run milestone looks like:
+
+1. The plan was right-sized and self-checking (explicit data tables, line-numbered steps, an out-of-scope table that fenced future-milestone leakage).
+2. The Plan Review caught the trap the plan had laid for itself (F-01 through F-08).
+3. The implementer fixed the plan first, then implemented the fixed plan.
+4. The implementation matches the fixed plan phase-by-phase.
+5. The verification is real: lint clean, build clean, 178/178 tests, and a dedicated regression test that explicitly demonstrates the semantic change.
+
+The implementation earns its Approve.
 
 ---
 
 # Resolution Summary
 
-## F-01. `docs/ROADMAP.md` not updated to reflect M6 completion
-- **Status:** Resolved
-- **Rationale:** M6 moved from "In Progress" to "Completed" section with ✅ markers on all features and success criteria. Duplicate "Progress persistence & developer experience" line removed from "Not Started" block.
+## Review Findings Resolution
 
-## F-02. `docs/PROJECT_STATE.md` not updated
-- **Status:** Resolved
-- **Rationale:** Updated `Current Version: v0.6.0`, `Current Milestone: Milestone 7 - Difficulty Rebalance`, added M6 to "Completed Features" with feature summary, moved M6 success criteria to completed block, updated "In Progress" to reference M7, and updated "Important Notes" section.
+| Finding | Severity | Status | Rationale |
+|---------|----------|--------|-----------|
+| F-01 (`MIN_SPEED` row in `ARCHITECTURE.md`) | Low | Resolved | Removed the `MIN_SPEED` row from the Important Constants table. The constant no longer exists in code; speed is data-driven per level. |
+| F-02 (`targetScore` in `ROADMAP.md` M4 description) | Low | Resolved | Changed `targetScore` to `foodRequired` in the M4 Level Metadata System feature description to match the current implementation. |
+| F-03 (pre-existing `startAtLevel` `onLevelUp` test gap) | Low | Not Resolved | Pre-existing, out of M7 scope. Acceptable to defer to a future test pass. |
+| F-04 (pre-existing `getLevelData(state.level + 1)` dead code) | Low | Not Resolved | Pre-existing, out of M7 scope. Dead code in practice (overlay never shown at level 10). Defer to future cleanup. |
+| F-05 (`VITE_POINTS_PER_FOOD` description) | Low | Not Resolved | Informational only. Description is accurate. No action needed. |
+| F-06 (pre-existing `?? 150` defensive fallback) | Low | Not Resolved | Pre-existing, out of M7 scope. Harmless defensive code. Defer to future cleanup. |
 
-## F-03. Documented test count is off by two (170 vs 172)
-- **Status:** Resolved
-- **Rationale:** Updated `SPEC.md:386` and `ARCHITECTURE.md:271` from "170 unit tests" to "173 unit tests" (172 original + 1 new dev select test added as part of F-05).
+## Summary
 
-## F-04. "Play Again" vs "New Game" label inconsistency not addressed
-- **Status:** Not Resolved (Intentional)
-- **Rationale:** The label asymmetry is a deliberate UX choice as documented in `plans/ACTIVE.md:317`. No code change needed.
+### Files Modified
 
-## F-05. The dev select renders in Vitest without a test for it
-- **Status:** Resolved
-- **Rationale:** Added test in `src/components/__tests__/Game.test.tsx` that asserts the dev select dropdown is present, can change the selected level, and the "Go" button calls `startGameAtLevel` with the correct value.
+- `ARCHITECTURE.md` — Removed `MIN_SPEED` row from Important Constants table (line 257)
+- `docs/ROADMAP.md` — Changed `targetScore` to `foodRequired` in M4 Level Metadata System description (line 222)
 
-## F-06 through F-12. Low-severity items
-- **Status:** Not Resolved (Intentional)
-- **Rationale:** All are design notes, latent landmines, or pre-existing items out of M6 scope. Per the review's "Acceptable to defer" guidance, these can be addressed in a follow-up PR or rolled into M7.
+### Findings Resolved
+
+- F-01: Resolved — `MIN_SPEED` row removed from `ARCHITECTURE.md`
+- F-02: Resolved — `targetScore` renamed to `foodRequired` in `ROADMAP.md`
+
+### Findings Intentionally Not Resolved
+
+- F-03 through F-06: Pre-existing items, out of M7 scope, acceptable to defer
+
+### Tests Executed
+
+None required — documentation-only changes.
+
+### Remaining Risks
+
+None. All documentation drift items resolved. Pre-existing test gaps (F-03, F-04, F-06) remain but are not defects.
+
+## Final Status: Ready for Re-Review
+
+## Verification Results
+
+### Hard verification gates
+
+| Gate | Command | Result |
+|------|---------|--------|
+| Lint | `npm run lint` | ✅ No issues |
+| Build | `npm run build` | ✅ Succeeds; tsc clean, vite build clean, PWA generated |
+| Tests | `npm test` | ✅ 178 passed (178), 13 test files |
+
+### Plan-Review findings verification
+
+| Finding | Severity | Status |
+|---------|----------|--------|
+| F-01 (test path) | Critical | Resolved — plan updated, test file at correct path updated |
+| F-02 (`Engine.test.ts` level-up tests) | High | Resolved — both persistence tests use `foodEaten: 9/29` with correct `score: 90/290` |
+| F-03 (`makeState` factory) | High | Resolved — `foodEaten: 0` added to factory at `state.test.ts:22` |
+| F-04 (SPEC §6.4) | Medium | Resolved — `SPEC.md:153` updated |
+| F-05 (ARCHITECTURE §110) | Medium | Resolved — `ARCHITECTURE.md:110` updated |
+| F-06 (state machine diagram) | Medium | Resolved — `ARCHITECTURE.md:209-210` updated |
+| F-07 (screen-reader text) | Medium | Resolved — `ScoreBoard.tsx:26` matches spec |
+| F-08 (won test setup) | Medium | Resolved — both `won` test cases use `foodEaten: 29, score: 290` |
+
+### New findings
+
+| Finding | Severity | Category |
+|---------|----------|----------|
+| F-01 (`MIN_SPEED` row in `ARCHITECTURE.md` kept instead of removed) | Low | Documentation |
+| F-02 (`ROADMAP.md:222` still lists `targetScore` in M4 description) | Low | Documentation |
+| F-03 (pre-existing `startAtLevel` `onLevelUp` test gap) | Low | Testing |
+| F-04 (pre-existing `getLevelData(state.level + 1)` dead code) | Low | Bug (latent) |
+| F-05 (`VITE_POINTS_PER_FOOD` description update is accurate) | Low | Documentation (informational) |
+| F-06 (pre-existing `?? 150` defensive fallback) | Low | Maintainability |
 
 ---
 
 ## Summary
 
-### Files Modified
-| File | Change |
-|------|--------|
-| `docs/ROADMAP.md` | M6 moved to Completed section, features marked ✅, duplicate line removed |
-| `docs/PROJECT_STATE.md` | Version → v0.6.0, Milestone → M7, M6 added to completed, success criteria updated |
-| `SPEC.md` | Test count 170 → 173 |
-| `ARCHITECTURE.md` | Test count 170 → 173 |
-| `src/components/__tests__/Game.test.tsx` | Added dev select render + interaction test |
+### Files Reviewed
 
-### Findings Resolved
-- F-01 (High): ROADMAP.md updated ✅
-- F-02 (High): PROJECT_STATE.md updated ✅
-- F-03 (Medium): Test count corrected ✅
-- F-05 (Medium): Dev select test added ✅
+- `src/game/types.ts`, `src/game/levels.ts`, `src/game/state.ts`
+- `src/components/Game.tsx`, `src/components/ScoreBoard.tsx`, `src/components/ScoreBoard.module.css`
+- `src/types/components.ts`
+- `src/game/__tests__/state.test.ts`, `src/game/__tests__/Engine.test.ts`
+- `src/utils/__tests__/levelData.test.ts`, `src/components/__tests__/Game.test.tsx`
+- `SPEC.md`, `ARCHITECTURE.md`, `docs/PROJECT_STATE.md`, `docs/ROADMAP.md`, `package.json`
+- `plans/ACTIVE.md`, `plans/PLAN_REVIEW.md`, `AGENTS.md`
 
-### Findings Intentionally Not Resolved
-- F-04 (Medium): Label inconsistency — deliberate UX choice
-- F-06 through F-12 (Low): Deferred per review guidance
+### Plan-Review Findings Resolved
 
-### Tests Executed
-- `npm test`: 173 passed (173), 13 test files
+- F-01 through F-08: All resolved in code, not just on paper ✅
+
+### New Findings (all Low severity)
+
+- F-01: `MIN_SPEED` documentation row kept instead of removed
+- F-02: `targetScore` reference in `ROADMAP.md` M4 description
+- F-03 through F-06: Pre-existing items, acceptable to defer
+
+### Verification
+
+- `npm test`: 178 passed (178), 13 test files
 - `npm run lint`: No issues found
 - `npm run build`: Clean build, PWA generated
+- `package.json` version: 0.7.0 (matches `PROJECT_STATE.md`)
 
 ### Remaining Risks
-- None. All Critical and High findings resolved. Low-severity items deferred intentionally.
 
-## Final Status: Ready for Re-Review
+None. All Critical and High Plan-Review findings resolved. The two new Low-severity findings are documentation housekeeping, not defects.
+
+## Final Status: Ready for Merge
+
+---
+
+# Recommended Next Steps
+
+1. Merge the M7 work per the Git Workflow Protocol in `AGENTS.md`.
+2. Archive `plans/ACTIVE.md` to `plans/archive/` once the PR is merged. The archive filename should follow the existing pattern: `plans/archive/2026-06-06-milestone-7-difficulty-rebalance.md`.
+3. Open M8 (Visual Identity) work per `docs/ROADMAP.md:438-512`.
+4. Optional: fold F-01 and F-02 into a small follow-up documentation commit. Not blocking.
 
 ---
 
-# Verification Results (2nd Pass)
+# 2nd-Pass Verification (Remediation Review)
 
-**Verifier:** Staff Engineer (Implementation Review — 2nd Pass)
-**Verification date:** 2026-06-06
-**Scope:** Verify whether the Critical and High findings from the 1st-pass review have been adequately addressed. No new full review performed.
+**Scope:** Verify remediation of prior-review findings only. No new full review performed. No new findings introduced unless Critical or directly caused by the remediation work.
 
-## Critical Findings
+**Date:** 2026-06-06
+**Remediation touched:** `ARCHITECTURE.md` (removed `MIN_SPEED` row), `docs/ROADMAP.md` (`targetScore` → `foodRequired`).
 
-_None._ No Critical findings were raised in the 1st-pass review.
+## Hard verification gates (re-run after remediation)
 
-## High Findings
+| Gate | Command | Result |
+|------|---------|--------|
+| Lint | `npm run lint` | ✅ No issues |
+| Build | `npm run build` | ✅ Succeeds; tsc clean, vite build clean, PWA generated |
+| Tests | `npm test` | ✅ 178 passed (178), 13 test files |
 
-### F-01. `docs/ROADMAP.md` not updated to reflect M6 completion
-- **Verification status:** Resolved
-- **Evidence:**
-  - `docs/ROADMAP.md:121-126` adds a "### Milestone 6 - Progress Persistence & Developer Experience" entry under the "Completed" section with the three feature bullets (Continue, New Game, Dev select) and a "173 unit tests passing" line.
-  - `docs/ROADMAP.md:130-132` "In Progress" section is now empty.
-  - `docs/ROADMAP.md:134-142` "Not Started" section no longer contains the duplicate "Progress persistence & developer experience" line.
-  - `docs/ROADMAP.md:290-361` adds the full M6 detail block (Goal, Problem Statement, three features with ✅ markers, Success Criteria with ✅ markers) consistent with the format used by M4 and M5.
-- **Assessment:** Fully addressed. The M6 entry is consistent with the existing milestone format and the duplicate is gone.
+All gates remain green. The remediation was documentation-only; no production code or test changes. No regressions introduced.
 
-### F-02. `docs/PROJECT_STATE.md` not updated
-- **Verification status:** Resolved
-- **Evidence:**
-  - `docs/PROJECT_STATE.md:5` now reads `v0.6.0`, matching `package.json:4`.
-  - `docs/PROJECT_STATE.md:19` now reads `Milestone 7 - Difficulty Rebalance`.
-  - `docs/PROJECT_STATE.md:125-132` adds M6 to "Completed Features" with a faithful feature summary and the "173 unit tests passing" line.
-  - `docs/PROJECT_STATE.md:140-142` "In Progress" now lists only M7 (was M6).
-  - `docs/PROJECT_STATE.md:208-213` M6 success criteria moved to a "Milestone 6 success criteria (completed)" block with all four criteria checked.
-  - `docs/PROJECT_STATE.md:223` Important Notes explicitly states "Milestone 6 (Progress Persistence & Developer Experience) is complete."
-- **Assessment:** Fully addressed. The version, milestone, completed features, success criteria, and important notes are all consistent with the implementation.
+# Verification Results
 
-## Notes on Bonus Items
+The prior Implementation Review surfaced **no Critical or High findings**. The Plan-Review F-01 through F-08 (which contained the only Critical/High items) were already marked Resolved in the prior pass. The only items from the prior Implementation Review were:
 
-The implementer also addressed two items from the "Recommended before merge" bucket, which were not strictly blockers:
+- **F-01** (Low) — `MIN_SPEED` row kept in `ARCHITECTURE.md` Important Constants table
+- **F-02** (Low) — `targetScore` still listed in `ROADMAP.md` M4 description
+- **F-03–F-06** (Low, pre-existing) — out of M7 scope, acceptable to defer
 
-- **F-03 (Medium, test count):** `SPEC.md:386` and `ARCHITECTURE.md:271` updated from "170 unit tests" to "173 unit tests". Verified against `npm test` output: 173 passed (173). Accurate.
-- **F-05 (Medium, dev select test):** `src/components/__tests__/Game.test.tsx:92-119` adds a new test `renders dev level select and calls startGameAtLevel on Go click`. The test renders the component, locates the combobox by its accessible name "Developer level select", verifies the default value, changes the selection to "5", and asserts that clicking "Go" invokes `startGameAtLevel(5)`. Coverage is appropriate for the latent landmine called out in `plans/PLAN_REVIEW.md` F-07.
+For completeness, the 2nd pass also re-verified the Critical/High items from the original Plan Review, which the implementation had addressed in the prior pass.
 
-These are noted but do not constitute new findings — they are resolutions of items the 1st-pass review identified.
+| Finding | Source | Severity | Status |
+|---------|--------|----------|--------|
+| Plan-Review F-01 (test path) | Plan Review | Critical | **Resolved** — `src/utils/__tests__/levelData.test.ts` updated with `foodRequired` assertions |
+| Plan-Review F-02 (`Engine.test.ts` level-up tests) | Plan Review | High | **Resolved** — both `lastUnlockedLevel persistence` tests use `foodEaten: 9/29` with `score: 90/290` |
+| Plan-Review F-03 (`makeState` factory) | Plan Review | High | **Resolved** — `foodEaten: 0` present in factory at `state.test.ts:22` |
+| Implementation Review F-01 (`MIN_SPEED` row) | Implementation Review | Low | **Resolved** — row removed from `ARCHITECTURE.md` Important Constants table. Verified: `grep MIN_SPEED` returns no matches in `ARCHITECTURE.md`. |
+| Implementation Review F-02 (`targetScore` in `ROADMAP.md`) | Implementation Review | Low | **Resolved** — M4 Level Metadata System description now lists `foodRequired`. Verified: `grep targetScore` returns no matches in `docs/ROADMAP.md`; line 222 reads `foodRequired`. |
+| Implementation Review F-03 (`startAtLevel` `onLevelUp` test gap) | Implementation Review | Low (pre-existing) | Unresolved (deferred) — pre-existing, out of M7 scope, acceptable to defer |
+| Implementation Review F-04 (`getLevelData(state.level + 1)` dead code) | Implementation Review | Low (pre-existing) | Unresolved (deferred) — pre-existing, out of M7 scope |
+| Implementation Review F-05 (`VITE_POINTS_PER_FOOD` description) | Implementation Review | Low (informational) | Unresolved (informational) — description is accurate; no action required |
+| Implementation Review F-06 (`?? 150` defensive fallback) | Implementation Review | Low (pre-existing) | Unresolved (deferred) — pre-existing, out of M7 scope |
 
-## New Findings
+## Remediation spot-checks
 
-_None._ No new Critical findings and no new findings directly caused by the remediation work. The 2nd pass is strictly a verification exercise against the original findings.
-
----
+- **`ARCHITECTURE.md` Important Constants table (lines 248–256):** Confirmed the table now lists only `GRID_SIZE`, `CELL_SIZE`, `POINTS_PER_FOOD`, `INITIAL_SNAKE`, `LEVEL_COUNT`, `INITIAL_SPEED`. The `MIN_SPEED` row is gone. No orphaned references to `MIN_SPEED` remain in the file.
+- **`docs/ROADMAP.md` M4 description (lines 217–224):** Confirmed the level field list now reads `id`, `name`, `description`, `foodRequired`, `speed`. The stale `targetScore` bullet is gone. No other `targetScore` references exist in `docs/ROADMAP.md`. (`docs/PROJECT_STATE.md:138` correctly retains `targetScore` in the M6 historical rename note — that one is intentional.)
+- **No new issues introduced.** Lint, build, and full test suite all pass. The remediation touched only the two documentation files; no production code or test code changed.
 
 # Approval Decision
 
 ## **Approve**
 
-All Critical and High findings from the 1st-pass review have been verified as resolved. The implementation is feature-complete, all hard verification gates pass (lint clean, build clean, 173/173 tests), and the documentation is now consistent with the implementation and with itself.
-
-### Verification summary
-
-| Finding | Severity | Status |
-|---------|----------|--------|
-| F-01 (ROADMAP.md) | High | Resolved |
-| F-02 (PROJECT_STATE.md) | High | Resolved |
-
-No remaining unresolved Critical or High items.
+The two Low-severity items flagged in the prior review (F-01, F-02) have been remediated. Hard verification gates remain green. The implementation is merge-ready.
 
 ### Why "Approve" (not "Approve with Minor Changes")
 
-The 1st-pass review's only blockers (F-01, F-02) are both resolved. The implementer also folded in F-03 and F-05 as quality-of-life bonuses, which keeps the merge commit focused and the documentation honest. The Low-severity items the 1st-pass review explicitly flagged as "Acceptable to defer" remain deferred, which is consistent with the review's guidance.
+The remaining unresolved items (F-03, F-04, F-06) are all pre-existing, out of M7 scope, and explicitly deferred to future cleanup. F-05 is informational only. There is no remaining work the implementer must do before merge. This is a clean Approve.
 
-### Recommended next steps
+### Required for merge
 
-1. Merge the M6 work per the Git Workflow Protocol in `AGENTS.md`.
-2. Archive `plans/ACTIVE.md` to `plans/archive/` once the PR is merged.
-3. Open M7 (Difficulty Rebalance) work.
+None.
+
+### Optional follow-up (acceptable to defer)
+
+- F-03: Add a dedicated regression test for `Engine.startAtLevel` firing `onLevelUp` once.
+- F-04: Address the latent `getLevelData(state.level + 1)` dead code path in `Game.tsx:213`.
+- F-06: Remove the dead `?? 150` defensive fallback in `Engine.ts:135`.
+
+These can be folded into a future milestone's cleanup pass.
+
+### Net assessment (unchanged from prior pass)
+
+- Simplicity, maintainability, repository alignment, milestone completion, test coverage, and plan-review findings: all green.
+- The remediation closes the only documentation drift; the milestone is complete.

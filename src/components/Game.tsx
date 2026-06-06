@@ -150,7 +150,7 @@ export const Game = () => {
           </button>
         </div>
       )}
-      <ScoreBoard score={state.score} highScore={state.highScore} level={state.level} levelName={getLevelData(state.level).name} />
+      <ScoreBoard score={state.score} highScore={state.highScore} level={state.level} levelName={getLevelData(state.level).name} foodEaten={state.foodEaten} foodRequired={getLevelData(state.level).foodRequired} />
       <div className={styles.controlsRow}>
         <button
           className={styles.toolbarBtn}
