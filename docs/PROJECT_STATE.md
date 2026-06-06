@@ -8,33 +8,33 @@ v0.5.0
 
 ## Current Status
 
-Obstacle Redesign Complete
+Progress Persistence & Developer Experience In Progress
 
-All 10 levels now have handcrafted obstacle layouts that create distinct, memorable gameplay experiences. Level 1 is obstacle-free, and each subsequent level introduces a unique obstacle pattern.
+The milestone focus has shifted to progress persistence and developer experience improvements. Difficulty rebalance remains a planned future milestone.
 
 ---
 
 ## Current Milestone
 
-Milestone 6 - Difficulty Rebalance
+Milestone 6 - Progress Persistence & Developer Experience
 
 Current Goal:
 
-Create longer and more meaningful gameplay sessions.
+Reduce friction when replaying and testing levels.
 
 ---
 
 ## Current Priorities
 
-1. Replace score-based progression with food-objective system
-2. Rebalance speed curve for fairer mobile play
-3. Extend level duration so difficulty comes from layouts, not just speed
+1. Allow players to continue from the most recently unlocked level
+2. Provide a New Game option to restart from Level 1
+3. Implement developer-only level selection for faster iteration
 
 ---
 
 ## Next Milestone
 
-Milestone 6 - Difficulty Rebalance
+Milestone 7 - Difficulty Rebalance
 
 Planned Focus:
 
@@ -130,7 +130,7 @@ Planned Focus:
 
 ## In Progress
 
-- Difficulty rebalance (Milestone 6)
+- Progress persistence & developer experience (Milestone 6)
 
 ---
 
@@ -198,15 +198,16 @@ Milestone 5 success criteria (completed):
 
 Milestone 6 success criteria (in progress):
 
-- Levels last longer
-- Mobile remains playable
-- Difficulty feels fair
+- Players can quickly resume progress after failure
+- Players can choose to restart from Level 1
+- Developers can instantly test any level
+- Testing and balancing workflows become faster
 
 ---
 
 ## Important Notes
 
-The current objective is Milestone 6 — Difficulty Rebalance.
+The current objective is Milestone 6 — Progress Persistence & Developer Experience.
 
 The PWA is live at `https://adityasingh-x.github.io/snake-run/` and can be installed on phones and desktops.
 
