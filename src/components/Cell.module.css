@@ -1,13 +1,13 @@
 .cell {
-  border: 1px solid #1e293b;
+  border: 1px solid var(--color-cell-border);
   width: 100%;
   height: 100%;
 }
 
 .snakeHead {
-  background: #22c55e;
-  box-shadow: 0 0 12px rgba(34, 197, 94, 0.8);
-  border-radius: 2px;
+  background: var(--color-accent);
+  box-shadow: var(--shadow-neon-green-strong);
+  border-radius: var(--radius-sm);
   position: relative;
   display: flex;
   align-items: center;
@@ -36,20 +36,21 @@
 .snakeHead--right .eyes { flex-direction: column; align-items: flex-end; }
 
 .snakeBody {
-  background: #16a34a;
+  background: var(--color-accent-deep);
   border-radius: 1px;
 }
 
 .food {
-  background: #ef4444;
+  background: var(--color-danger);
   border-radius: 50%;
   animation: pulse 1s infinite;
 }
 
 .obstacle {
-  background: #6366f1;
-  border: 2px solid #818cf8;
-  box-shadow: 0 0 8px rgba(99, 102, 241, 0.5);
+  background: var(--color-obstacle);
+  border: 2px solid var(--color-obstacle-edge);
+  box-shadow: var(--shadow-neon-purple-soft);
+  border-radius: 2px;
 }
 
 @keyframes pulse {

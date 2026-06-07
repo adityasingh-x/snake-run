@@ -1,3 +1,62 @@
+@font-face {
+  font-family: "Press Start 2P";
+  src: url("/fonts/press-start-2p.woff2") format("woff2");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  /* Colors */
+  --color-bg: #1a1a2e;
+  --color-surface: #16213e;
+  --color-board-bg: #0f172a;
+  --color-text-primary: #f8fafc;
+  --color-text-body: #eee;
+  --color-text-label: #94a3b8;
+  --color-text-hint: #64748b;
+  --color-text-on-accent: #0f172a;
+  --color-accent-soft: #4ade80;
+  --color-accent: #22c55e;
+  --color-accent-deep: #16a34a;
+  --color-danger: #ef4444;
+  --color-warning: #fbbf24;
+  --color-obstacle: #6366f1;
+  --color-obstacle-edge: #818cf8;
+  --color-border-default: #475569;
+  --color-board-border: #334155;
+  --color-cell-border: #1e293b;
+
+  /* Typography */
+  --font-display: "Press Start 2P", system-ui, sans-serif;
+  --font-body: system-ui, -apple-system, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+
+  /* Spacing */
+  --space-xs: 0.25rem;
+  --space-sm: 0.5rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+
+  /* Shadows */
+  --shadow-neon-green: 0 0 12px rgba(74, 222, 128, 0.6);
+  --shadow-neon-green-strong: 0 0 12px rgba(34, 197, 94, 0.8);
+  --shadow-neon-red: 0 0 12px rgba(239, 68, 68, 0.6);
+  --shadow-neon-gold: 0 0 12px rgba(251, 191, 36, 0.6);
+  --shadow-neon-purple: 0 0 12px rgba(129, 140, 248, 0.6);
+  --shadow-neon-purple-soft: 0 0 8px rgba(99, 102, 241, 0.5);
+
+  /* Border radius */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 1rem;
+
+  /* Transitions */
+  --transition-fast: 150ms ease;
+  --transition-normal: 250ms ease;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -12,9 +71,9 @@ body {
   height: 100dvh;
   overflow: hidden;
   overscroll-behavior: none;
-  background: #1a1a2e;
-  color: #eee;
-  font-family: system-ui, -apple-system, sans-serif;
+  background: var(--color-bg);
+  color: var(--color-text-body);
+  font-family: var(--font-body);
 }
 
 body {

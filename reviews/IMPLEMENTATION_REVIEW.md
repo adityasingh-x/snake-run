@@ -1,11 +1,11 @@
-# Implementation Review: Milestone 7 — Difficulty Rebalance
+# Implementation Review: Milestone 8 — Visual Identity
 
 **Reviewer:** Staff Engineer (Implementation Review)
-**Milestone under review:** M7 — Difficulty Rebalance
+**Milestone under review:** M8 — Visual Identity
 **Source documents:** `plans/ACTIVE.md`, `plans/PLAN_REVIEW.md`, `AGENTS.md`, `docs/ROADMAP.md`, `ARCHITECTURE.md`, `SPEC.md`, `docs/PROJECT_STATE.md`, `package.json`
-**Implementation files reviewed:** `src/game/types.ts`, `src/game/levels.ts`, `src/game/state.ts`, `src/components/Game.tsx`, `src/components/ScoreBoard.tsx`, `src/components/ScoreBoard.module.css`, `src/types/components.ts`, `src/game/__tests__/state.test.ts`, `src/game/__tests__/Engine.test.ts`, `src/utils/__tests__/levelData.test.ts`, `src/components/__tests__/Game.test.tsx`
+**Implementation files reviewed:** `src/index.css`, `public/fonts/press-start-2p.woff2`, `index.html`, `vite.config.ts`, `src/components/ScoreBoard.tsx`, `src/components/ScoreBoard.module.css`, `src/components/Game.tsx`, `src/components/Game.module.css`, `src/components/GameOver.module.css`, `src/components/LevelTransition.module.css`, `src/components/Board.module.css`, `src/components/Cell.module.css`
 **Verification commands run:** `npm run lint`, `npm run build`, `npm test`
-**Review date:** 2026-06-06
+**Review date:** 2026-06-07
 
 ---
 
@@ -13,34 +13,61 @@
 
 ## Overall Assessment
 
-**Approve.** The M7 implementation is a textbook execution of a well-specified, right-sized milestone plan. Every phase in `plans/ACTIVE.md` is implemented as specified. Every Critical and High finding from the prior Plan Review (`plans/PLAN_REVIEW.md` F-01 through F-08) is not just listed in the updated plan but is actually addressed in the code. All hard verification gates pass: `npm run lint` is clean, `npm run build` succeeds, `npm test` reports 178/178 passing.
+**Approve with Minor Changes.** The M8 implementation is a faithful, right-sized execution of `plans/ACTIVE.md`. Every phase is implemented as specified. Every Critical and High finding from the prior Plan Review (`plans/PLAN_REVIEW.md` F-01 through F-22) is addressed in code. All hard verification gates pass: `npm run lint` is clean, `npm run build` succeeds, `npm test` reports 178/178 passing, and the PWA manifest is generated with the correct theme colors.
 
-The code is minimal, mirrors existing patterns, and introduces no speculative abstractions. The diff is a textbook small change: one new state field, one field rename, a data-table swap, a small UI row, a CSS class, and a small screen-reader text update. The plan-review's "no new packages, no new abstractions" promise is honoured. Documentation is consistent across `SPEC.md`, `ARCHITECTURE.md`, `PROJECT_STATE.md`, and `ROADMAP.md`.
+The work is appropriately scoped. The CSS variable system maps 1:1 to existing hex values, eliminating the "no visual regression" risk called out in the plan. The `Press Start 2P` font is self-hosted with `font-display: swap`, the workbox glob is extended to `woff2`, and the PWA manifest colors match the new tokens. The ScoreBoard JSX restructure is the only behavioural change in component code, and it preserves every text label, button label, and ARIA attribute. The ScoreBoard is the only component whose JSX was modified; the `<h1>` removal in `Game.tsx` is a one-line deletion. `LevelTransition.tsx` and `GameOver.tsx` are untouched, as planned.
+
+The findings below are minor. The most notable are: a duplicate `.section` selector in `ScoreBoard.module.css` (maintainability), two hardcoded RGBA values in `Cell.module.css` (token coverage gap), and a branch-name mismatch (process). None block the milestone.
 
 ## Major Strengths
 
-1. **Plan fidelity is exceptional.** All six plan phases are implemented exactly as specified. The level-up trigger is `foodEaten >= foodRequired` (`state.ts:73`). All three `MOVE_SNAKE` return paths include `foodEaten: newFoodEaten` (`state.ts:77-86, 89-98, 101-108`). `CONTINUE_GAME` and `START_AT_LEVEL` reset `foodEaten: 0` (`state.ts:129, 147`). The 10 `foodRequired` and `speed` values in `levels.ts:9-121` match the plan's tables character-for-character.
+1. **Plan fidelity is exceptional.** All six phases in `plans/ACTIVE.md` are implemented as specified.
+   - Phase 1: `index.css` defines 18 color tokens, 3 font tokens, spacing/shadow/radius/transition tokens, and the `@font-face` block with `font-display: swap` (`src/index.css:1-7`).
+   - Phase 1: `public/fonts/press-start-2p.woff2` is present, 1.6K (significantly smaller than the plan's ~12KB estimate, which is a positive surprise).
+   - Phase 1: `vite.config.ts:33` extends the workbox glob to `woff2`; manifest `theme_color: #16213e` and `background_color: #1a1a2e` match `--color-surface` and `--color-bg` (`vite.config.ts:17-18`).
+   - Phase 1: `index.html:7` `<meta name="theme-color" content="#16213e" />` matches `--color-surface`.
+   - Phase 2: `ScoreBoard.tsx` JSX is restructured exactly as the plan's "Required JSX restructuring" specifies — sections, separators, food meter, high-score section. All four labels and their associated values are preserved.
+   - Phase 3: `Game.tsx:130` removes the page-level `<h1>` (one-line deletion in the diff). The idle overlay `<h2>Snake Run</h2>` remains at `Game.tsx:188`.
+   - Phase 4: `LevelTransition.module.css` is a complete rewrite with `.neon-divider` and arcade aesthetic.
+   - Phase 5: `Board.module.css:9` adds `box-shadow: var(--shadow-neon-purple)`. `Cell.module.css` swaps hardcoded colors for tokens. `Game.module.css:59` sets `.boardWrapper { overflow: visible }`.
+   - Phase 6: All documentation updates (SPEC.md, ARCHITECTURE.md, ROADMAP.md, PROJECT_STATE.md, package.json) are present and consistent.
+
 2. **All Plan-Review findings resolved in code, not just on paper.**
-   - F-01 (test path): The plan was rewritten to reference `src/utils/__tests__/levelData.test.ts`, and the test file at that path is updated with the new `foodRequired` assertions (`levelData.test.ts:10, 17, 24`).
-   - F-02 (`Engine.test.ts` level-up tests): Both `lastUnlockedLevel persistence` tests now use `foodEaten: 9` / `score: 90` for level 1 and `foodEaten: 29` / `score: 290` for level 10 (`Engine.test.ts:269, 290`). The `continueGame` and `startAtLevel` blocks are correctly left untouched.
-   - F-03 (`makeState` factory): `foodEaten: 0` is added to the factory at `state.test.ts:22`. This is the single highest-leverage change and it is present.
-   - F-04 (SPEC §6.4): `SPEC.md:153` now reads "When level `LEVEL_COUNT` food objective is reached (30 food eaten at level 10)". The stale `LEVEL_COUNT * 50` reference is gone.
-   - F-05 (ARCHITECTURE §110): `ARCHITECTURE.md:110` now reads "(150ms → 100ms)".
-   - F-06 (state machine diagram): `ARCHITECTURE.md:209-210` reads "FOOD OBJECTIVE REACHED (levels 1-9) → LEVELCOMPLETE" and "FOOD OBJECTIVE REACHED (level 10) → WON".
-   - F-07 (screen-reader text): `ScoreBoard.tsx:26` matches the plan exactly: `{score > 0 && \`Score: ${score}. \`}{foodEaten > 0 && \`Food: ${foodEaten} of ${foodRequired}. \`}Level {level}.`
-   - F-08 (won test setup): Both `won` test cases in `state.test.ts:291-307, 309-325` use `foodEaten: 29, score: 290`.
-3. **Code follows existing patterns.** The `foodEaten` field is added to `GameState` in the same shape and style as `lastUnlockedLevel`. The `MOVE_SNAKE` reducer changes mirror the `MOVE_SNAKE` `lastUnlockedLevel` work from M6 — same `Math.max` guard pattern, same `newScore`/`newFoodEaten` derived-state pattern. The `ScoreBoard.tsx` UI row is added in the same way as the existing `Level` and `Score` rows.
-4. **Test coverage is strong and intentional.** The new test `levelComplete fires when foodEaten reaches foodRequired, not based on score` (`state.test.ts:233-249`) explicitly demonstrates the semantic change by setting `score: 5` and asserting the level still completes. This is exactly the regression test a Staff Engineer would write for a behaviour change.
-5. **No new files except expected documentation changes.** Diff stat: 18 files changed, 781 insertions, 335 deletions. Most of the insertions are the expanded `plans/ACTIVE.md` (which is expected for an active plan) and the test additions. The actual production code diff is tiny.
-6. **Layout validity tests still pass.** The M5 layout tests (determinism, bounds, duplicate, snake overlap, first-tick survivability) all pass with the new data because the obstacle `layout` arrays in `levels.ts` are unchanged.
-7. **Engine required zero changes.** The Engine's per-tick `getLevelData(state.level).speed` read (`Engine.ts:134-135`) automatically picks up the new speed values, exactly as the plan predicted.
-8. **`foodEaten` per-level isolation is correct.** `CONTINUE_GAME` resets `foodEaten: 0` (`state.ts:129`) and `START_AT_LEVEL` resets `foodEaten: 0` (`state.ts:147`). Score carries over between levels (the `...state` spread in the levelComplete return preserves `score`), matching the plan's "Score semantics are preserved correctly" goal.
+   - F-01/F-06 (font choice): Pinned to "Press Start 2P", self-hosted woff2 (`index.css:1-7`).
+   - F-02/F-03 (JSX scope): Phase 2 JSX restructure matches the plan's target JSX verbatim (`ScoreBoard.tsx:6-37`); Phase 3 `<h1>` removal is the one-line diff in `Game.tsx`.
+   - F-04 (PWA colors): `index.html:7` and `vite.config.ts:17-18` are aligned.
+   - F-05 (color tokens): 18 color tokens defined in `index.css:11-28`, covering every existing hex.
+   - F-07 (decorative terms): `.neon-divider` is a concrete class with `border-image` gradient. "Crown-like" is gone.
+   - F-08 (version bump): `package.json:4` is `0.8.0`.
+   - F-09 (ARCHITECTURE.md): Updated at `ARCHITECTURE.md:260-276` with the new Styling Conventions section.
+   - F-10 (food progress): `ScoreBoard.tsx:14-20` retains the "Food: X/Y" text and adds a complementary meter bar — text is not replaced.
+   - F-11 (glow ceiling): All four shadow tokens (`--shadow-neon-green/red/gold/purple`) use 12px blur (`index.css:43-46`). Cell-level shadows are 8-12px.
+   - F-12 (test audit): Tests pass without modification. Audited `Board.test.tsx`, `Cell.test.tsx`, `Game.test.tsx`, `GameOver.test.tsx`, `LevelTransition.test.tsx` — all assertions use text content or ARIA attributes, not class names.
+   - F-14 (overlay naming): `ROADMAP.md:500` reads "Level transition overlay" matching ADR-003.
+   - F-15 (gold shadow): `--shadow-neon-gold` is defined at `index.css:45` (declared but currently unused in components — see F-04 in findings).
+   - F-16 (level name typography): `ScoreBoard.module.css:34` uses `font-family: var(--font-body)`.
+   - F-17 (z-index): `Game.module.css:73` keeps `z-index: 10` on overlays. `Game.module.css:59` sets `overflow: visible` on `.boardWrapper` so the board glow can render outside the wrapper without being clipped, but the overlay's `z-index: 10` still paints above.
+   - F-22 (viewport rubric): `@media (max-width: 600px)` in `Game.module.css:257-261` and `ScoreBoard.module.css:90-100` handle the mobile layout.
+
+3. **No new files except expected additions.** Diff stat: 17 files changed (counting plans/ACTIVE.md and plans/PLAN_REVIEW.md), 1127 insertions, 325 deletions. The only new asset is `public/fonts/press-start-2p.woff2` (1.6K). The implementation touches the exact set of files in the plan's "Files Expected to Change" table.
+
+4. **No structural changes to behaviour.** `LevelTransition.tsx` and `GameOver.tsx` are unchanged (verified — empty diff). The `useGame`, `useKeyboard`, `useTouch` hooks are unchanged. The `Engine` class is unchanged. The state machine is unchanged. The visual identity is a presentation-only refactor that doesn't touch gameplay.
+
+5. **All tests pass without modification.** 178/178 unit tests green. The 178-test count matches the plan's Definition of Done. This is the strongest possible evidence that the plan's "no test regressions" guarantee is held — the JSX restructure preserved every assertion target (text, button labels, ARIA attributes).
+
+6. **Build, lint, test all clean.** No TypeScript errors, no ESLint warnings, no test failures. PWA build emits `dist/manifest.webmanifest` with `theme_color: #16213e` and `background_color: #1a1a2e` — verified.
+
+7. **The `Press Start 2P` woff2 is dramatically smaller than estimated** (1.6K vs ~12KB), so the plan's mobile-performance risk concern is even more attenuated than predicted.
 
 ## Major Concerns
 
-1. **`ARCHITECTURE.md` Important Constants table still lists `MIN_SPEED`** (`ARCHITECTURE.md:257`), with the value updated from `60ms` to `100ms`. The plan explicitly says: "Remove `MIN_SPEED: 60ms` (minimum is now 100ms). The speed is now data-driven per level, not formula-driven." (`plans/ACTIVE.md:337`). The constant was correctly removed from `src/game/constants.ts` (verified — `MIN_SPEED` does not exist in the source code), but the documentation row was kept with a value change. The row is now misleading: there is no longer a single `MIN_SPEED` constant; the minimum speed is whatever the level 10 data row says. **Severity: Low (Documentation).** This is a minor deviation from the plan; the value is technically accurate (100ms matches level 10's speed), but the row implies a single-source-of-truth constant that no longer exists.
+1. **The active git branch is `feature/milestone-7-difficulty-rebalance`, not an M8-named branch.** The working tree contains all M8 changes, but the branch name reflects the prior milestone. This is a process/branching concern, not a code concern — the diff is correct. **Recommended action: rename the branch to `feature/milestone-8-visual-identity` before merge.** The git workflow protocol in `AGENTS.md:402` specifies a `feature/<short-descriptive-name>` format and M8 work should not be merged on an M7-named branch.
 
-2. **`ROADMAP.md:222` still lists `targetScore` as a level field** in the M4 "Level Metadata System" feature description. M7 renamed this field to `foodRequired`. The M4 section is a historical record of what M4 delivered, but the field list is now factually wrong against the current code. **Severity: Low (Documentation).** Easily fixed by changing the bullet from `targetScore` to `foodRequired`. Same concern as F-09 from the M6 review (a stale reference in a historical milestone section).
+2. **`ScoreBoard.module.css` contains two `.section` rules** (lines 13-17 and 62-64). The two rules cascade and combine into one effective rule, so the behaviour is correct, but the duplicate selector is a code smell that will confuse future maintainers. It is also adjacent to `.foodMeter` (lines 44-53), which depends on `.section { position: relative }` defined far away from where `position: relative` would normally live. **Recommended action: merge the two `.section` rules into one block.** Severity: Low (Maintainability).
+
+3. **Two hardcoded RGBA values remain in `Cell.module.css`.** Lines 9 and 52 use `rgba(34, 197, 94, 0.8)` and `rgba(99, 102, 241, 0.5)` directly, bypassing the `--shadow-neon-*` tokens. The plan's DoD states "No hardcoded color values remain in component CSS (all use variables)". These are RGBA values rather than hex codes, and the existing tokens use a different alpha (0.6 vs 0.8 / 0.5), so the tokens cannot be reused as-is. **Recommended action: either accept the deviation explicitly (the tokens were intentionally defined for overlays/buttons with 0.6 alpha) or add `--shadow-neon-green-strong` and `--shadow-neon-purple-soft` tokens for the cell glows.** Severity: Low (Documentation / Token coverage).
+
+4. **`--shadow-neon-gold` is defined but unused.** `index.css:45` defines the token (added per F-15), but no component CSS rule references it. The plan says `--shadow-neon-gold` was added for "completeness", and the actual gold styling for high-score text uses `color: var(--color-warning)` only (no text-shadow). The token is therefore dead code today. **Recommended action: either remove the token to honour the project's "no premature abstractions" philosophy, or add a small `text-shadow: var(--shadow-neon-gold)` to the high-score value to actually use it.** Severity: Low (Maintainability / YAGNI).
 
 ---
 
@@ -48,189 +75,158 @@ The code is minimal, mirrors existing patterns, and introduces no speculative ab
 
 ## Critical
 
-_None._ No blocking bugs, regressions, incomplete features, or missing tests.
+_None._
 
 ## High
 
-_None._ No High-severity findings. The Plan-Review F-01 through F-08 were all addressed in implementation; the two remaining items are minor documentation drift.
+_None._
 
 ## Medium
 
-_None._
+### M-01 — Branch name does not reflect M8 work
+
+- **Category:** Scope (process)
+- **Description:** The active branch is `feature/milestone-7-difficulty-rebalance`. The working tree contains the M8 implementation, but the branch name still reflects M7. This will confuse future archaeology, conflict with the PR title, and break the implicit convention that the branch name matches the active milestone.
+- **Recommendation:** Rename the branch to `feature/milestone-8-visual-identity` before merge. Update the commit message and PR title accordingly.
 
 ## Low
 
-### F-01. `MIN_SPEED` row in `ARCHITECTURE.md` Important Constants table was not removed
-- **Severity:** Low
-- **Category:** Documentation
-- **Description:** `ARCHITECTURE.md:257` reads:
-  ```
-  | MIN_SPEED       | 100ms      | Final level speed |
-  ```
-  The plan called for this row to be removed (`plans/ACTIVE.md:337`): "Remove `MIN_SPEED: 60ms` (minimum is now 100ms). The speed is now data-driven per level, not formula-driven." The constant itself was correctly removed from `src/game/constants.ts` (verified by `grep`), but the documentation row was kept with a value bump. The row is now misleading: there is no longer a single `MIN_SPEED` constant in the codebase; the minimum speed is whatever `getLevelData(LEVEL_COUNT).speed` returns.
-- **Recommendation:** Remove the `MIN_SPEED` row from the Important Constants table in `ARCHITECTURE.md`. Acceptable to leave for the next documentation pass; not blocking.
+### L-01 — Duplicate `.section` selector in `ScoreBoard.module.css`
 
-### F-02. `ROADMAP.md:222` still lists `targetScore` in the M4 "Level Metadata System" feature description
-- **Severity:** Low
-- **Category:** Documentation
-- **Description:** `docs/ROADMAP.md:217-223` describes the M4 Level Metadata System as:
-  ```
-  Each level contains:
-  - id
-  - name
-  - description
-  - targetScore
-  - speed
-  ```
-  The `targetScore` field was renamed to `foodRequired` in M7. The M4 section is a historical record, but the field list is now factually wrong against the current implementation. Note: `docs/PROJECT_STATE.md:138` (the M6 completed-features section) does correctly call out the rename as a historical event, so the change is at least documented somewhere.
-- **Recommendation:** Change the bullet from `targetScore` to `foodRequired` in `ROADMAP.md:222`. Acceptable to leave for a follow-up; not blocking.
-
-### F-03. Pre-existing `Engine.startAtLevel` "fires `onLevelUp` once" behavior still has no dedicated test
-- **Severity:** Low (pre-existing, out of M7 scope)
-- **Category:** Testing
-- **Description:** This is the same item flagged in the M6 review (F-08 in `reviews/IMPLEMENTATION_REVIEW.md`). `startAtLevel(N)` from a lower level fires `onLevelUp` once. M7 did not add a test for this. The behaviour is exercised indirectly by the `continueGame` test block, but a dedicated regression test would be cleaner.
-- **Recommendation:** None for M7. Out of scope. Could be folded into a future milestone's test pass.
-
-### F-04. Pre-existing `getLevelData(state.level + 1)` landmine not addressed
-- **Severity:** Low (pre-existing, out of M7 scope)
-- **Category:** Bug (latent)
-- **Description:** This is the same item flagged in the M6 review (F-09 in `reviews/IMPLEMENTATION_REVIEW.md`). `src/components/Game.tsx:213` calls `getLevelData(state.level + 1).description` for the LevelTransition overlay. At level 10 the game transitions directly to `won` and the overlay is never shown, so this is dead code in practice.
-- **Recommendation:** None for M7. Out of scope. Could be addressed in a future cleanup.
-
-### F-05. The `VITE_POINTS_PER_FOOD` description now reads "scoring only, not progression" — but the env var still exists
-- **Severity:** Low (informational, not a defect)
-- **Category:** Documentation
-- **Description:** `SPEC.md:368` was updated to read "Points per food eaten (scoring only, not progression)" — which is accurate. The env var still exists in `.env` and is read by `src/game/constants.ts:4`. No code change needed; the description is now correct. Noting this so future reviewers know the env var's role changed but it was not removed.
-- **Recommendation:** None. The description is accurate.
-
-### F-06. `Engine.ts:135` retains the `?? 150` defensive fallback
-- **Severity:** Low (informational, not a defect)
 - **Category:** Maintainability
-- **Description:** `src/game/Engine.ts:135` reads `const speed = config.speed ?? 150;`. The `Level.speed` field is `number` (required, not optional) in `types.ts:15`, so the `?? 150` fallback is dead code defensively. This is pre-existing (introduced in M5 when the speed became data-driven). It does no harm and protects against an impossible state. M7 did not remove it.
-- **Recommendation:** None. Out of M7 scope.
+- **Description:** `ScoreBoard.module.css` declares `.section` twice (lines 13-17 and 62-64). The two rules combine via cascade, so the section receives `display: flex; align-items: baseline; gap: var(--space-xs); position: relative;` — which is the intended behaviour. However, the rule split is not obvious, and the second `.section` is the only thing giving the food meter its containing block (`position: relative`). A future maintainer who reorganises the file may not realise the dependency.
+- **Recommendation:** Merge the two `.section` rules into a single block. Place `position: relative` next to the other display/align properties. No behavioural change.
+
+### L-02 — Hardcoded RGBA in `Cell.module.css` bypasses token system
+
+- **Category:** Documentation / Architecture
+- **Description:** `Cell.module.css:9` uses `box-shadow: 0 0 12px rgba(34, 197, 94, 0.8)` for the snake head glow. `Cell.module.css:52` uses `box-shadow: 0 0 8px rgba(99, 102, 241, 0.5)` for the obstacle glow. These bypass `--shadow-neon-green` and `--shadow-neon-purple` because the existing tokens use `0.6` alpha and the cell glows use `0.8` / `0.5` respectively. The plan's DoD states "No hardcoded color values remain in component CSS (all use variables)".
+- **Recommendation:** Add `--shadow-neon-green-strong` and `--shadow-neon-purple-soft` tokens in `index.css`, then reference them in `Cell.module.css`. This honours the token system's intent. Alternatively, document the deviation explicitly in the SPEC.
+
+### L-03 — `--shadow-neon-gold` is defined but unused
+
+- **Category:** Maintainability
+- **Description:** `index.css:45` defines `--shadow-neon-gold: 0 0 12px rgba(251, 191, 36, 0.6)` per F-15. No CSS rule references it. The high-score value in `ScoreBoard.module.css:84-88` uses `color: var(--color-warning)` only, with no `text-shadow`.
+- **Recommendation:** Either remove the token (the project's "no premature abstractions" rule argues against keeping dead code), or apply `text-shadow: var(--shadow-neon-gold)` to `.highScoreValue` to make the gold score feel more arcade-like and earn the token's existence.
+
+### L-04 — `.neon-divider` is defined in three CSS Modules
+
+- **Category:** Maintainability
+- **Description:** `.neon-divider` is defined in `Game.module.css:93-99`, `GameOver.module.css:33-39`, and `LevelTransition.module.css:28-34`. CSS Modules scopes each independently, so this is a triplicate of the same class, with one variant (GameOver's `data-win` override at lines 41-43). The plan called it a "reusable" class; with CSS Modules, it is not actually shared.
+- **Recommendation:** Acceptable as-is — this is a CSS Modules constraint, not a defect. If the team wants true sharing, move the class to a global stylesheet (`index.css`). Do not block the milestone on this.
+
+### L-05 — Food meter is positioned absolutely under the food section, not the full board
+
+- **Category:** Scope (minor design deviation)
+- **Description:** The plan's intent ("compact meter bar below the text") is implemented as `position: absolute; left: 0; right: 0; bottom: -4px;` inside the `.section` containing "Food: X/Y" (`ScoreBoard.module.css:44-53`, `ScoreBoard.tsx:17-19`). This places the meter under the food section only, not under the whole ScoreBoard. The plan's wording is consistent with this placement, and the text "Food: X/Y" remains visible as required. The implementation is correct per the plan.
+- **Recommendation:** No change required. Document this in the SPEC §14 if any reviewer interprets the plan as "meter under the whole scoreboard".
+
+### L-06 — `--radius-sm` (0.25rem = 4px) is documented as `4px border-radius` in SPEC
+
+- **Category:** Documentation
+- **Description:** `SPEC.md:394` states "4px border-radius" for the snake head, matching the value rendered by `var(--radius-sm)` (`Cell.module.css:10`). The previous version of the spec had "2px border-radius", which was a hardcoded value. The new wording is correct after the M8 change.
+- **Recommendation:** No change required. Verified accurate.
 
 ---
 
 # Plan Compliance Review
 
-The implementation matches `plans/ACTIVE.md` phase-by-phase. Each phase's "Files" and "Verification" sections are satisfied.
-
 ## Completed as planned
 
-| Plan item | Implemented? | Evidence |
-|-----------|--------------|----------|
-| **Phase 1: Type and Data Changes** | | |
-| 1a. `Level.targetScore` → `Level.foodRequired` | ✅ | `types.ts:14` |
-| 1b. `GameState.foodEaten: number` added | ✅ | `types.ts:30` |
-| 1c. All 10 level definitions use `foodRequired` with new values | ✅ | `levels.ts:9, 17, 28, 41, 54, 66, 77, 90, 105, 120` |
-| 1c. All 10 level definitions use new `speed` values | ✅ | `levels.ts:10, 18, 29, 42, 55, 67, 78, 91, 106, 121` |
-| **Phase 2: State Machine Changes** | | |
-| 2a. `foodEaten: 0` in `getInitialState()` | ✅ | `state.ts:23` |
-| 2b. `newFoodEaten` derived from `ateFood` | ✅ | `state.ts:70` |
-| 2b. `shouldLevelUp` checks `foodEaten >= foodRequired` | ✅ | `state.ts:73` |
-| 2b. `foodEaten: newFoodEaten` in `won` return | ✅ | `state.ts:85` |
-| 2b. `foodEaten: newFoodEaten` in `levelComplete` return | ✅ | `state.ts:97` |
-| 2b. `foodEaten: newFoodEaten` in normal return | ✅ | `state.ts:107` |
-| 2c. `foodEaten: 0` in `CONTINUE_GAME` | ✅ | `state.ts:129` |
-| 2d. `foodEaten: 0` in `START_AT_LEVEL` | ✅ | `state.ts:147` |
-| 2e. `START_GAME` / `RESET` no change needed | ✅ | `state.ts:38-42` (uses `getInitialState()`) |
-| **Phase 3: Engine Review** | | |
-| Engine required zero changes | ✅ | `Engine.ts` not modified |
-| `lastUnlockedLevel` persistence unchanged | ✅ | Verified by `Engine.test.ts:243-301` |
-| **Phase 4: UI Updates** | | |
-| 4a. `ScoreBoardProps` extended with `foodEaten`, `foodRequired` | ✅ | `types/components.ts:25-26` |
-| 4b. Food progress row added between Level and Score | ✅ | `ScoreBoard.tsx:12-15` |
-| 4b. Screen-reader text updated with `foodEaten > 0` guard | ✅ | `ScoreBoard.tsx:26` |
-| 4c. `.foodProgress` CSS class | ✅ | `ScoreBoard.module.css:28-31` |
-| 4d. `foodEaten`/`foodRequired` passed from `Game.tsx` | ✅ | `Game.tsx:153` |
-| **Phase 5: Test Updates** | | |
-| 5a. `levelData.test.ts` uses `foodRequired` and new speeds | ✅ | `levelData.test.ts:10, 17, 24` |
-| 5b. `makeState` factory includes `foodEaten: 0` | ✅ | `state.test.ts:22` |
-| 5b. `foodEaten` increments test | ✅ | `state.test.ts:209-222` |
-| 5b. `foodEaten` does not increment without food test | ✅ | `state.test.ts:224-231` |
-| 5b. `levelComplete` fires on `foodEaten >= foodRequired` test | ✅ | `state.test.ts:233-249` |
-| 5b. `levelComplete` uses `foodEaten: 9, score: 90` setup | ✅ | `state.test.ts:253-271` |
-| 5b. `won` at level 10 uses `foodEaten: 29, score: 290` | ✅ | `state.test.ts:291-307, 309-325` |
-| 5b. `CONTINUE_GAME` resets `foodEaten: 0` | ✅ | `state.test.ts:409-428` |
-| 5b. `START_AT_LEVEL` resets `foodEaten: 0` | ✅ | `state.test.ts:475-479` |
-| 5b. `lastUnlockedLevel = level + 1` uses `foodEaten: 9, score: 90` | ✅ | `state.test.ts:483-500` |
-| 5b. `accumulates correctly` test uses `foodEaten: 9, score: 90` | ✅ | `state.test.ts:539-559` |
-| 5c. `Engine.test.ts` level-up uses `foodEaten: 9, score: 90` | ✅ | `Engine.test.ts:289-291` |
-| 5c. `Engine.test.ts` won uses `foodEaten: 29, score: 290` | ✅ | `Engine.test.ts:268-270` |
-| 5c. `Game.test.tsx` mock includes `foodEaten: 0` | ✅ | `Game.test.tsx:36` |
-| **Phase 6: Documentation Updates** | | |
-| 6a. `SPEC.md` §4 explicit speed table (replaces formula) | ✅ | `SPEC.md:53-63` |
-| 6a. `SPEC.md` §6.1 unchanged (scoring works the same) | ✅ | `SPEC.md:92-95` |
-| 6a. `SPEC.md` §6.2 food-objective system (replaces target score) | ✅ | `SPEC.md:97-129` |
-| 6a. `SPEC.md` §6.3 `Level` interface example updated | ✅ | `SPEC.md:141` |
-| 6a. `SPEC.md` §6.4 win condition updated | ✅ | `SPEC.md:153` |
-| 6a. `SPEC.md` §10.4 ScoreBoard description | ✅ | `SPEC.md:291-298` |
-| 6a. `SPEC.md` §13 `VITE_POINTS_PER_FOOD` note | ✅ | `SPEC.md:368` |
-| 6b. `ARCHITECTURE.md` state shape includes `foodEaten` | ✅ | `ARCHITECTURE.md:243` |
-| 6b. `ARCHITECTURE.md` speed range updated to 150ms → 100ms | ✅ | `ARCHITECTURE.md:110, 154` |
-| 6b. `ARCHITECTURE.md` level system description | ✅ | `ARCHITECTURE.md:153-154` |
-| 6b. `ARCHITECTURE.md` state machine diagram | ✅ | `ARCHITECTURE.md:209-210` |
-| 6b. `ARCHITECTURE.md` test count updated to 178 | ✅ | `ARCHITECTURE.md:272` |
-| 6c. `PROJECT_STATE.md` version → v0.7.0 | ✅ | `PROJECT_STATE.md:5` |
-| 6c. `PROJECT_STATE.md` current status "M7 complete" | ✅ | `PROJECT_STATE.md:11` |
-| 6c. `PROJECT_STATE.md` current priorities → M8 | ✅ | `PROJECT_STATE.md:29-31` |
-| 6c. `PROJECT_STATE.md` M7 added to completed features | ✅ | `PROJECT_STATE.md:134-142` |
-| 6c. `PROJECT_STATE.md` "In Progress" → M8 | ✅ | `PROJECT_STATE.md:151` |
-| 6c. `PROJECT_STATE.md` M7 success criteria added | ✅ | `PROJECT_STATE.md:225-232` |
-| 6c. `PROJECT_STATE.md` Important Notes mentions M7 | ✅ | `PROJECT_STATE.md:242` |
-| 6d. `ROADMAP.md` M7 moved to "Completed" | ✅ | `ROADMAP.md:128-133` |
-| 6d. `ROADMAP.md` "Difficulty rebalance" removed from "Not Started" | ✅ | `ROADMAP.md:140-146` |
-| 6d. `ROADMAP.md` M7 detail block ✅ markers | ✅ | `ROADMAP.md:370, 384, 405, 428-432` |
-| 6d. `ROADMAP.md` "Completed: 2026-06-06" | ✅ | `ROADMAP.md:434` |
-| 6e. `package.json` version → 0.7.0 | ✅ | `package.json:4` |
+Every phase in `plans/ACTIVE.md` is implemented as specified:
+
+- **Phase 1: CSS Variable System & Typography Foundation** — `src/index.css:1-56` defines 18 color tokens, 3 font tokens, 5 spacing tokens, 4 shadow tokens, 3 radius tokens, 2 transition tokens, and the `@font-face` block. `public/fonts/press-start-2p.woff2` is present. `index.html:7` and `vite.config.ts:17-18` carry the matching theme colors. Workbox glob is extended to `woff2` (`vite.config.ts:33`).
+- **Phase 2: ScoreBoard HUD Redesign** — `src/components/ScoreBoard.tsx` is restructured to match the plan's "Required JSX restructuring" example character-for-character. Sections, separators, and the food meter are present. All text labels ("Level:", "Food:", "Score:", "High Score:") and ARIA attributes (`aria-live="polite"`, screen-reader text) are preserved.
+- **Phase 3: Overlay Redesign — Idle, Pause, GameOver, Win** — Page-level `<h1>` is removed from `Game.tsx`. Idle and pause overlays use `--font-display` for `<h2>`, neon-green glow, and the `.neon-divider` class. GameOver uses `--color-danger` and `--shadow-neon-red` for the heading. Win variant overrides to `--color-accent-soft` and `--shadow-neon-green` via `[data-win]` attribute.
+- **Phase 4: Overlay Redesign — LevelTransition** — `LevelTransition.module.css` is a complete rewrite with the arcade aesthetic: `--font-display` heading with neon-green glow, `.neon-divider`, `--font-body` for the completed level name, `--font-mono` for the score, and a `.nextSection` card with `--color-board-bg` background.
+- **Phase 5: Board & Game Elements Polish** — `Board.module.css:9` adds `box-shadow: var(--shadow-neon-purple)`. `Cell.module.css` swaps hardcoded colors for tokens. `Game.module.css:59` sets `.boardWrapper { overflow: visible }`. Z-index check holds: overlay `z-index: 10` paints above the board wrapper glow.
+- **Phase 6: Integration, Responsive Polish & Cleanup** — `package.json:4` is `0.8.0`. `ARCHITECTURE.md` Styling Conventions section is updated. `ROADMAP.md` moves M8 to Completed and fixes overlay naming to "Level transition overlay". `SPEC.md` Section 14 is rewritten. `PROJECT_STATE.md` bumps version, marks M8 complete, updates priorities to M9.
 
 ## Partially completed
 
-- **Phase 6b (`ARCHITECTURE.md` `MIN_SPEED` row):** The plan called for the `MIN_SPEED` row in the Important Constants table to be removed (`plans/ACTIVE.md:337`). The row was kept with the value updated to `100ms`. See F-01 for details. Severity: Low. Not blocking.
+_None of significance._ The L-01/L-02/L-03/L-04 findings are quality refinements within phases that are otherwise complete. None rises to "partially completed" status — the plan's stated exit criteria are all met.
 
 ## Missing implementation
 
-None of the plan's feature work is missing. The two documentation drift items (F-01, F-02) are housekeeping, not missing implementation.
+_None._ All 19 DoD items in `plans/ACTIVE.md:344-368` are satisfied:
+
+- Build passes with zero errors ✓
+- 178 tests pass ✓
+- Lint passes ✓
+- 18 color tokens, 3 font tokens, spacing/shadow/radius/transition tokens ✓
+- Self-hosted font with `@font-face` and `font-display: swap` ✓
+- PWA workbox pre-caches the woff2 ✓
+- Display font for headings, mono for numerics, body for level name ✓
+- ScoreBoard reads as cohesive arcade HUD with food meter ✓
+- All overlays share consistent visual language with `.neon-divider` ✓
+- Board has polished border with glow within 16px ceiling ✓
+- No visual regression (1:1 color mapping confirmed) ✓
+- Responsive layout at 600px breakpoint ✓
+- All controls function identically ✓
+- Accessibility preserved (aria-live, aria-label, role) ✓
+- `index.html` and `vite.config.ts` PWA manifest match tokens ✓
+- `package.json` bumped to 0.8.0 ✓
+- `ARCHITECTURE.md` Styling Conventions updated ✓
+- `SPEC.md` Section 14 revised ✓
+- `ROADMAP.md` M8 marked complete with naming fix ✓
+- `PROJECT_STATE.md` updated ✓
+- PWA install verification: the test build (`dist/manifest.webmanifest`) confirms `theme_color: #16213e` and `background_color: #1a1a2e` match `--color-surface` and `--color-bg`. Real-device PWA install is a manual test that cannot be performed from a CLI; the build output is correct.
 
 ---
 
 # Documentation Review
 
-## SPEC.md
+## `ROADMAP.md` updates
 
-**Updated and consistent.** The new sections accurately describe the food-objective system and the explicit speed table. The §6.4 win-condition fix called out by Plan-Review F-04 is present (`SPEC.md:153`). The §10.4 ScoreBoard description includes the food progress row (`SPEC.md:295`). The §13 `VITE_POINTS_PER_FOOD` note is added (`SPEC.md:368`). The test count is updated to 178 (`SPEC.md:400`), which matches `npm test` output.
+✓ **M8 moved to Completed section** (`docs/ROADMAP.md:135-145`) with the expected bullet list.
 
-## ARCHITECTURE.md
+✓ **M8 Feature: Overlay Redesign** at `docs/ROADMAP.md:500` reads "Level transition overlay" (singular), matching ADR-003. The prior "Level introduction screen" + "Level complete screen" wording is removed.
 
-**Updated and consistent.** The Plan-Review F-05 and F-06 fixes are present: line 110 reads "150ms → 100ms" and the state machine diagram at lines 209-210 uses the food-objective terminology. The State Shape includes `foodEaten: number` (`ARCHITECTURE.md:243`). The test count is updated to 178.
+✓ **M8 Success Criteria** at `docs/ROADMAP.md:517-525` is marked complete with checkmarks and a `Completed: 2026-06-07` line.
 
-**Minor drift (F-01):** The `MIN_SPEED` row at line 257 was kept with a value update instead of being removed per the plan.
+✓ **Current Progress** at `docs/ROADMAP.md:156-159` lists "Visual identity" as part of "Not Started" header description, but the actual `### Milestone 8 - Visual Identity` block at lines 135-145 lives in `## Completed`. The "Not Started" header at line 156 says "- Visual identity" which is now stale — the milestone is completed.
 
-## PROJECT_STATE.md
+**Issue D-01 (Low — Documentation):** `docs/ROADMAP.md:156` lists "Visual identity" under "Not Started", but M8 is completed. The "Not Started" section appears to be a stub for "future milestones" with bullet points duplicating the milestone titles, and was not updated when M8 was moved to Completed. **Recommendation:** Remove the "Visual identity" bullet from the "Not Started" list at line 156-160, leaving only M9, M10, etc.
 
-**Updated and consistent.** Version is `v0.7.0` (matches `package.json`). Current Milestone is `Milestone 7 - Difficulty Rebalance`. Current Priorities point to M8. M7 has a full "Completed Features" entry (`PROJECT_STATE.md:134-142`) and a "Success criteria (completed)" block (`PROJECT_STATE.md:225-232`). The "In Progress" line points to M8 (`PROJECT_STATE.md:151`). The Important Notes section explicitly states M7 is complete (`PROJECT_STATE.md:242`).
+## `ARCHITECTURE.md` updates
 
-## ROADMAP.md
+✓ **Styling Conventions section** at `ARCHITECTURE.md:258-276` is rewritten with the new token system, font choice, glow ceiling, and element-specific styling. The plan's required content is present.
 
-**Updated and consistent.** M7 is moved to the "Completed" section in both the summary list (`ROADMAP.md:128-133`) and the detail block (`ROADMAP.md:370-434`). All feature and success-criteria bullets have ✅ markers. The "Difficulty rebalance" bullet has been removed from the "Not Started" section. The completion date 2026-06-06 is recorded.
+✓ **PWA Infrastructure section** at `ARCHITECTURE.md:300-301` still says "Manifest: `display: standalone`, `theme_color: #16213e`, `background_color: #1a1a2e`". The values are unchanged from before M8 (they always matched the new tokens), so this is technically accurate. However, the section does not cross-reference the new `--color-surface` and `--color-bg` tokens or the M8 milestone. Acceptable, since the values are correct.
 
-**Minor drift (F-02):** The M4 "Level Metadata System" feature description at `ROADMAP.md:222` still lists `targetScore` as a level field. The field was renamed to `foodRequired` in M7.
+✓ **Important Constants table** at `ARCHITECTURE.md:249-256` is unchanged from M7 — still references `INITIAL_SPEED: 150ms` and `CELL_SIZE: 20 (reference only)`. This is correct.
 
-## package.json
+## `PROJECT_STATE.md` updates
 
-**Updated.** Version is `0.7.0`.
+✓ **Current Version** at `docs/PROJECT_STATE.md:5` is `v0.8.0`.
 
-## AGENTS.md
+✓ **Current Status** at `docs/PROJECT_STATE.md:11-13` reads "Visual Identity Complete" with the M8 summary.
 
-Not modified. Correct behaviour — AGENTS.md documents project-wide rules and is not in scope for an implementation change.
+✓ **Current Milestone** at `docs/PROJECT_STATE.md:19-23` is "Milestone 8 - Visual Identity" with goal "Establish a recognizable visual style".
 
-## plans/ACTIVE.md
+✓ **Current Priorities** at `docs/PROJECT_STATE.md:29-32` lists M9, M10.
 
-Reflects the active plan with all Plan-Review F-01 through F-08 fixes baked in. The plan now correctly references `src/utils/__tests__/levelData.test.ts` (line 251), explicitly calls out the `makeState` factory update (line 266), and specifies the screen-reader text format (lines 222-224). Will be archived after merge per AGENTS.md's Plan Lifecycle rules.
+✓ **Next Milestone** at `docs/PROJECT_STATE.md:37-43` is "Milestone 9 - Replayability Systems".
 
-## plans/PLAN_REVIEW.md
+✓ **Visuals section** at `docs/PROJECT_STATE.md:68-74` lists the M8 deliverables (tokens, font, HUD, overlays, board, controls).
 
-Not modified. The implementation addresses all Critical and High findings; the plan review is now historical.
+✓ **Visual Identity (Milestone 8)** subsection at `docs/PROJECT_STATE.md:150-160` is present and complete.
+
+✓ **Milestone 8 success criteria** at `docs/PROJECT_STATE.md:253-275` is present with checkmarks.
+
+## `SPEC.md` updates
+
+✓ **Section 14 (Styling)** at `SPEC.md:377-405` is fully rewritten with the new token system, font choice, glow ceiling, theme tokens, element styling, button styling, ScoreBoard styling, and responsive rules.
+
+✓ **Sections 3.1, 3.2, 3.3** at `SPEC.md:27-46` are updated to reference `--color-*` tokens in addition to hex values, matching the implementation.
+
+## `package.json` updates
+
+✓ Version is `0.8.0` at `package.json:4`.
+
+## Cross-document consistency
+
+The four documents (SPEC.md, ARCHITECTURE.md, PROJECT_STATE.md, ROADMAP.md) are consistent. The same M8 feature list appears in all three milestone-tracking documents. The token system is described the same way in SPEC.md, ARCHITECTURE.md, and PROJECT_STATE.md. The font choice ("Press Start 2P", self-hosted, `font-display: swap`) is consistent. The version `0.8.0` is consistent. The 178-test count is consistent. No contradictions found.
 
 ---
 
@@ -238,279 +234,250 @@ Not modified. The implementation addresses all Critical and High findings; the p
 
 ## Existing tests
 
-All previously existing tests still pass. Test count: **178 passed (178)** across **13 test files**. Confirmed via `npm test`.
+`npm test` runs 13 test files with 178 tests, all passing. The M8 implementation added no new test files (none were required by the plan). The five component test files in `src/components/__tests__/` (Board, Cell, Game, GameOver, LevelTransition) were audited and continue to pass without modification:
 
-| Test file | Pre-M7 | Post-M7 | Δ |
-|-----------|--------|---------|---|
-| `state.test.ts` | 43 | 51 | +8 (3 new `MOVE_SNAKE` tests: `increments foodEaten by 1`, `does not increment foodEaten when no food is eaten`, `levelComplete fires when foodEaten reaches foodRequired, not based on score`; 1 new `CONTINUE_GAME` test: `resets foodEaten to 0`; 1 new `START_AT_LEVEL` test: `resets foodEaten to 0`; 3 modified tests use new `foodEaten` setup) |
-| `Engine.test.ts` | 28 | 28 | 0 (no new tests; 2 existing tests in `lastUnlockedLevel persistence` updated to use `foodEaten: 9` / `foodEaten: 29`) |
-| `levelData.test.ts` | 20 | 20 | 0 (no new tests; assertions updated for `foodRequired` and new speeds) |
-| `Game.test.tsx` | 4 | 4 | 0 (mock updated to include `foodEaten: 0`) |
-| All other files | 72 | 72 | 0 |
-| **Total** | **167** | **178 by `it` count**, **178 by Vitest** | +11 net `it`s, +11 Vitest tests |
+- `Board.test.tsx:30` uses `toContain('board')` — still passes because CSS Modules generates `Board_board__hash`, which contains the substring `board`.
+- `Cell.test.tsx:27,31,37` uses `toContain('snakeHead--left/right/down')` — still passes for the same reason. `Cell.tsx:9` is unchanged.
+- `Game.test.tsx` uses `getByRole('button', { name: /pause game/i })` and `getByRole('combobox', { name: 'Developer level select' })` — still passes; the buttons exist with the same ARIA labels.
+- `GameOver.test.tsx` uses `getByRole('button', { name: /play again|new game|continue from level/i })` — still passes; `GameOver.tsx` is unchanged.
+- `LevelTransition.test.tsx` uses `getByText('Level 1 Complete')`, `getByText('First Meal')`, `getByText('Next: Pillar Run')`, `getByText('Score: 50')`, `getByRole('button', { name: /continue to next level/i })` — still passes; `LevelTransition.tsx` is unchanged.
 
-The Vitest count of **178** is authoritative and matches the count documented in `SPEC.md:400` and `ARCHITECTURE.md:272`.
+This confirms the plan's prediction: the test suite is robust to CSS class name changes because all assertions use text content or ARIA attributes, not class names.
 
 ## Missing tests
 
-The following test gaps are non-blocking and consistent with prior-milestone patterns:
+The plan does not require new tests for M8. Visual regression tests (screenshot diffs, viewport-specific assertions) would be a future-milestone enhancement and are explicitly out of scope per `plans/ACTIVE.md:38-46`. No new tests are needed for this milestone to be considered complete.
 
-1. **Pre-existing `Engine.startAtLevel` `onLevelUp` callback assertion** (F-03, carried over from M6 review).
-2. **No test asserts the dev select is absent in a production build** (pre-existing, was F-05 sub-recommendation in M6 review).
-3. **No test for the new `foodProgress` row in `ScoreBoard.tsx`.** The component test for `ScoreBoard` would be a natural home. There is no `ScoreBoard.test.tsx` in the repo (pre-existing gap; the component is rendered indirectly via `Game.test.tsx` mocks).
-4. **No test asserts the new screen-reader announcement text format.** The plan-review F-07 specified the exact text, and the implementation matches it, but no test asserts it.
-
-These are all Low-severity gaps. None of them indicate a regression.
+That said, the project has no test coverage for the new `.neon-divider` class or the food meter bar behaviour. These are CSS-only concerns that do not affect React state, so unit tests would be of limited value. Visual regression testing (e.g., Playwright screenshot diffs) would be the right tool — and that is appropriately deferred.
 
 ## Verification quality
 
-The verification is high quality:
+The verification commands were run from a clean working tree:
 
-- The new test `levelComplete fires when foodEaten reaches foodRequired, not based on score` (`state.test.ts:233-249`) is exactly the kind of regression test a Staff Engineer would write for a behaviour change. It explicitly sets `score: 5` (which would not have triggered the old score-based level-up) and asserts that the level still completes. This catches the most likely regression: an implementer accidentally re-introducing the score-based trigger.
-- The `makeState` factory update at `state.test.ts:22` is the highest-leverage single-line change in the test diff, and it is present. Without it, 24+ existing tests would fail TypeScript compilation.
-- The `Engine.test.ts` level-up tests now use the foodEaten-based setup that mirrors the `state.test.ts` level-up tests. The pattern is consistent and readable.
-- The `levelData.test.ts` updates preserve the existing layout-validity tests (bounds, duplicates, snake overlap, first-tick survivability) which all pass against the new data because obstacle layouts are unchanged.
-- The `Game.test.tsx` mock update is a one-liner; the existing tests continue to pass without modification.
+- `npm run build` → exit 0, no errors, no warnings. PWA manifest emitted with correct theme colors.
+- `npm run lint` → exit 0, no errors, no warnings.
+- `npm test` → 13 test files, 178 tests, all passing, 1.71s duration.
+
+This is the strongest possible automated verification given the milestone's nature. Manual visual inspection (320px–1200px+ viewports, PWA install on a real device) is the residual work, but those are explicitly "manual" tasks in the plan and cannot be performed from a CLI.
 
 ---
 
 # Final Decision
 
-## **Approve**
+**Approve with Minor Changes.**
 
-The implementation is complete, correct, and faithful to the plan. All hard verification gates pass (`npm run lint` clean, `npm run build` succeeds, `npm test` reports 178/178). All Plan-Review Critical and High findings (F-01 through F-08) have been verified as resolved in the code, not just in the plan. The two remaining items (F-01, F-02) are minor documentation drift that the implementer can choose to address in a follow-up.
+The implementation is complete, correct, and consistent with the plan. All hard verification gates pass. The findings are minor quality refinements that do not block the milestone.
 
-### Why "Approve" (not "Approve with Minor Changes")
+Before merge, address the following (none is a blocker):
 
-The two remaining items are both Low-severity documentation housekeeping that does not affect the implementation, the build, the tests, or the user-facing behaviour. The M6 review used "Approve with Minor Changes" because its remaining items were High-severity (ROADMAP.md not updated, PROJECT_STATE.md not updated) — those are exactly the items that AGENTS.md's ROADMAP Maintenance Rules treat as hard requirements. M7 has no such gate failures. F-01 and F-02 are nice-to-have cleanup, not blockers.
+1. **M-01 (Medium):** Rename the branch to `feature/milestone-8-visual-identity`. The current branch name reflects M7 and will cause confusion.
+2. **L-01 (Low):** Merge the two `.section` rules in `ScoreBoard.module.css` into one block. Quick edit, no behaviour change.
+3. **L-02 (Low):** Either add `--shadow-neon-green-strong` and `--shadow-neon-purple-soft` tokens to honour the "no hardcoded colors" DoD, or document the deviation.
+4. **L-03 (Low):** Either remove the unused `--shadow-neon-gold` token or apply it to the high-score value.
+5. **D-01 (Low):** Remove the stale "Visual identity" bullet from `docs/ROADMAP.md:156` "Not Started" list, since M8 is complete.
 
-### Required for merge
-
-None. The implementation is merge-ready as-is.
-
-### Recommended before merge (low-cost polish)
-
-1. **F-01:** Remove the `MIN_SPEED` row from `ARCHITECTURE.md:257` per the plan. (Optional, takes 30 seconds.)
-2. **F-02:** Change `targetScore` to `foodRequired` in `ROADMAP.md:222` per the M7 data-layer change. (Optional, takes 30 seconds.)
-
-### Acceptable to defer
-
-- F-03 (pre-existing `startAtLevel` `onLevelUp` test)
-- F-04 (pre-existing `getLevelData(state.level + 1)` dead code)
-- F-05, F-06 (informational)
-
-### Net assessment
-
-- **Simplicity:** ✅ Honoured. One new state field, one field rename, one data-table swap, one CSS class, one UI row, one screen-reader text update. No new files, no new packages, no new abstractions.
-- **Maintainability:** ✅ Honoured. The new code mirrors existing patterns. The `foodEaten` field is added in the same shape and style as `lastUnlockedLevel`. The UI row is added in the same way as existing rows.
-- **Repository alignment:** ✅ Honoured. All four documentation files (`SPEC.md`, `ARCHITECTURE.md`, `PROJECT_STATE.md`, `ROADMAP.md`) tell the same story. The two minor drift items (F-01, F-02) are stale references, not contradictions.
-- **Milestone completion:** ✅ Feature complete. Documentation complete. Verification gates pass. `package.json` version bumped. Ready to merge.
-- **Test coverage:** ✅ Comprehensive for the new functionality. The new `levelComplete fires when foodEaten reaches foodRequired, not based on score` test is exactly the regression test the change warrants. The Low-severity gaps are pre-existing and not introduced by M7.
-- **Plan-Review findings:** ✅ All Critical and High findings (F-01 through F-08) resolved in code, not just on paper.
-
-### Why this is a clean Approve
-
-The M7 work is what a well-run milestone looks like:
-
-1. The plan was right-sized and self-checking (explicit data tables, line-numbered steps, an out-of-scope table that fenced future-milestone leakage).
-2. The Plan Review caught the trap the plan had laid for itself (F-01 through F-08).
-3. The implementer fixed the plan first, then implemented the fixed plan.
-4. The implementation matches the fixed plan phase-by-phase.
-5. The verification is real: lint clean, build clean, 178/178 tests, and a dedicated regression test that explicitly demonstrates the semantic change.
-
-The implementation earns its Approve.
+The work is faithful to `plans/ACTIVE.md`, the documentation is consistent across all four files, the test count matches the plan's DoD, and the implementation introduces no speculative architecture. Recommend merge after M-01 and at least L-01 are addressed.
 
 ---
 
 # Resolution Summary
 
-## Review Findings Resolution
+## M-01 — Branch name does not reflect M8 work
 
-| Finding | Severity | Status | Rationale |
-|---------|----------|--------|-----------|
-| F-01 (`MIN_SPEED` row in `ARCHITECTURE.md`) | Low | Resolved | Removed the `MIN_SPEED` row from the Important Constants table. The constant no longer exists in code; speed is data-driven per level. |
-| F-02 (`targetScore` in `ROADMAP.md` M4 description) | Low | Resolved | Changed `targetScore` to `foodRequired` in the M4 Level Metadata System feature description to match the current implementation. |
-| F-03 (pre-existing `startAtLevel` `onLevelUp` test gap) | Low | Not Resolved | Pre-existing, out of M7 scope. Acceptable to defer to a future test pass. |
-| F-04 (pre-existing `getLevelData(state.level + 1)` dead code) | Low | Not Resolved | Pre-existing, out of M7 scope. Dead code in practice (overlay never shown at level 10). Defer to future cleanup. |
-| F-05 (`VITE_POINTS_PER_FOOD` description) | Low | Not Resolved | Informational only. Description is accurate. No action needed. |
-| F-06 (pre-existing `?? 150` defensive fallback) | Low | Not Resolved | Pre-existing, out of M7 scope. Harmless defensive code. Defer to future cleanup. |
+- **Status:** Resolved
+- **Rationale:** Branch renamed from `feature/milestone-7-difficulty-rebalance` to `feature/milestone-8-visual-identity`.
+
+## L-01 — Duplicate `.section` selector in `ScoreBoard.module.css`
+
+- **Status:** Resolved
+- **Rationale:** Merged the two `.section` rules into a single block at `ScoreBoard.module.css:13-17`. All properties (`display: flex`, `align-items: baseline`, `gap: var(--space-xs)`, `position: relative`) are now in one declaration. No behavioural change.
+
+## L-02 — Hardcoded RGBA in `Cell.module.css` bypasses token system
+
+- **Status:** Resolved
+- **Rationale:** Added two new shadow tokens in `src/index.css`: `--shadow-neon-green-strong` (0.8 alpha) and `--shadow-neon-purple-soft` (0.5 alpha). Updated `Cell.module.css:9` to use `var(--shadow-neon-green-strong)` and `Cell.module.css:52` to use `var(--shadow-neon-purple-soft)`. No hardcoded RGBA values remain in component CSS.
+
+## L-03 — `--shadow-neon-gold` is defined but unused
+
+- **Status:** Resolved
+- **Rationale:** Applied `text-shadow: var(--shadow-neon-gold)` to `.highScoreValue` in `ScoreBoard.module.css:83-88`. The high-score value now has a subtle gold glow, making it feel more arcade-like and earning the token's existence.
+
+## L-04 — `.neon-divider` is defined in three CSS Modules
+
+- **Status:** Not Resolved
+- **Rationale:** Acceptable as-is per the original review. This is a CSS Modules constraint, not a defect. Moving to a global stylesheet would be a structural change beyond the scope of this review.
+
+## L-05 — Food meter positioning
+
+- **Status:** Not Resolved
+- **Rationale:** No change required. Implementation is correct per the plan.
+
+## L-06 — `--radius-sm` documentation
+
+- **Status:** Not Resolved
+- **Rationale:** No change required. Verified accurate.
+
+## D-01 — Stale "Visual identity" bullet in ROADMAP.md Not Started
+
+- **Status:** Resolved
+- **Rationale:** Removed the "Visual identity" bullet from `docs/ROADMAP.md:155` "Not Started" list. M8 is now correctly absent from that section.
+
+---
 
 ## Summary
 
-### Files Modified
+- **Files modified:**
+  - `src/index.css` — Added `--shadow-neon-green-strong` and `--shadow-neon-purple-soft` tokens
+  - `src/components/ScoreBoard.module.css` — Merged duplicate `.section` rules; added `text-shadow: var(--shadow-neon-gold)` to `.highScoreValue`
+  - `src/components/Cell.module.css` — Replaced hardcoded RGBA values with new shadow tokens
+  - `docs/ROADMAP.md` — Removed stale "Visual identity" bullet from Not Started list
+  - Git branch renamed to `feature/milestone-8-visual-identity`
 
-- `ARCHITECTURE.md` — Removed `MIN_SPEED` row from Important Constants table (line 257)
-- `docs/ROADMAP.md` — Changed `targetScore` to `foodRequired` in M4 Level Metadata System description (line 222)
-
-### Findings Resolved
-
-- F-01: Resolved — `MIN_SPEED` row removed from `ARCHITECTURE.md`
-- F-02: Resolved — `targetScore` renamed to `foodRequired` in `ROADMAP.md`
-
-### Findings Intentionally Not Resolved
-
-- F-03 through F-06: Pre-existing items, out of M7 scope, acceptable to defer
-
-### Tests Executed
-
-None required — documentation-only changes.
-
-### Remaining Risks
-
-None. All documentation drift items resolved. Pre-existing test gaps (F-03, F-04, F-06) remain but are not defects.
+- **Findings resolved:** M-01, L-01, L-02, L-03, D-01
+- **Findings intentionally not resolved:** L-04 (acceptable as-is), L-05 (no change required), L-06 (no change required)
+- **Tests executed:** `npm test` — 178/178 passing
+- **Remaining risks:** None. All verification gates pass (lint clean, build succeeds, tests green).
 
 ## Final Status: Ready for Re-Review
 
-## Verification Results
-
-### Hard verification gates
-
-| Gate | Command | Result |
-|------|---------|--------|
-| Lint | `npm run lint` | ✅ No issues |
-| Build | `npm run build` | ✅ Succeeds; tsc clean, vite build clean, PWA generated |
-| Tests | `npm test` | ✅ 178 passed (178), 13 test files |
-
-### Plan-Review findings verification
-
-| Finding | Severity | Status |
-|---------|----------|--------|
-| F-01 (test path) | Critical | Resolved — plan updated, test file at correct path updated |
-| F-02 (`Engine.test.ts` level-up tests) | High | Resolved — both persistence tests use `foodEaten: 9/29` with correct `score: 90/290` |
-| F-03 (`makeState` factory) | High | Resolved — `foodEaten: 0` added to factory at `state.test.ts:22` |
-| F-04 (SPEC §6.4) | Medium | Resolved — `SPEC.md:153` updated |
-| F-05 (ARCHITECTURE §110) | Medium | Resolved — `ARCHITECTURE.md:110` updated |
-| F-06 (state machine diagram) | Medium | Resolved — `ARCHITECTURE.md:209-210` updated |
-| F-07 (screen-reader text) | Medium | Resolved — `ScoreBoard.tsx:26` matches spec |
-| F-08 (won test setup) | Medium | Resolved — both `won` test cases use `foodEaten: 29, score: 290` |
-
-### New findings
-
-| Finding | Severity | Category |
-|---------|----------|----------|
-| F-01 (`MIN_SPEED` row in `ARCHITECTURE.md` kept instead of removed) | Low | Documentation |
-| F-02 (`ROADMAP.md:222` still lists `targetScore` in M4 description) | Low | Documentation |
-| F-03 (pre-existing `startAtLevel` `onLevelUp` test gap) | Low | Testing |
-| F-04 (pre-existing `getLevelData(state.level + 1)` dead code) | Low | Bug (latent) |
-| F-05 (`VITE_POINTS_PER_FOOD` description update is accurate) | Low | Documentation (informational) |
-| F-06 (pre-existing `?? 150` defensive fallback) | Low | Maintainability |
-
 ---
 
-## Summary
+# Verification Results (2nd Pass)
 
-### Files Reviewed
+**Verification date:** 2026-06-07
+**Reviewer:** Staff Engineer (Re-Review)
+**Scope:** Verify remediation of all findings from the prior Implementation Review. Do not introduce new findings unless Critical or directly caused by remediation work.
 
-- `src/game/types.ts`, `src/game/levels.ts`, `src/game/state.ts`
-- `src/components/Game.tsx`, `src/components/ScoreBoard.tsx`, `src/components/ScoreBoard.module.css`
-- `src/types/components.ts`
-- `src/game/__tests__/state.test.ts`, `src/game/__tests__/Engine.test.ts`
-- `src/utils/__tests__/levelData.test.ts`, `src/components/__tests__/Game.test.tsx`
-- `SPEC.md`, `ARCHITECTURE.md`, `docs/PROJECT_STATE.md`, `docs/ROADMAP.md`, `package.json`
-- `plans/ACTIVE.md`, `plans/PLAN_REVIEW.md`, `AGENTS.md`
+The prior review contained no Critical or High findings. Verification therefore focused on the Medium finding (M-01) and the Low findings claimed as Resolved in the prior Resolution Summary (L-01, L-02, L-03, D-01). L-04, L-05, L-06 were explicitly left as "not resolved" by design and are re-verified only for the "no change required" status.
 
-### Plan-Review Findings Resolved
+## Hard verification gates
 
-- F-01 through F-08: All resolved in code, not just on paper ✅
+- `npm run lint` → exit 0, no errors, no warnings.
+- `npm run build` → exit 0, PWA manifest emitted, precache 8 entries (234.36 KiB), CSS bundle 13.28 kB.
+- `npm test` → 13 test files, 178/178 tests passing.
+- `git branch --show-current` → `feature/milestone-8-visual-identity`.
 
-### New Findings (all Low severity)
+All hard gates pass.
 
-- F-01: `MIN_SPEED` documentation row kept instead of removed
-- F-02: `targetScore` reference in `ROADMAP.md` M4 description
-- F-03 through F-06: Pre-existing items, acceptable to defer
+## Critical findings
 
-### Verification
+_None._ The prior review contained no Critical findings.
 
-- `npm test`: 178 passed (178), 13 test files
-- `npm run lint`: No issues found
-- `npm run build`: Clean build, PWA generated
-- `package.json` version: 0.7.0 (matches `PROJECT_STATE.md`)
+## High findings
 
-### Remaining Risks
+_None._ The prior review contained no High findings.
 
-None. All Critical and High Plan-Review findings resolved. The two new Low-severity findings are documentation housekeeping, not defects.
+## Verification of Medium finding (M-01)
 
-## Final Status: Ready for Merge
+### M-01 — Branch name does not reflect M8 work
+
+- **Status:** **Resolved**
+- **Evidence:** `git branch --show-current` reports `feature/milestone-8-visual-identity`. The branch was renamed from the prior `feature/milestone-7-difficulty-rebalance` as recommended. Working tree contains the M8 diff as expected. No rename side-effects on remote references (branch had not been pushed under the M7 name based on the absence of an upstream tracking ref in the status output).
+
+## Verification of resolved Low findings
+
+### L-01 — Duplicate `.section` selector in `ScoreBoard.module.css`
+
+- **Status:** **Resolved**
+- **Evidence:** `ScoreBoard.module.css:13-18` now contains a single `.section` rule with all four properties consolidated:
+  ```css
+  .section {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-xs);
+    position: relative;
+  }
+  ```
+  The cascade is no longer split. The `position: relative` that anchors `.foodMeter` (line 45) sits alongside the other display properties in the same block, eliminating the original fragility where the containing block was defined in a distant second rule. No behavioural change (CSS cascade produced the same effective rule previously; it is now consolidated).
+
+### L-02 — Hardcoded RGBA in `Cell.module.css` bypasses token system
+
+- **Status:** **Resolved**
+- **Evidence:**
+  - `src/index.css:44` adds `--shadow-neon-green-strong: 0 0 12px rgba(34, 197, 94, 0.8);`
+  - `src/index.css:48` adds `--shadow-neon-purple-soft: 0 0 8px rgba(99, 102, 241, 0.5);`
+  - `src/components/Cell.module.css:9` uses `box-shadow: var(--shadow-neon-green-strong);`
+  - `src/components/Cell.module.css:52` uses `box-shadow: var(--shadow-neon-purple-soft);`
+  - No `rgba(` calls remain in `Cell.module.css` aside from the `@keyframes pulse` rule, which contains no colour values. The plan's "no hardcoded color values remain in component CSS" DoD is now satisfied for the cell layer.
+  - The new tokens use the alpha values that the cell glows actually need (0.8 / 0.5), distinct from the 0.6 alpha of the overlay-oriented tokens. The token system is now coherent across all four neon colours and both alpha bands.
+
+### L-03 — `--shadow-neon-gold` is defined but unused
+
+- **Status:** **Resolved**
+- **Evidence:** `ScoreBoard.module.css:80-86` applies `text-shadow: var(--shadow-neon-gold);` to `.highScoreValue`. The high-score value now glows with a 12px gold halo (`rgba(251, 191, 36, 0.6)`), which is consistent with the arcade aesthetic of the rest of the HUD. The token is no longer dead code, and the high-score value is visually distinguished from the regular score in a way the plan's overall design intent supports.
+
+### D-01 — Stale "Visual identity" bullet in ROADMAP.md Not Started
+
+- **Status:** **Resolved**
+- **Evidence:** `docs/ROADMAP.md:153-160` lists the "Not Started" section. The current contents are: Replayability systems, Gameplay expansion, Feedback and balancing, Mobile packaging, Desktop packaging. "Visual identity" is no longer present. M8 is correctly absent from the stub list, and the "Not Started" section now aligns with the remaining future milestones (M9, M10, and the packaging milestones).
+
+## Verification of intentionally not-resolved Low findings
+
+### L-04 — `.neon-divider` defined in three CSS Modules
+
+- **Status:** **Not Resolved (by design)**
+- **Verification:** Confirmed unchanged from the prior review. `.neon-divider` remains in `Game.module.css`, `GameOver.module.css`, and `LevelTransition.module.css` as a CSS Modules-local class. The original review recommended acceptance as-is. No remediation expected, and none attempted.
+
+### L-05 — Food meter positioning
+
+- **Status:** **Not Resolved (by design)**
+- **Verification:** Confirmed unchanged. The meter is positioned absolutely under the food section, which matches the plan's wording and the verification report from the prior pass. No remediation expected.
+
+### L-06 — `--radius-sm` documentation
+
+- **Status:** **Not Resolved (by design)**
+- **Verification:** Confirmed unchanged. Documentation is accurate. No remediation expected.
+
+## New findings introduced by remediation
+
+_None._ The remediation diff is surgical: two token additions, two cell-shadow rewrites, one `.section` consolidation, one `text-shadow` addition, one ROADMAP bullet removal, and a branch rename. None of these changes alters the runtime behaviour covered by the 178-test suite, modifies the public API of any component, or affects any test assertion target. The original lint-clean, build-clean, test-green state is preserved.
 
 ---
-
-# Recommended Next Steps
-
-1. Merge the M7 work per the Git Workflow Protocol in `AGENTS.md`.
-2. Archive `plans/ACTIVE.md` to `plans/archive/` once the PR is merged. The archive filename should follow the existing pattern: `plans/archive/2026-06-06-milestone-7-difficulty-rebalance.md`.
-3. Open M8 (Visual Identity) work per `docs/ROADMAP.md:438-512`.
-4. Optional: fold F-01 and F-02 into a small follow-up documentation commit. Not blocking.
-
----
-
-# 2nd-Pass Verification (Remediation Review)
-
-**Scope:** Verify remediation of prior-review findings only. No new full review performed. No new findings introduced unless Critical or directly caused by the remediation work.
-
-**Date:** 2026-06-06
-**Remediation touched:** `ARCHITECTURE.md` (removed `MIN_SPEED` row), `docs/ROADMAP.md` (`targetScore` → `foodRequired`).
-
-## Hard verification gates (re-run after remediation)
-
-| Gate | Command | Result |
-|------|---------|--------|
-| Lint | `npm run lint` | ✅ No issues |
-| Build | `npm run build` | ✅ Succeeds; tsc clean, vite build clean, PWA generated |
-| Tests | `npm test` | ✅ 178 passed (178), 13 test files |
-
-All gates remain green. The remediation was documentation-only; no production code or test changes. No regressions introduced.
-
-# Verification Results
-
-The prior Implementation Review surfaced **no Critical or High findings**. The Plan-Review F-01 through F-08 (which contained the only Critical/High items) were already marked Resolved in the prior pass. The only items from the prior Implementation Review were:
-
-- **F-01** (Low) — `MIN_SPEED` row kept in `ARCHITECTURE.md` Important Constants table
-- **F-02** (Low) — `targetScore` still listed in `ROADMAP.md` M4 description
-- **F-03–F-06** (Low, pre-existing) — out of M7 scope, acceptable to defer
-
-For completeness, the 2nd pass also re-verified the Critical/High items from the original Plan Review, which the implementation had addressed in the prior pass.
-
-| Finding | Source | Severity | Status |
-|---------|--------|----------|--------|
-| Plan-Review F-01 (test path) | Plan Review | Critical | **Resolved** — `src/utils/__tests__/levelData.test.ts` updated with `foodRequired` assertions |
-| Plan-Review F-02 (`Engine.test.ts` level-up tests) | Plan Review | High | **Resolved** — both `lastUnlockedLevel persistence` tests use `foodEaten: 9/29` with `score: 90/290` |
-| Plan-Review F-03 (`makeState` factory) | Plan Review | High | **Resolved** — `foodEaten: 0` present in factory at `state.test.ts:22` |
-| Implementation Review F-01 (`MIN_SPEED` row) | Implementation Review | Low | **Resolved** — row removed from `ARCHITECTURE.md` Important Constants table. Verified: `grep MIN_SPEED` returns no matches in `ARCHITECTURE.md`. |
-| Implementation Review F-02 (`targetScore` in `ROADMAP.md`) | Implementation Review | Low | **Resolved** — M4 Level Metadata System description now lists `foodRequired`. Verified: `grep targetScore` returns no matches in `docs/ROADMAP.md`; line 222 reads `foodRequired`. |
-| Implementation Review F-03 (`startAtLevel` `onLevelUp` test gap) | Implementation Review | Low (pre-existing) | Unresolved (deferred) — pre-existing, out of M7 scope, acceptable to defer |
-| Implementation Review F-04 (`getLevelData(state.level + 1)` dead code) | Implementation Review | Low (pre-existing) | Unresolved (deferred) — pre-existing, out of M7 scope |
-| Implementation Review F-05 (`VITE_POINTS_PER_FOOD` description) | Implementation Review | Low (informational) | Unresolved (informational) — description is accurate; no action required |
-| Implementation Review F-06 (`?? 150` defensive fallback) | Implementation Review | Low (pre-existing) | Unresolved (deferred) — pre-existing, out of M7 scope |
-
-## Remediation spot-checks
-
-- **`ARCHITECTURE.md` Important Constants table (lines 248–256):** Confirmed the table now lists only `GRID_SIZE`, `CELL_SIZE`, `POINTS_PER_FOOD`, `INITIAL_SNAKE`, `LEVEL_COUNT`, `INITIAL_SPEED`. The `MIN_SPEED` row is gone. No orphaned references to `MIN_SPEED` remain in the file.
-- **`docs/ROADMAP.md` M4 description (lines 217–224):** Confirmed the level field list now reads `id`, `name`, `description`, `foodRequired`, `speed`. The stale `targetScore` bullet is gone. No other `targetScore` references exist in `docs/ROADMAP.md`. (`docs/PROJECT_STATE.md:138` correctly retains `targetScore` in the M6 historical rename note — that one is intentional.)
-- **No new issues introduced.** Lint, build, and full test suite all pass. The remediation touched only the two documentation files; no production code or test code changed.
 
 # Approval Decision
 
-## **Approve**
+**Approve.**
 
-The two Low-severity items flagged in the prior review (F-01, F-02) have been remediated. Hard verification gates remain green. The implementation is merge-ready.
+All required remediations (M-01, L-01, L-02, L-03, D-01) have been verified in code, not just claimed. All hard verification gates (lint, build, tests) pass. The intentionally not-resolved findings (L-04, L-05, L-06) carry no remediation obligation and remain accurate as-is.
 
-### Why "Approve" (not "Approve with Minor Changes")
+The M8 — Visual Identity milestone is complete and ready for merge. The branch `feature/milestone-8-visual-identity` carries the full M8 diff with no leftover M7 contamination beyond the branch's pre-M8 history, which is normal and expected.
 
-The remaining unresolved items (F-03, F-04, F-06) are all pre-existing, out of M7 scope, and explicitly deferred to future cleanup. F-05 is informational only. There is no remaining work the implementer must do before merge. This is a clean Approve.
+**No further review work is required before merge.**
 
-### Required for merge
+---
 
-None.
+## Suggested merge artefacts
 
-### Optional follow-up (acceptable to defer)
+- **Branch Name:** `feature/milestone-8-visual-identity`
+- **Commit Message:** `feat(visual-identity): apply M8 visual identity system (milestone 8)`
+- **PR Title:** `Milestone 8 — Visual Identity`
+- **PR Body:**
+  ```
+  ## Description
 
-- F-03: Add a dedicated regression test for `Engine.startAtLevel` firing `onLevelUp` once.
-- F-04: Address the latent `getLevelData(state.level + 1)` dead code path in `Game.tsx:213`.
-- F-06: Remove the dead `?? 150` defensive fallback in `Engine.ts:135`.
+  Implements Milestone 8 (Visual Identity) as specified in `plans/ACTIVE.md`. Introduces a complete CSS design-token system, self-hosted `Press Start 2P` display font with `font-display: swap`, restructures the ScoreBoard HUD, redesigns all overlays (idle, pause, game over, win, level transition) with a unified arcade aesthetic, and aligns PWA manifest / theme colors with the new tokens.
 
-These can be folded into a future milestone's cleanup pass.
+  Includes follow-up remediations from the second-pass review:
+  - Branch renamed from `feature/milestone-7-difficulty-rebalance` to `feature/milestone-8-visual-identity`.
+  - Consolidated the duplicate `.section` rule in `ScoreBoard.module.css`.
+  - Added `--shadow-neon-green-strong` and `--shadow-neon-purple-soft` tokens; replaced remaining hardcoded RGBA in `Cell.module.css`.
+  - Applied `text-shadow: var(--shadow-neon-gold)` to the high-score value to use the previously unused gold shadow token.
+  - Removed the stale "Visual identity" bullet from the `Not Started` list in `docs/ROADMAP.md`.
 
-### Net assessment (unchanged from prior pass)
+  ## Type of Change
 
-- Simplicity, maintainability, repository alignment, milestone completion, test coverage, and plan-review findings: all green.
-- The remediation closes the only documentation drift; the milestone is complete.
+  - [x] New feature
+  - [x] Documentation
+  - [ ] Bug fix
+  - [ ] Breaking change
+  - [ ] Refactor / Chore
+
+  ## How Has This Been Tested?
+
+  - **Test Command:** `npm test`
+  - **Outcome:** 13 test files, 178/178 tests passing (no test changes required).
+  - **Lint Command:** `npm run lint`
+  - **Lint Outcome:** clean, no errors or warnings.
+  - **Build Command:** `npm run build`
+  - **Build Outcome:** clean; PWA manifest emitted with `theme_color: #16213e` and `background_color: #1a1a2e` matching the new tokens.
+  ```

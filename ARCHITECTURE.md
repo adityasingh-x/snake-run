@@ -257,13 +257,22 @@ interface GameState {
 
 ## Styling Conventions
 
-- **Dark theme:** Background #1a1a2e, Card #16213e
-- **Snake head:** Green #22c55e with glow
-- **Snake body:** Darker green #16a34a
-- **Food:** Red #ef4444 with pulse animation
-- **Obstacles:** Indigo #6366f1 with border
-- **Typography:** System fonts
 - **CSS Modules:** scoped per component
+- **CSS Custom Properties:** centralized in `src/index.css` on `:root`
+  - 18 color tokens (`--color-*`) for consistent theming
+  - 3 font tokens (`--font-display`, `--font-body`, `--font-mono`)
+  - Spacing, shadow, radius, and transition tokens
+- **Display font:** "Press Start 2P" (self-hosted `woff2` in `public/fonts/`, pre-cached by PWA workbox)
+  - Used for headings, titles, and button text
+  - `font-display: swap` ensures non-blocking load
+- **Numeric values:** use `--font-mono` (system mono stack) for readability
+- **Level name text:** uses `--font-body` (system stack) to preserve lowercase readability
+- **Glow ceiling:** max 16px blur radius, max 6 simultaneous `box-shadow` elements visible
+- **Dark theme tokens:** Background `--color-bg` (#1a1a2e), Surface `--color-surface` (#16213e)
+- **Snake head:** `--color-accent` (#22c55e) with glow
+- **Snake body:** `--color-accent-deep` (#16a34a)
+- **Food:** `--color-danger` (#ef4444) with pulse animation
+- **Obstacles:** `--color-obstacle` (#6366f1) with `--color-obstacle-edge` border
 
 ## Testing
 

@@ -26,20 +26,20 @@ A classic single-player Snake Run. The player controls a snake on a 20x20 grid. 
 
 ### 3.1 Snake
 - **Initial state:** 3 segments at `[{x:10,y:10}, {x:9,y:10}, {x:8,y:10}]`, facing RIGHT
-- **Head:** `{x:10,y:10}`, bright green (`#22c55e`) with glow (`box-shadow: 0 0 12px`)
-- **Body:** darker green (`#16a34a`), 1px border-radius
+- **Head:** `{x:10,y:10}`, bright green (`--color-accent` / #22c55e) with glow (`box-shadow: 0 0 12px`)
+- **Body:** darker green (`--color-accent-deep` / #16a34a), 1px border-radius
 - **Growth:** when food is eaten, new head is prepended and tail is NOT removed (net +1 segment)
 - **Movement:** when no food eaten, new head is prepended and tail is removed (net 0 change)
 - **Position tracking:** array of `{x, y}` positions; `snake[0]` is always the head
 
 ### 3.2 Food
-- **Appearance:** red (`#ef4444`), circular (`border-radius: 50%`), pulsing animation (scale 0.8 to 1.0 over 1s)
+- **Appearance:** red (`--color-danger` / #ef4444), circular (`border-radius: 50%`), pulsing animation (scale 0.8 to 1.0 over 1s)
 - **Spawning:** random position within grid bounds, excluding all snake segments and obstacles
 - **Algorithm:** generates random candidates, checks against a Set of occupied positions, max attempts to prevent infinite loop, falls back to snake head position if grid is completely full
 - **Replacement:** new food spawns immediately when eaten
 
 ### 3.3 Obstacles
-- **Appearance:** indigo (`#6366f1`) with lighter border (`#818cf8`) and glow (`box-shadow: 0 0 8px`)
+- **Appearance:** indigo (`--color-obstacle` / #6366f1) with lighter border (`--color-obstacle-edge` / #818cf8) and glow (`box-shadow: 0 0 8px`)
 - **Layout:** Each level has a predefined handcrafted obstacle layout defined in level metadata
 - **No randomness:** Obstacle positions are authored, not generated randomly
 - **Persistence:** Layout changes based on the level definition on each level-up; obstacles do NOT carry over between levels
@@ -377,19 +377,31 @@ won
 ## 14. Styling
 
 - **CSS Modules:** scoped per component (`.module.css` files)
-- **Dark theme:**
-  - Background: `#1a1a2e` (page), `#16213e` (game card)
-  - Text: `#f8fafc` (primary), `#94a3b8` (secondary), `#64748b` (muted)
-- **Snake head:** `#22c55e` with `box-shadow: 0 0 12px rgba(34, 197, 94, 0.8)`, 2px border-radius, and **directional eyes** that align visually according to the movement vector (UP, DOWN, LEFT, RIGHT).
-- **Snake body:** `#16a34a`, 1px border-radius
-- **Food:** `#ef4444`, circular, pulse animation (scale 0.8 to 1.0)
-- **Obstacles:** `#6366f1` background, `#818cf8` border, `box-shadow: 0 0 8px`
-- **Overlay:** `rgba(15, 23, 42, 0.95)` backdrop, centered content
-- **Buttons:** `#4ade80` background, `#0f172a` text, hover: `#22c55e` with scale(1.05)
-- **Typography:** system font stack, weights 400-700
-- **Responsive:** `@media (max-width: 600px)` reduces padding and title size
+- **CSS Custom Properties:** centralized in `src/index.css` on `:root`
+  - 18 color tokens (`--color-*`), 3 font tokens (`--font-display`, `--font-body`, `--font-mono`), spacing, shadow, radius, and transition tokens
+- **Display font:** "Press Start 2P" (self-hosted `woff2` in `public/fonts/`, pre-cached by PWA workbox, `font-display: swap`)
+  - Used for headings, titles, overlay headings, and button text
+- **Numeric values:** `--font-mono` (system mono stack) for score, level numbers, food progress
+- **Level name text:** `--font-body` (system stack) for readability of names like "First Meal"
+- **Glow ceiling:** max 16px blur radius, max 6 simultaneous `box-shadow` elements visible at once
+- **Theme tokens:**
+  - Background: `--color-bg` (#1a1a2e), Surface: `--color-surface` (#16213e), Board: `--color-board-bg` (#0f172a)
+  - Text: `--color-text-primary` (#f8fafc), `--color-text-body` (#eee), `--color-text-label` (#94a3b8), `--color-text-hint` (#64748b)
+  - Accents: `--color-accent-soft` (#4ade80), `--color-accent` (#22c55e), `--color-accent-deep` (#16a34a)
+  - Danger: `--color-danger` (#ef4444), Warning: `--color-warning` (#fbbf24)
+  - Obstacles: `--color-obstacle` (#6366f1), `--color-obstacle-edge` (#818cf8)
+  - Borders: `--color-border-default` (#475569), `--color-board-border` (#334155), `--color-cell-border` (#1e293b)
+- **Snake head:** `--color-accent` (#22c55e) with `box-shadow: 0 0 12px rgba(34, 197, 94, 0.8)`, 4px border-radius, and **directional eyes** that align visually according to the movement vector (UP, DOWN, LEFT, RIGHT).
+- **Snake body:** `--color-accent-deep` (#16a34a), 1px border-radius
+- **Food:** `--color-danger` (#ef4444), circular, pulse animation (scale 0.8 to 1.0)
+- **Obstacles:** `--color-obstacle` (#6366f1) background, `--color-obstacle-edge` border, `box-shadow: 0 0 8px`, 2px border-radius
+- **Board:** `--color-board-border` border with `--shadow-neon-purple` glow
+- **Overlays:** `rgba(15, 23, 42, 0.95)` backdrop, centered content, consistent neon styling with reusable `.neon-divider` class
+- **Buttons:** `--color-accent-soft` background, `--color-text-on-accent` text, hover: `--color-accent` with scale(1.05), neon glow box-shadow
+- **ScoreBoard:** arcade-style horizontal panel with section separators, food progress meter bar, high score in gold (`--color-warning`)
+- **Responsive:** `@media (max-width: 600px)` reduces padding; ScoreBoard wraps gracefully
 - **Mobile viewport:** `position: fixed`, `overflow: hidden`, `overscroll-behavior: none`, `touch-action: none` on body and root
-- **Safe-area insets:** `padding: max(20px, env(safe-area-inset-*))` on game container for notched devices
+- **Safe-area insets:** `padding: max(var(--space-lg), env(safe-area-inset-*))` on game container for notched devices
 - **iOS PWA:** `apple-mobile-web-app-capable`, `viewport-fit=cover`, `theme-color` meta tags
 
 ---

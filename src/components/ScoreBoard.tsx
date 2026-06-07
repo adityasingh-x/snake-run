@@ -5,21 +5,28 @@ export const ScoreBoard = ({ score, highScore, level, levelName, foodEaten, food
   return (
     <>
       <div className={styles.scoreboard} aria-live="polite">
-        <div className={styles.score}>
+        <div className={styles.section}>
           <span className={styles.label}>Level:</span>
-          <span className={styles.value}>{level}{levelName ? ` — ${levelName}` : ''}</span>
+          <span className={styles.levelValue}>{level}</span>
+          {levelName && <span className={styles.levelName}> — {levelName}</span>}
         </div>
-        <div className={styles.foodProgress}>
+        <div className={styles.separator} />
+        <div className={styles.section}>
           <span className={styles.label}>Food:</span>
-          <span className={styles.value}>{foodEaten}/{foodRequired}</span>
+          <span className={styles.foodText}>{foodEaten}/{foodRequired}</span>
+          <div className={styles.foodMeter}>
+            <div className={styles.foodMeterFill} style={{ width: `${(foodEaten / foodRequired) * 100}%` }} />
+          </div>
         </div>
-        <div className={styles.score}>
+        <div className={styles.separator} />
+        <div className={styles.section}>
           <span className={styles.label}>Score:</span>
-          <span className={styles.value}>{score}</span>
+          <span className={styles.scoreValue}>{score}</span>
         </div>
-        <div className={`${styles.score} ${styles.highScore}`}>
+        <div className={styles.separator} />
+        <div className={`${styles.section} ${styles.highScoreSection}`}>
           <span className={styles.label}>High Score:</span>
-          <span className={styles.value}>{highScore}</span>
+          <span className={styles.highScoreValue}>{highScore}</span>
         </div>
       </div>
       <div className="sr-only" aria-live="assertive" role="status">
