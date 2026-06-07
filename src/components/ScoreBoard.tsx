@@ -1,7 +1,7 @@
 import type { ScoreBoardProps } from '../types/components';
 import styles from './ScoreBoard.module.css';
 
-export const ScoreBoard = ({ score, highScore, level, levelName, foodEaten, foodRequired, isEndless }: ScoreBoardProps) => {
+export const ScoreBoard = ({ score, highScore, level, levelName, foodEaten, foodRequired, isEndless, speedEffectTicks }: ScoreBoardProps) => {
   return (
     <>
       <div className={styles.scoreboard} aria-live="polite">
@@ -36,6 +36,15 @@ export const ScoreBoard = ({ score, highScore, level, levelName, foodEaten, food
           <span className={styles.label}>High Score:</span>
           <span className={styles.highScoreValue}>{highScore}</span>
         </div>
+        {speedEffectTicks !== undefined && speedEffectTicks > 0 && (
+          <>
+            <div className={styles.separator} />
+            <div className={`${styles.section} ${styles.slowBadge}`}>
+              <span className={styles.label}>SLOW</span>
+              <span className={styles.slowTicks}>({speedEffectTicks} ticks remaining)</span>
+            </div>
+          </>
+        )}
       </div>
       <div className="sr-only" aria-live="assertive" role="status">
         {score > 0 && `Score: ${score}. `}{!isEndless && foodEaten > 0 && `Food: ${foodEaten} of ${foodRequired}. `}

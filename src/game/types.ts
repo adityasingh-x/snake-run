@@ -7,6 +7,14 @@ export type Direction = 'UP' | 'DOWN' | 'LEFT' | 'RIGHT';
 
 export type GameStatus = 'idle' | 'playing' | 'paused' | 'levelComplete' | 'gameover' | 'won';
 
+export type FoodType = 'normal' | 'gold' | 'poison' | 'slow';
+
+export interface Food {
+  position: Position;
+  type: FoodType;
+  timer: number;
+}
+
 export interface Level {
   id: number;
   name: string;
@@ -14,11 +22,13 @@ export interface Level {
   foodRequired: number;
   speed: number;
   layout: Position[];
+  wrapAround?: boolean;
+  portals?: [Position, Position][];
 }
 
 export interface GameState {
   snake: Position[];
-  food: Position;
+  food: Food;
   direction: Direction;
   nextDirection: Direction;
   status: GameStatus;
@@ -29,6 +39,7 @@ export interface GameState {
   lastUnlockedLevel: number;
   foodEaten: number;
   isEndless: boolean;
+  speedEffectTicks: number;
 }
 
 export type GameAction =

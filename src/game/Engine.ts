@@ -7,6 +7,8 @@ import { loadStats, saveStats } from './statistics';
 import type { Stats } from './statistics';
 import { checkAchievements, saveAchievement, loadAchievements } from './achievements';
 
+const SLOW_EFFECT_MULTIPLIER = 1.3;
+
 export type GameEventListener = (state: GameState) => void;
 
 export class Engine {
@@ -180,8 +182,9 @@ export class Engine {
 
       const config = getLevelData(this.state.level);
       const speed = config.speed ?? 150;
+      const effectiveSpeed = this.state.speedEffectTicks > 0 ? speed * SLOW_EFFECT_MULTIPLIER : speed;
 
-      if (this.accumulator >= speed) {
+      if (this.accumulator >= effectiveSpeed) {
         this.dispatch({ type: 'MOVE_SNAKE' });
         this.accumulator = 0;
       }

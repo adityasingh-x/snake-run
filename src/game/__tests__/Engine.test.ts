@@ -273,7 +273,7 @@ describe('Engine', () => {
           { x: 8, y: 10 },
           { x: 7, y: 10 },
         ],
-        food: { x: 10, y: 10 },
+        food: { position: { x: 10, y: 10 }, type: 'normal', timer: -1 },
         nextDirection: 'RIGHT',
       });
       engine.testDispatch({ type: 'MOVE_SNAKE' });
@@ -294,7 +294,7 @@ describe('Engine', () => {
           { x: 8, y: 10 },
           { x: 7, y: 10 },
         ],
-        food: { x: 10, y: 10 },
+        food: { position: { x: 10, y: 10 }, type: 'normal', timer: -1 },
         nextDirection: 'RIGHT',
       });
       engine.testDispatch({ type: 'MOVE_SNAKE' });
@@ -328,7 +328,7 @@ describe('Engine', () => {
           { x: 8, y: 10 },
           { x: 7, y: 10 },
         ],
-        food: { x: 10, y: 10 },
+        food: { position: { x: 10, y: 10 }, type: 'normal', timer: -1 },
         nextDirection: 'RIGHT',
         obstacles: [],
       });
@@ -343,13 +343,23 @@ describe('Engine', () => {
         const foodX = 12 + i;
         engine.setState({
           ...engine.getState(),
-          food: { x: foodX, y: 10 },
+          food: { position: { x: foodX, y: 10 }, type: 'normal', timer: -1 },
           snake: [{ x: foodX - 1, y: 10 }, { x: foodX - 2, y: 10 }, { x: foodX - 3, y: 10 }, { x: foodX - 4, y: 10 }],
         });
         engine.testDispatch({ type: 'MOVE_SNAKE' });
         expect(engine.getState().status).toBe('playing');
         expect(engine.getState().isEndless).toBe(true);
       }
+    });
+  });
+
+  describe('speed effect', () => {
+    it('engine state has speedEffectTicks field', () => {
+      engine.setState({
+        ...getInitialState(),
+        speedEffectTicks: 5,
+      });
+      expect(engine.getState().speedEffectTicks).toBe(5);
     });
   });
 });

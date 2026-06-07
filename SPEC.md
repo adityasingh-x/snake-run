@@ -34,9 +34,17 @@ A classic single-player Snake Run. The player controls a snake on a 20x20 grid. 
 
 ### 3.2 Food
 - **Appearance:** red (`--color-danger` / #ef4444), circular (`border-radius: 50%`), pulsing animation (scale 0.8 to 1.0 over 1s)
-- **Spawning:** random position within grid bounds, excluding all snake segments and obstacles
+- **Spawning:** random position within grid bounds, excluding all snake segments, obstacles, and portal tiles
 - **Algorithm:** generates random candidates, checks against a Set of occupied positions, max attempts to prevent infinite loop, falls back to snake head position if grid is completely full
 - **Replacement:** new food spawns immediately when eaten
+- **Food Types:**
+  | Type | Spawn % | Points | Effect | Timer (ticks) | Shape | Color |
+  |------|---------|--------|--------|---------------|-------|-------|
+  | `normal` | 80% | +10 | Grow by 1 | ∞ (`-1`) | Circle, pulse 1s | `--color-danger` |
+  | `gold` | 10% | +30 | Grow by 1 | 10 | Diamond (`rotate(45deg)`), pulse 0.5s | `--color-warning` |
+  | `poison` | 5% | 0 | Shrink by 1 (floor at initial snake length) | ∞ (`-1`) | Square, static | `--color-food-poison` |
+  | `slow` | 5% | +10 | Speed × 1.3 for 10 ticks | 8 | Triangle (`clip-path`), glow | `--color-food-slow` |
+- **Timer behavior:** When a food's timer reaches 0, it is replaced by a new `normal` food immediately. Normal and poison food have no timer (`-1`) and persist until eaten.
 
 ### 3.3 Obstacles
 - **Appearance:** indigo (`--color-obstacle` / #6366f1) with lighter border (`--color-obstacle-edge` / #818cf8) and glow (`box-shadow: 0 0 8px`)
@@ -74,24 +82,30 @@ A classic single-player Snake Run. The player controls a snake on a 20x20 grid. 
 - Direction changes are debounced per tick; only the last queued direction is applied
 
 ### 5.2 Collision Detection (checked in order on each MOVE_SNAKE)
-1. **Wall collision:** new head position x < 0, x >= 20, y < 0, or y >= 20
-2. **Self collision:** new head overlaps any snake segment EXCEPT the tail (tail moves away before head arrives)
-3. **Obstacle collision:** new head position matches any obstacle position (Set-based O(1) lookup)
-- Any collision triggers game over
+1. **Wrap-around:** If the current level has `wrapAround: true`, normalize head coordinates modulo grid size before collision checks. The snake exits one edge and appears on the opposite edge.
+2. **Portal teleport:** If the current level has `portals`, check if the (possibly wrapped) head position matches a portal tile. If so, teleport to the paired position.
+3. **Wall collision:** new head position x < 0, x >= 20, y < 0, or y >= 20 (after wrap/portal)
+4. **Self collision:** new head overlaps any snake segment EXCEPT the tail (tail moves away before head arrives)
+5. **Obstacle collision:** new head position matches any obstacle position (Set-based O(1) lookup)
+- Any collision (after wrap and portal processing) triggers game over
 
 ### 5.3 Collision Outcome
 - Status changes to `gameover`
 - High score is updated: `max(currentHighScore, currentScore)`
 - High score is persisted to localStorage
 - Collision sound plays
+- **Note:** Eating poison food shrinks the snake by 1 segment (floored at initial length of 3). This is NOT a collision and does NOT trigger game over.
 
 ---
 
 ## 6. Scoring and Levels
 
 ### 6.1 Scoring
-- **Points per food:** 10
-- **Score only increases** when food is eaten
+- **Points per normal food:** 10
+- **Points per gold food:** 30
+- **Points per slow food:** 10
+- **Points per poison food:** 0
+- Score only increases when normal, gold, or slow food is eaten
 - Score does NOT decrease on any event
 
 ### 6.2 Level Progression
@@ -141,6 +155,8 @@ Each level is defined as a data-driven object with the following structure:
   foodRequired: number; // Food count threshold for level completion
   speed: number;       // Tick interval in milliseconds
   layout: Position[];   // Predefined obstacle positions for the level
+  wrapAround?: boolean; // If true, snake exits one edge and appears on opposite edge (Level 5 only)
+  portals?: [Position, Position][]; // Paired portal tiles; landing on one teleports to the other (Level 7 only)
 }
 ```
 
@@ -326,13 +342,14 @@ won
 
 ### 10.4 ScoreBoard
 
-- Displays: Level (with level name), Food progress, Score, High Score
+- Displays: Level (with level name), Food progress, Score, High Score, SLOW indicator (when active)
 - Level display format: "Level: {id} — {name}" (e.g., "Level: 1 — First Meal")
 - Food progress display: "Food: {foodEaten}/{foodRequired}" (e.g., "Food: 3/10")
 - Sound toggle button (speaker emoji, toggles between enabled/disabled)
 - `aria-live="polite"` for score/level changes
 - Screen-reader-only `aria-live="assertive"` region announces score, food progress, and level
 - **Endless mode:** When `isEndless` is true, shows "Endless" instead of level display and hides food progress meter
+- **SLOW indicator:** When `speedEffectTicks > 0`, displays "SLOW (N ticks remaining)" badge in cyan (`--color-food-slow`). Positioned after the High Score section. On mobile (`@media (max-width: 600px)`), wraps below the score row.
 
 ### 10.4a Statistics Panel
 
@@ -463,9 +480,11 @@ won
   - Danger: `--color-danger` (#ef4444), Warning: `--color-warning` (#fbbf24)
   - Obstacles: `--color-obstacle` (#6366f1), `--color-obstacle-edge` (#818cf8)
   - Borders: `--color-border-default` (#475569), `--color-board-border` (#334155), `--color-cell-border` (#1e293b)
+  - Food variants (Milestone 10): `--color-food-poison` (#d946ef, magenta), `--color-food-slow` (#22d3ee, cyan)
+  - Portals (Milestone 10): `--color-portal` (#a855f7, purple)
 - **Snake head:** `--color-accent` (#22c55e) with `box-shadow: 0 0 12px rgba(34, 197, 94, 0.8)`, 4px border-radius, and **directional eyes** that align visually according to the movement vector (UP, DOWN, LEFT, RIGHT).
 - **Snake body:** `--color-accent-deep` (#16a34a), 1px border-radius
-- **Food:** `--color-danger` (#ef4444), circular, pulse animation (scale 0.8 to 1.0)
+- **Food:** `--color-danger` (#ef4444), circular, pulse animation (scale 0.8 to 1.0). Variants: gold (`--color-warning`, diamond, fast pulse), poison (`--color-food-poison`, square, static), slow (`--color-food-slow`, triangle, glow)
 - **Obstacles:** `--color-obstacle` (#6366f1) background, `--color-obstacle-edge` border, `box-shadow: 0 0 8px`, 2px border-radius
 - **Board:** `--color-board-border` border with `--shadow-neon-purple` glow
 - **Overlays:** `rgba(15, 23, 42, 0.95)` backdrop, centered content, consistent neon styling with reusable `.neon-divider` class
@@ -481,7 +500,7 @@ won
 ## 15. Testing
 
 - **Framework:** Vitest with jsdom environment
-- **212 unit tests** across 17 test files:
+- **255 unit tests** across 17 test files:
   - `state.test.ts` (43 tests): gameReducer state transitions (START, RESET, PAUSE, RESUME, CHANGE_DIRECTION, MOVE_SNAKE, collisions, levelComplete, CONTINUE_GAME, win, high score, START_AT_LEVEL, lastUnlockedLevel tracking, endless mode)
   - `Engine.test.ts` (26 tests): Engine class behavior (start, pause, resume, reset, continueGame, startAtLevel, startEndless, loop management, subscriptions, destroy, sound callback wiring, lastUnlockedLevel persistence)
   - `gameLogic.test.ts` (31 tests): positionsEqual, calculateNewHead, isWallCollision, isSelfCollision, isObstacleCollision, isCollision, spawnFood

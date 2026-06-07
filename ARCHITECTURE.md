@@ -135,6 +135,24 @@ dispatch action → gameReducer → new state → subscribe → React re-render
 
 - **Directional Snake Eyes:** Snake head rendering includes eyes that face the current direction of movement.
 
+### Food Variants
+
+Four food types with weighted random spawning (80/10/5/5):
+- **Normal** (80%): +10 points, grow by 1, no timer
+- **Gold** (10%): +30 points, grow by 1, despawns after 10 ticks
+- **Poison** (5%): 0 points, shrinks snake by 1 (floored at 3), no timer
+- **Slow** (5%): +10 points, speed × 1.3 for 10 ticks, despawns after 8 ticks
+
+Spawn probabilities and timers are exported constants from `src/game/food.ts`.
+
+### Wrap-Around Levels
+
+Level 5 (Maze Runner) has `wrapAround: true`. The snake's head coordinates are normalized modulo grid size before collision checks, allowing it to exit one edge and appear on the opposite edge. Self-collision and obstacle collision still apply.
+
+### Portal Levels
+
+Level 7 (Four Chambers) has one portal pair. When the snake's head lands on a portal tile, it teleports to the paired position. Collision is checked against the teleported position. Food does not spawn on portal tiles.
+
 ### Collision Detection
 
 1. **Wall collision:** bounds check
@@ -157,6 +175,8 @@ dispatch action → gameReducer → new state → subscribe → React re-render
 - **Progression:** food-objective system (10–30 food per level)
 - **Speed ramp:** 150ms → 100ms (see SPEC.md for full table)
 - **Obstacles:** predefined handcrafted layouts per level (see `LEVEL_DESIGN.md`)
+- **Wrap-around:** Level 5 has `wrapAround: true`; snake exits one edge and appears on the opposite
+- **Portals:** Level 7 has one portal pair (`portals: [[{x:2,y:4}, {x:16,y:15}]]`); landing on one teleports to the other
 - **Level-up (two-step):**
   1. Score reaches target → status = `levelComplete`, game freezes, overlay appears
   2. Player clicks Continue or presses Space → `CONTINUE_GAME` → level increments, snake resets, game resumes
@@ -235,7 +255,7 @@ WON
 ```typescript
 interface GameState {
   snake: Position[];
-  food: Position;
+  food: Food;           // { position, type, timer }
   direction: Direction;
   nextDirection: Direction;
   status: GameStatus;
@@ -246,6 +266,7 @@ interface GameState {
   lastUnlockedLevel: number;  // Persisted to localStorage
   foodEaten: number;          // Per-level food counter
   isEndless: boolean;         // True when playing endless mode
+  speedEffectTicks: number;   // Slow effect remaining ticks (0 = inactive)
 }
 ```
 
@@ -277,12 +298,14 @@ interface GameState {
 - **Snake head:** `--color-accent` (#22c55e) with glow
 - **Snake body:** `--color-accent-deep` (#16a34a)
 - **Food:** `--color-danger` (#ef4444) with pulse animation
+- **Food variants (M10):** Gold `--color-warning` (#fbbf24), Poison `--color-food-poison` (#d946ef), Slow `--color-food-slow` (#22d3ee)
+- **Portals (M10):** `--color-portal` (#a855f7)
 - **Obstacles:** `--color-obstacle` (#6366f1) with `--color-obstacle-edge` border
 
 ## Testing
 
 - **Framework:** Vitest with jsdom
-- **212 unit tests** across 17 test files
+- **255 unit tests** across 17 test files
 - **Coverage:** game/ modules (state, Engine, collision, food, snake, levels, storage, statistics, achievements), hooks, utilities, touch recognizer, components (Game, Board, Cell, LevelTransition, GameOver, Statistics, Achievements)
 - **Run:** `npm test` or `npm run test:watch`
 

@@ -165,3 +165,35 @@ describe('level metadata', () => {
     }
   });
 });
+
+describe('wrap-around', () => {
+  it('Level 5 has wrapAround: true', () => {
+    const data = getLevelData(5);
+    expect(data.wrapAround).toBe(true);
+  });
+
+  it('all other levels have wrapAround false or undefined', () => {
+    for (let i = 1; i <= 10; i++) {
+      if (i === 5) continue;
+      const data = getLevelData(i);
+      expect(data.wrapAround).toBeFalsy();
+    }
+  });
+});
+
+describe('portals', () => {
+  it('Level 7 has exactly one portal pair', () => {
+    const data = getLevelData(7);
+    expect(data.portals).toBeDefined();
+    expect(data.portals).toHaveLength(1);
+    expect(data.portals![0]).toHaveLength(2);
+  });
+
+  it('all other levels have no portals', () => {
+    for (let i = 1; i <= 10; i++) {
+      if (i === 7) continue;
+      const data = getLevelData(i);
+      expect(data.portals).toBeUndefined();
+    }
+  });
+});

@@ -5,7 +5,7 @@ import { Cell } from './Cell';
 import type { BoardProps } from '../types/components';
 import styles from './Board.module.css';
 
-export const Board = ({ snake, direction, food, obstacles }: BoardProps) => {
+export const Board = ({ snake, direction, food, obstacles, wrapAround, portals }: BoardProps) => {
   const grid = useMemo(() => {
     const cells: { x: number; y: number }[] = [];
     for (let y = 0; y < GRID_SIZE; y++) {
@@ -26,11 +26,17 @@ export const Board = ({ snake, direction, food, obstacles }: BoardProps) => {
     [obstacles]
   );
 
+  const portalSet = useMemo(
+    () => new Set((portals ?? []).map(p => `${p.x},${p.y}`)),
+    [portals]
+  );
+
   return (
     <div
       className={styles.board}
       role="grid"
       aria-label="Snake Run board"
+      data-wrap-around={wrapAround ? 'true' : undefined}
       style={{
         display: 'grid',
         gridTemplateColumns: `repeat(${GRID_SIZE}, 1fr)`,
@@ -42,8 +48,9 @@ export const Board = ({ snake, direction, food, obstacles }: BoardProps) => {
         const key = `${x},${y}`;
         const isSnakeHead = positionsEqual(pos, snake[0]);
         const isSnakeBody = snakeBodySet.has(key);
-        const isFood = positionsEqual(pos, food);
+        const isFood = positionsEqual(pos, food.position);
         const isObstacle = obstaclesSet.has(key);
+        const isPortal = portalSet.has(key);
 
         return (
           <Cell
@@ -52,8 +59,9 @@ export const Board = ({ snake, direction, food, obstacles }: BoardProps) => {
             y={y}
             isSnakeHead={isSnakeHead}
             isSnakeBody={isSnakeBody}
-            isFood={isFood}
+            foodType={isFood ? food.type : undefined}
             isObstacle={isObstacle}
+            isPortal={isPortal}
             direction={isSnakeHead ? direction : undefined}
           />
         );

@@ -7,7 +7,7 @@ describe('Board Component', () => {
   const defaultProps = {
     snake: [{ x: 10, y: 10 }],
     direction: 'RIGHT' as const,
-    food: { x: 5, y: 5 },
+    food: { position: { x: 5, y: 5 }, type: 'normal' as const, timer: -1 },
     obstacles: [],
   };
 

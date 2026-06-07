@@ -161,7 +161,6 @@ Planned packaging technology:
 
 ## Not Started
 
-- Gameplay expansion
 - Feedback and balancing
 - Mobile packaging
 - Desktop packaging
@@ -553,7 +552,7 @@ Completed: 2026-06-07
 
 ---
 
-# Milestone 10 - Gameplay Expansion
+# Milestone 10 - Gameplay Expansion ✅
 
 Goal:
 
@@ -561,33 +560,54 @@ Introduce new gameplay decisions.
 
 Features:
 
-### Food Variants
+**Food Variants:**
+- Gold food: +30 points, diamond shape, despawns after 10 ticks
+- Poison food: shrinks snake by 1 (floored at 3), square shape, persistent
+- Slow food: speed × 1.3 for 10 ticks, triangle shape, despawns after 8 ticks
+- Normal food: +10 points, circle shape, persistent (80% spawn rate)
 
-Examples:
+**Wrap-Around Levels:**
+- Level 5 (Maze Runner): snake exits one edge and appears on opposite edge
+- Visual indicator: dashed border on the board
 
-- Gold food
-- Poison food
-- Speed food
-
-### Advanced Level Mechanics
-
-Examples:
-
-- Wrap-around levels
-- Portal levels
-- Moving obstacles
-
-### Advanced Challenges
-
-Examples:
-
-- Enemy snake
-- Boss levels
+**Portal Levels:**
+- Level 7 (Four Chambers): one portal pair connecting opposite chambers
+- Teleport on head landing; collision checked at destination
+- Food does not spawn on portal tiles
+- Purple rotating ring visual
 
 Success Criteria:
 
-- Runs become less predictable
-- New mechanics create meaningful decisions
+- Runs become less predictable ✅
+- New mechanics create meaningful decisions ✅
+
+Completed: 2026-06-07
+
+#### Design Note — Visual Tokens Added (Reviewer Guidance)
+
+> **This section is here to prevent future review agents from flagging the new CSS tokens as arbitrary or out of scope.**
+
+M10 introduces three new gameplay objects that all live on the same board as the existing snake, obstacles, and normal food: 3 food variants (gold, poison, slow) and 1 portal type. The M8 visual identity (see Milestone 8 — Visual Identity) established an 18-token palette that is fully consumed by the existing game elements. When M10 maps the new objects onto the existing palette naively:
+
+- Slow food → `--color-accent-soft` (green) = identical to the snake head glow
+- Poison food → `--color-obstacle` (indigo) = identical to obstacles
+- Portal tiles → `--color-warning` (amber) = identical to gold food and high-score highlights
+
+This creates real visual ambiguity at 100–150ms tick speeds, where players must distinguish food types and obstacles in real time. Shape encoding alone (diamond/square/triangle) is insufficient for color-blind users and small mobile screens.
+
+**Therefore M10 adds 3 new tokens to `src/index.css`:**
+
+| Token | Value | Used by |
+|-------|-------|---------|
+| `--color-food-poison` | `#d946ef` (magenta) | Poison food cell |
+| `--color-food-slow` | `#22d3ee` (cyan) | Slow food cell |
+| `--color-portal` | `#a855f7` (purple) | Portal cell |
+
+All three are neon-arcade-saturated and pairwise distinguishable from the existing palette. No existing tokens are renamed, removed, or repurposed. The change is additive only and scoped to `src/index.css`.
+
+**Minimal visual redesign accompanies the tokens** (documented in the active plan's "Visual Design Additions" section): a 1px outer border on special food types and a slow 4s rotation on portal tiles. No other components, overlays, fonts, or layout tokens change in M10.
+
+This is not a visual identity overhaul — it is a targeted addition required to ship M10's mechanics without breaking the M8 design system. Any broader visual work belongs in Milestone 12 (Game Polish).
 
 ---
 

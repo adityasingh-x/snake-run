@@ -8,3 +8,7 @@
   touch-action: none;
   box-shadow: var(--shadow-neon-purple);
 }
+
+.board[data-wrap-around="true"] {
+  border: 2px dashed var(--color-warning);
+}

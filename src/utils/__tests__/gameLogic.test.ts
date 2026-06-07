@@ -84,6 +84,13 @@ describe('isWallCollision', () => {
   it('returns false for bottom-right corner', () => {
     expect(isWallCollision({ x: GRID_SIZE - 1, y: GRID_SIZE - 1 })).toBe(false);
   });
+
+  it('returns false for out-of-bounds when wrapAround is true', () => {
+    expect(isWallCollision({ x: -1, y: 10 }, true)).toBe(false);
+    expect(isWallCollision({ x: GRID_SIZE, y: 10 }, true)).toBe(false);
+    expect(isWallCollision({ x: 10, y: -1 }, true)).toBe(false);
+    expect(isWallCollision({ x: 10, y: GRID_SIZE }, true)).toBe(false);
+  });
 });
 
 describe('isSelfCollision', () => {
@@ -148,6 +155,18 @@ describe('isCollision', () => {
   it('returns false for safe position', () => {
     expect(isCollision({ x: 6, y: 5 }, snake, obstacles)).toBe(false);
   });
+
+  it('returns false for wall collision when wrapAround is true', () => {
+    expect(isCollision({ x: -1, y: 5 }, snake, obstacles, true)).toBe(false);
+  });
+
+  it('still detects self collision when wrapAround is true', () => {
+    expect(isCollision({ x: 4, y: 5 }, snake, obstacles, true)).toBe(true);
+  });
+
+  it('still detects obstacle collision when wrapAround is true', () => {
+    expect(isCollision({ x: 10, y: 10 }, snake, obstacles, true)).toBe(true);
+  });
 });
 
 describe('spawnFood', () => {
@@ -159,23 +178,23 @@ describe('spawnFood', () => {
 
   it('returns a position not on the snake', () => {
     const food = spawnFood(snake, []);
-    const isOnSnake = snake.some(s => positionsEqual(s, food));
+    const isOnSnake = snake.some(s => positionsEqual(s, food.position));
     expect(isOnSnake).toBe(false);
   });
 
   it('returns a position not on obstacles', () => {
     const obstacles = [{ x: 0, y: 0 }, { x: 1, y: 1 }];
     const food = spawnFood(snake, obstacles);
-    const isOnObstacle = obstacles.some(o => positionsEqual(o, food));
+    const isOnObstacle = obstacles.some(o => positionsEqual(o, food.position));
     expect(isOnObstacle).toBe(false);
   });
 
   it('returns position within grid bounds', () => {
     const food = spawnFood(snake, []);
-    expect(food.x).toBeGreaterThanOrEqual(0);
-    expect(food.x).toBeLessThan(GRID_SIZE);
-    expect(food.y).toBeGreaterThanOrEqual(0);
-    expect(food.y).toBeLessThan(GRID_SIZE);
+    expect(food.position.x).toBeGreaterThanOrEqual(0);
+    expect(food.position.x).toBeLessThan(GRID_SIZE);
+    expect(food.position.y).toBeGreaterThanOrEqual(0);
+    expect(food.position.y).toBeLessThan(GRID_SIZE);
   });
 
   it('returns snake head as fallback when grid is full', () => {
@@ -186,6 +205,22 @@ describe('spawnFood', () => {
       }
     }
     const food = spawnFood(fullSnake, []);
-    expect(positionsEqual(food, fullSnake[0])).toBe(true);
+    expect(positionsEqual(food.position, fullSnake[0])).toBe(true);
+  });
+
+  it('returns a Food object with type and timer', () => {
+    const food = spawnFood(snake, []);
+    expect(food.type).toBeDefined();
+    expect(food.timer).toBeDefined();
+    expect(['normal', 'gold', 'poison', 'slow']).toContain(food.type);
+  });
+
+  it('does not place food on portal tiles when portals are passed', () => {
+    const portals = [{ x: 0, y: 0 }, { x: 1, y: 1 }];
+    for (let i = 0; i < 50; i++) {
+      const food = spawnFood(snake, [], portals);
+      const isOnPortal = portals.some(p => positionsEqual(p, food.position));
+      expect(isOnPortal).toBe(false);
+    }
   });
 });
