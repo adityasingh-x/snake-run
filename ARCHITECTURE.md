@@ -27,6 +27,8 @@ src/
 │   ├── snake.ts              # Snake movement helpers
 │   ├── levels.ts             # Level data and obstacle generation
 │   ├── storage.ts            # High score and level progress persistence
+│   ├── statistics.ts         # Player statistics tracking (localStorage)
+│   ├── achievements.ts       # Achievement definitions, detection, persistence
 │   └── index.ts              # Barrel exports
 ├── platform/                 # Platform-specific adapters
 │   ├── keyboard.ts           # Keyboard event handling
@@ -44,6 +46,8 @@ src/
 │   ├── ScoreBoard.tsx        # Score display
 │   ├── GameOver.tsx          # Win/gameover modal
 │   ├── LevelTransition.tsx   # Level complete overlay
+│   ├── Statistics.tsx        # Player statistics panel
+│   ├── Achievements.tsx      # Achievement display panel
 │   └── *.module.css          # Component styles
 ├── types/                    # Shared types (re-exports from game/)
 │   ├── game.ts               # Re-exports from game/types
@@ -241,6 +245,7 @@ interface GameState {
   obstacles: Position[];
   lastUnlockedLevel: number;  // Persisted to localStorage
   foodEaten: number;          // Per-level food counter
+  isEndless: boolean;         // True when playing endless mode
 }
 ```
 
@@ -277,8 +282,8 @@ interface GameState {
 ## Testing
 
 - **Framework:** Vitest with jsdom
-- **178 unit tests** across 13 test files
-- **Coverage:** game/ modules, Engine, hooks, utilities, touch recognizer, components (Game, Board, Cell, LevelTransition)
+- **212 unit tests** across 17 test files
+- **Coverage:** game/ modules (state, Engine, collision, food, snake, levels, storage, statistics, achievements), hooks, utilities, touch recognizer, components (Game, Board, Cell, LevelTransition, GameOver, Statistics, Achievements)
 - **Run:** `npm test` or `npm run test:watch`
 
 # Platform Strategy

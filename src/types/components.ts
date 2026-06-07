@@ -1,4 +1,6 @@
 import type { Position, Direction } from './game';
+import type { Achievement } from '../game/achievements';
+import type { Stats } from '../game/statistics';
 
 export interface BoardProps {
   snake: Position[];
@@ -24,6 +26,7 @@ export interface ScoreBoardProps {
   levelName?: string;
   foodEaten: number;
   foodRequired: number;
+  isEndless?: boolean;
 }
 
 export interface GameOverProps {
@@ -32,6 +35,11 @@ export interface GameOverProps {
   onContinueFromLevel: (level: number) => void;
   lastUnlockedLevel: number;
   variant?: 'gameover' | 'win';
+  isEndless?: boolean;
+  onStartEndless?: () => void;
+  stats?: Stats;
+  achievements?: Achievement[];
+  newAchievementIds?: string[];
 }
 
 export interface LevelTransitionProps {
@@ -41,4 +49,11 @@ export interface LevelTransitionProps {
   nextLevelDescription: string;
   score: number;
   onContinue: () => void;
+}
+
+export interface StatisticsProps {
+  gamesPlayed: number;
+  totalFood: number;
+  bestLevel: number;
+  highScore: number;
 }

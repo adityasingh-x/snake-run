@@ -34,6 +34,7 @@ const makePlayingState = () => ({
   obstacles: [],
   lastUnlockedLevel: 1,
   foodEaten: 0,
+  isEndless: false,
 });
 
 const makeIdleState = () => ({
@@ -48,9 +49,12 @@ describe('Game Component', () => {
     vi.clearAllMocks();
     mockUseGame.mockReturnValue({
       state: makePlayingState(),
+      stats: { gamesPlayed: 0, totalFood: 0, bestLevel: 1, highScore: 0 },
+      achievements: [],
       initAudio: vi.fn(),
       startGame: vi.fn(),
       startGameAtLevel: vi.fn(),
+      startEndlessGame: vi.fn(),
       pauseGame: mockPauseGame,
       resumeGame: vi.fn(),
       changeDirection: vi.fn(),
@@ -68,9 +72,12 @@ describe('Game Component', () => {
   it('pause button is not rendered when game is idle', () => {
     mockUseGame.mockReturnValue({
       state: makeIdleState(),
+      stats: { gamesPlayed: 0, totalFood: 0, bestLevel: 1, highScore: 0 },
+      achievements: [],
       initAudio: vi.fn(),
       startGame: vi.fn(),
       startGameAtLevel: vi.fn(),
+      startEndlessGame: vi.fn(),
       pauseGame: mockPauseGame,
       resumeGame: vi.fn(),
       changeDirection: vi.fn(),
@@ -94,9 +101,12 @@ describe('Game Component', () => {
     const mockStartAtLevel = vi.fn();
     mockUseGame.mockReturnValue({
       state: makeIdleState(),
+      stats: { gamesPlayed: 0, totalFood: 0, bestLevel: 1, highScore: 0 },
+      achievements: [],
       initAudio: vi.fn(),
       startGame: vi.fn(),
       startGameAtLevel: mockStartAtLevel,
+      startEndlessGame: vi.fn(),
       pauseGame: vi.fn(),
       resumeGame: vi.fn(),
       changeDirection: vi.fn(),
@@ -117,5 +127,34 @@ describe('Game Component', () => {
     const goButton = screen.getByRole('button', { name: 'Go' });
     await user.click(goButton);
     expect(mockStartAtLevel).toHaveBeenCalledWith(5);
+  });
+
+  it('renders Statistics and Achievements panels on idle screen', () => {
+    mockUseGame.mockReturnValue({
+      state: makeIdleState(),
+      stats: { gamesPlayed: 5, totalFood: 42, bestLevel: 3, highScore: 200 },
+      achievements: [
+        { id: 'beat_game', name: 'Snake Master', description: 'Complete level 10', unlocked: false },
+        { id: 'score_500', name: 'High Scorer', description: 'Reach score 500', unlocked: true },
+        { id: 'no_pause', name: 'Marathon Run', description: 'Win without pausing', unlocked: false },
+      ],
+      initAudio: vi.fn(),
+      startGame: vi.fn(),
+      startGameAtLevel: vi.fn(),
+      startEndlessGame: vi.fn(),
+      pauseGame: vi.fn(),
+      resumeGame: vi.fn(),
+      changeDirection: vi.fn(),
+      resetGame: vi.fn(),
+      continueGame: vi.fn(),
+    });
+
+    render(<Game />);
+
+    expect(screen.getByText('Games Played')).toBeInTheDocument();
+    expect(screen.getByText('5')).toBeInTheDocument();
+    expect(screen.getByText('Total Food')).toBeInTheDocument();
+    expect(screen.getByText('42')).toBeInTheDocument();
+    expect(screen.getByText('High Scorer')).toBeInTheDocument();
   });
 });

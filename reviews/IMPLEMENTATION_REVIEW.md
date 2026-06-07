@@ -1,11 +1,12 @@
-# Implementation Review: Milestone 8 — Visual Identity
+# Implementation Review: Milestone 9 — Replayability Systems
 
 **Reviewer:** Staff Engineer (Implementation Review)
-**Milestone under review:** M8 — Visual Identity
-**Source documents:** `plans/ACTIVE.md`, `plans/PLAN_REVIEW.md`, `AGENTS.md`, `docs/ROADMAP.md`, `ARCHITECTURE.md`, `SPEC.md`, `docs/PROJECT_STATE.md`, `package.json`
-**Implementation files reviewed:** `src/index.css`, `public/fonts/press-start-2p.woff2`, `index.html`, `vite.config.ts`, `src/components/ScoreBoard.tsx`, `src/components/ScoreBoard.module.css`, `src/components/Game.tsx`, `src/components/Game.module.css`, `src/components/GameOver.module.css`, `src/components/LevelTransition.module.css`, `src/components/Board.module.css`, `src/components/Cell.module.css`
-**Verification commands run:** `npm run lint`, `npm run build`, `npm test`
+**Milestone under review:** M9 — Replayability Systems (all three phases)
+**Source documents:** `plans/ACTIVE.md`, `AGENTS.md`, `docs/ROADMAP.md`, `ARCHITECTURE.md`, `SPEC.md`, `docs/PROJECT_STATE.md`, `package.json`
+**Implementation files reviewed:** `src/game/types.ts`, `src/game/state.ts`, `src/game/Engine.ts`, `src/game/statistics.ts`, `src/game/achievements.ts`, `src/game/index.ts`, `src/hooks/useGame.ts`, `src/components/Game.tsx`, `src/components/GameOver.tsx`, `src/components/ScoreBoard.tsx`, `src/components/Statistics.tsx`, `src/components/Achievements.tsx`, `src/types/components.ts`, all 17 test files
+**Verification commands run:** `npm test` (212/212 pass), `npm run lint` (clean), `npm run build` (success, 220 kB JS / 68 kB gz)
 **Review date:** 2026-06-07
+**Branch under review:** `feature/milestone-8-visual-identity` (M9 work applied on top of M8)
 
 ---
 
@@ -13,471 +14,592 @@
 
 ## Overall Assessment
 
-**Approve with Minor Changes.** The M8 implementation is a faithful, right-sized execution of `plans/ACTIVE.md`. Every phase is implemented as specified. Every Critical and High finding from the prior Plan Review (`plans/PLAN_REVIEW.md` F-01 through F-22) is addressed in code. All hard verification gates pass: `npm run lint` is clean, `npm run build` succeeds, `npm test` reports 178/178 passing, and the PWA manifest is generated with the correct theme colors.
+**Approve.** The M9 implementation is a faithful, appropriately-scoped execution of `plans/ACTIVE.md:1-386` across all three phases (Endless Mode, Statistics, Achievements). The change surface matches the plan's file tables precisely: 6 new files (`statistics.ts`, `achievements.ts`, `Statistics.tsx`, `Statistics.module.css`, `Achievements.tsx`, `Achievements.module.css`), 11 modified files, and 3 new test files. The architectural choices made in the plan (Engine callback pattern, batched stats cache, screen-reader re-use via `announceRef`) are implemented as designed. The reducer is a clean, minimal extension of the existing `MOVE_SNAKE` switch case. The `Engine.dispatch()` lifecycle ordering matches the plan's spec for achievement detection (between reducer and listener notification, with persistence before callback fire).
 
-The work is appropriately scoped. The CSS variable system maps 1:1 to existing hex values, eliminating the "no visual regression" risk called out in the plan. The `Press Start 2P` font is self-hosted with `font-display: swap`, the workbox glob is extended to `woff2`, and the PWA manifest colors match the new tokens. The ScoreBoard JSX restructure is the only behavioural change in component code, and it preserves every text label, button label, and ARIA attribute. The ScoreBoard is the only component whose JSX was modified; the `<h1>` removal in `Game.tsx` is a one-line deletion. `LevelTransition.tsx` and `GameOver.tsx` are untouched, as planned.
+All hard verification gates pass cleanly:
+- `npm test` → 17 files, **212/212 tests passing** (34-test increase from M8's 178).
+- `npm run lint` → exit 0, no errors, no warnings.
+- `npm run build` → exit 0, PWA manifest emitted, precache 8 entries, JS bundle 220 kB / 68 kB gz, CSS 15 kB / 3 kB gz.
 
-The findings below are minor. The most notable are: a duplicate `.section` selector in `ScoreBoard.module.css` (maintainability), two hardcoded RGBA values in `Cell.module.css` (token coverage gap), and a branch-name mismatch (process). None block the milestone.
+The cross-document set (SPEC.md, ARCHITECTURE.md, ROADMAP.md, PROJECT_STATE.md) is internally consistent. The version bump to `0.9.0` is applied. The plan's Definition of Done is met.
+
+The findings below are minor and none blocks the milestone. The most notable are: (1) the `statsCache` is undermined by per-action `increment*`/`update*` calls that also write to localStorage, partially defeating the plan's "avoids per-food writes" intent; (2) `Engine.getStats()` re-reads localStorage on every state change instead of using the cache; (3) `checkAchievements` triggers a localStorage read on every dispatch; (4) `Engine.ts:58` hardcodes `10` rather than `POINTS_PER_FOOD`; (5) `GameOver.tsx` has a complex nested conditional structure that could benefit from small refactoring.
 
 ## Major Strengths
 
-1. **Plan fidelity is exceptional.** All six phases in `plans/ACTIVE.md` are implemented as specified.
-   - Phase 1: `index.css` defines 18 color tokens, 3 font tokens, spacing/shadow/radius/transition tokens, and the `@font-face` block with `font-display: swap` (`src/index.css:1-7`).
-   - Phase 1: `public/fonts/press-start-2p.woff2` is present, 1.6K (significantly smaller than the plan's ~12KB estimate, which is a positive surprise).
-   - Phase 1: `vite.config.ts:33` extends the workbox glob to `woff2`; manifest `theme_color: #16213e` and `background_color: #1a1a2e` match `--color-surface` and `--color-bg` (`vite.config.ts:17-18`).
-   - Phase 1: `index.html:7` `<meta name="theme-color" content="#16213e" />` matches `--color-surface`.
-   - Phase 2: `ScoreBoard.tsx` JSX is restructured exactly as the plan's "Required JSX restructuring" specifies — sections, separators, food meter, high-score section. All four labels and their associated values are preserved.
-   - Phase 3: `Game.tsx:130` removes the page-level `<h1>` (one-line deletion in the diff). The idle overlay `<h2>Snake Run</h2>` remains at `Game.tsx:188`.
-   - Phase 4: `LevelTransition.module.css` is a complete rewrite with `.neon-divider` and arcade aesthetic.
-   - Phase 5: `Board.module.css:9` adds `box-shadow: var(--shadow-neon-purple)`. `Cell.module.css` swaps hardcoded colors for tokens. `Game.module.css:59` sets `.boardWrapper { overflow: visible }`.
-   - Phase 6: All documentation updates (SPEC.md, ARCHITECTURE.md, ROADMAP.md, PROJECT_STATE.md, package.json) are present and consistent.
+1. **Plan fidelity is high across all three phases.** The implementation matches `plans/ACTIVE.md:1-386` essentially line-for-line:
+   - Phase 1 (Endless Mode): `isEndless: boolean` field on `GameState` (`types.ts:31`), `START_ENDLESS_GAME` action (`types.ts:43`), reducer case at `state.ts:152-167` setting all required fields, `MOVE_SNAKE` level-up guard at `state.ts:74`, `Engine.startEndless()` at `Engine.ts:138-142`, `useGame` exposing `startEndlessGame` (`useGame.ts:93-95`), `ScoreBoard` endless display (`ScoreBoard.tsx:9-15`), `GameOver` endless button + score text (`GameOver.tsx:14-20`).
+   - Phase 2 (Statistics): `src/game/statistics.ts` with the full surface (`loadStats`, `saveStats`, `incrementGamesPlayed`, `incrementTotalFood`, `updateBestLevel`), Engine integration in `Engine.dispatch()` (`Engine.ts:41-71`), `Statistics.tsx` panel, `Engine.getStats()` (`Engine.ts:144-147`).
+   - Phase 3 (Achievements): `src/game/achievements.ts` with `Achievement` type, 3 definitions, `loadAchievements`, `saveAchievement`, `checkAchievements`; `Engine.wasPaused` private field (`Engine.ts:18`); Engine check at `Engine.ts:73-77`; `onAchievementUnlock` callback (`Engine.ts:210`); `Achievements.tsx` with "NEW" badge; screen reader announce via `Game.tsx:130-133`.
 
-2. **All Plan-Review findings resolved in code, not just on paper.**
-   - F-01/F-06 (font choice): Pinned to "Press Start 2P", self-hosted woff2 (`index.css:1-7`).
-   - F-02/F-03 (JSX scope): Phase 2 JSX restructure matches the plan's target JSX verbatim (`ScoreBoard.tsx:6-37`); Phase 3 `<h1>` removal is the one-line diff in `Game.tsx`.
-   - F-04 (PWA colors): `index.html:7` and `vite.config.ts:17-18` are aligned.
-   - F-05 (color tokens): 18 color tokens defined in `index.css:11-28`, covering every existing hex.
-   - F-07 (decorative terms): `.neon-divider` is a concrete class with `border-image` gradient. "Crown-like" is gone.
-   - F-08 (version bump): `package.json:4` is `0.8.0`.
-   - F-09 (ARCHITECTURE.md): Updated at `ARCHITECTURE.md:260-276` with the new Styling Conventions section.
-   - F-10 (food progress): `ScoreBoard.tsx:14-20` retains the "Food: X/Y" text and adds a complementary meter bar — text is not replaced.
-   - F-11 (glow ceiling): All four shadow tokens (`--shadow-neon-green/red/gold/purple`) use 12px blur (`index.css:43-46`). Cell-level shadows are 8-12px.
-   - F-12 (test audit): Tests pass without modification. Audited `Board.test.tsx`, `Cell.test.tsx`, `Game.test.tsx`, `GameOver.test.tsx`, `LevelTransition.test.tsx` — all assertions use text content or ARIA attributes, not class names.
-   - F-14 (overlay naming): `ROADMAP.md:500` reads "Level transition overlay" matching ADR-003.
-   - F-15 (gold shadow): `--shadow-neon-gold` is defined at `index.css:45` (declared but currently unused in components — see F-04 in findings).
-   - F-16 (level name typography): `ScoreBoard.module.css:34` uses `font-family: var(--font-body)`.
-   - F-17 (z-index): `Game.module.css:73` keeps `z-index: 10` on overlays. `Game.module.css:59` sets `overflow: visible` on `.boardWrapper` so the board glow can render outside the wrapper without being clipped, but the overlay's `z-index: 10` still paints above.
-   - F-22 (viewport rubric): `@media (max-width: 600px)` in `Game.module.css:257-261` and `ScoreBoard.module.css:90-100` handle the mobile layout.
+2. **Architecture alignment is strong.** The Engine remains framework-agnostic: `statistics.ts` and `achievements.ts` import only from `game/types.ts` and `game/storage.ts` (`achievements.ts:1`, `statistics.ts:1-6`). The React layer reads stats through `Engine.getStats()` exclusively (no localStorage reads from `Game.tsx`), per F3 in the plan review. The `wasPaused` field lives in the Engine (not `GameState`) per the plan's justification ("Engine-private tracker never read by the UI or the reducer"). Achievements and statistics share no state with each other; their persistence is independent.
 
-3. **No new files except expected additions.** Diff stat: 17 files changed (counting plans/ACTIVE.md and plans/PLAN_REVIEW.md), 1127 insertions, 325 deletions. The only new asset is `public/fonts/press-start-2p.woff2` (1.6K). The implementation touches the exact set of files in the plan's "Files Expected to Change" table.
+3. **Conservative change surface.** Six new files; eleven modified files. All new files appear in the plan's "Files Expected to Change" tables. No new abstractions (no toast manager, no achievement system object, no state machine library) were introduced. The new UI components are flat, presentational, and consume props directly. The `MOVE_SNAKE` endless guard is a single token added to a boolean expression.
 
-4. **No structural changes to behaviour.** `LevelTransition.tsx` and `GameOver.tsx` are unchanged (verified — empty diff). The `useGame`, `useKeyboard`, `useTouch` hooks are unchanged. The `Engine` class is unchanged. The state machine is unchanged. The visual identity is a presentation-only refactor that doesn't touch gameplay.
+4. **Test coverage matches the plan's specified test list.** All test categories from `plans/ACTIVE.md:85-97, 159-167, 245-257` are covered. The test counts are:
+   - `state.test.ts`: 43 tests including 6 for `START_ENDLESS_GAME` (`state.test.ts:563-601`) and 4 for endless `MOVE_SNAKE` (`state.test.ts:603-691`).
+   - `Engine.test.ts`: 26 tests including 2 for `startEndless` (`Engine.test.ts:306-354`).
+   - `GameOver.test.tsx`: 9 tests including 4 for endless mode UI (`GameOver.test.tsx:94-154`).
+   - `statistics.test.ts`: 5 tests (`statistics.test.ts:4-61`).
+   - `achievements.test.ts`: 7 tests (`achievements.test.ts:23-97`).
+   - `Statistics.test.tsx`: 1 test (`Statistics.test.tsx:7-21`).
+   - `Achievements.test.tsx`: 3 tests (`Achievements.test.tsx:14-35`).
 
-5. **All tests pass without modification.** 178/178 unit tests green. The 178-test count matches the plan's Definition of Done. This is the strongest possible evidence that the plan's "no test regressions" guarantee is held — the JSX restructure preserved every assertion target (text, button labels, ARIA attributes).
+5. **All hard verification gates pass.**
+   - `npm test` → 17 files, **212/212 tests passing** (1.96s).
+   - `npm run lint` → exit 0, no errors, no warnings.
+   - `npm run build` → exit 0, PWA precache 8 entries (242 KiB), JS 220 kB / 68 kB gz, CSS 15 kB / 3 kB gz.
 
-6. **Build, lint, test all clean.** No TypeScript errors, no ESLint warnings, no test failures. PWA build emits `dist/manifest.webmanifest` with `theme_color: #16213e` and `background_color: #1a1a2e` — verified.
-
-7. **The `Press Start 2P` woff2 is dramatically smaller than estimated** (1.6K vs ~12KB), so the plan's mobile-performance risk concern is even more attenuated than predicted.
+6. **Documentation is comprehensive and consistent.** SPEC.md adds §6.5 (Endless Mode), §6.6 (Statistics), §6.7 (Achievements), §10.4a/b (Statistics/Achievements panels), §12.4/5 (new persistence keys), §15 (updated test counts). ARCHITECTURE.md updates State Shape, Project Structure, and Testing sections. ROADMAP.md marks M9 complete with the four sub-features listed. PROJECT_STATE.md updates Current Version (0.9.0), Current Status, Current Milestone (M10), and the per-phase success criteria. The `package.json` version is bumped to `0.9.0`.
 
 ## Major Concerns
 
-1. **The active git branch is `feature/milestone-7-difficulty-rebalance`, not an M8-named branch.** The working tree contains all M8 changes, but the branch name reflects the prior milestone. This is a process/branching concern, not a code concern — the diff is correct. **Recommended action: rename the branch to `feature/milestone-8-visual-identity` before merge.** The git workflow protocol in `AGENTS.md:402` specifies a `feature/<short-descriptive-name>` format and M8 work should not be merged on an M7-named branch.
-
-2. **`ScoreBoard.module.css` contains two `.section` rules** (lines 13-17 and 62-64). The two rules cascade and combine into one effective rule, so the behaviour is correct, but the duplicate selector is a code smell that will confuse future maintainers. It is also adjacent to `.foodMeter` (lines 44-53), which depends on `.section { position: relative }` defined far away from where `position: relative` would normally live. **Recommended action: merge the two `.section` rules into one block.** Severity: Low (Maintainability).
-
-3. **Two hardcoded RGBA values remain in `Cell.module.css`.** Lines 9 and 52 use `rgba(34, 197, 94, 0.8)` and `rgba(99, 102, 241, 0.5)` directly, bypassing the `--shadow-neon-*` tokens. The plan's DoD states "No hardcoded color values remain in component CSS (all use variables)". These are RGBA values rather than hex codes, and the existing tokens use a different alpha (0.6 vs 0.8 / 0.5), so the tokens cannot be reused as-is. **Recommended action: either accept the deviation explicitly (the tokens were intentionally defined for overlays/buttons with 0.6 alpha) or add `--shadow-neon-green-strong` and `--shadow-neon-purple-soft` tokens for the cell glows.** Severity: Low (Documentation / Token coverage).
-
-4. **`--shadow-neon-gold` is defined but unused.** `index.css:45` defines the token (added per F-15), but no component CSS rule references it. The plan says `--shadow-neon-gold` was added for "completeness", and the actual gold styling for high-score text uses `color: var(--color-warning)` only (no text-shadow). The token is therefore dead code today. **Recommended action: either remove the token to honour the project's "no premature abstractions" philosophy, or add a small `text-shadow: var(--shadow-neon-gold)` to the high-score value to actually use it.** Severity: Low (Maintainability / YAGNI).
+None. The implementation is solid and consistent with the plan. The findings below are minor and could be addressed in a follow-up cleanup pass or carried into M10.
 
 ---
 
 # Findings
 
-## Critical
+## F1 — Per-food localStorage writes undermine the stats cache (Deviation from plan)
 
-_None._
+- **Severity:** Medium
+- **Category:** Performance / Scope
+- **Description:** `plans/ACTIVE.md:273` states: "Stats writes are batched (in-memory cache flushed on game over / win / pause) rather than per-food." However, the implementation calls `incrementTotalFood(foodCount)` (`Engine.ts:60`) on every food eaten, which reads and writes localStorage immediately. Similarly, `incrementGamesPlayed()` (`Engine.ts:42`) writes on every start action, and `updateBestLevel(level)` (`Engine.ts:65`) writes on every level change. The cache (`this.statsCache`) is then also flushed on `gameover`/`won`/`paused` (`Engine.ts:70`), producing duplicate writes.
+- **Consequence:** For a full 10-level campaign run (200–230 food eaten), there are ~200–230 read+write cycles for `snakeStatsTotalFood` plus a single batched `saveStats` write at the end. This is ~200 extra localStorage operations per run. Synchronous localStorage is fast enough that this is not a user-visible problem, but it is a measurable deviation from the plan's stated intent.
+- **Recommendation:** Either (a) remove the per-action `incrementTotalFood` / `updateBestLevel` calls in `Engine.dispatch()` and rely solely on the `saveStats` flush at gameover/win/pause, or (b) explicitly acknowledge the deviation in a plan/RISKS comment. Option (a) is consistent with the plan and saves 200+ localStorage operations per run.
 
-## High
+## F2 — `Engine.getStats()` re-reads localStorage on every state change (Missed optimization)
 
-_None._
+- **Severity:** Medium
+- **Category:** Performance / Architecture
+- **Description:** `Engine.getStats()` (`Engine.ts:144-147`) calls `loadStats()` (which reads 3 localStorage keys) and merges in `this.state.highScore`. The hook calls `engine.getStats()` in the subscriber callback (`useGame.ts:27`), which fires on every dispatch (every `MOVE_SNAKE`, `CHANGE_DIRECTION`, etc.). The `statsCache` field exists in the Engine but is never used in `getStats()`. So the cache is dead state from the perspective of the read path.
+- **Consequence:** Every `MOVE_SNAKE` produces 3 localStorage reads (via `getStats` → `loadStats`). For a 100ms tick rate, this is 30 localStorage reads per second during gameplay. Acceptable but wasteful.
+- **Recommendation:** Have `getStats()` return `{ ...this.statsCache, highScore: this.state.highScore }` (or a normalized version) and have the `Engine` constructor seed `statsCache` from `loadStats()`. This eliminates the per-tick localStorage read while keeping the public API identical. The flush at gameover/win/pause (`Engine.ts:70`) already persists the cache.
 
-## Medium
+## F3 — `checkAchievements` reads localStorage on every dispatch (Performance)
 
-### M-01 — Branch name does not reflect M8 work
+- **Severity:** Low
+- **Category:** Performance
+- **Description:** `checkAchievements` (`achievements.ts:70`) calls `loadAchievements()` to read the current unlock state and filter out already-unlocked IDs. This runs from `Engine.dispatch()` on every action. So every `MOVE_SNAKE`, `CHANGE_DIRECTION`, `PAUSE_GAME`, etc. triggers a JSON parse of `snakeAchievements` from localStorage.
+- **Consequence:** Same as F2 — adds a localStorage read on every dispatch. At a 100ms tick rate, this is 10 reads/second during gameplay. Not a user-visible problem at the current scale.
+- **Recommendation:** Cache the unlocked-IDs set in the Engine (mirror of `statsCache` pattern), updated when an achievement is saved. Alternative: skip `checkAchievements` entirely for actions that cannot produce unlocks (e.g., `MOVE_SNAKE` before food threshold, `CHANGE_DIRECTION`, `PAUSE_GAME`, `RESUME_GAME`).
 
-- **Category:** Scope (process)
-- **Description:** The active branch is `feature/milestone-7-difficulty-rebalance`. The working tree contains the M8 implementation, but the branch name still reflects M7. This will confuse future archaeology, conflict with the PR title, and break the implicit convention that the branch name matches the active milestone.
-- **Recommendation:** Rename the branch to `feature/milestone-8-visual-identity` before merge. Update the commit message and PR title accordingly.
+## F4 — Hardcoded `10` in `Engine.ts:58` (Maintainability)
 
-## Low
-
-### L-01 — Duplicate `.section` selector in `ScoreBoard.module.css`
-
+- **Severity:** Low
 - **Category:** Maintainability
-- **Description:** `ScoreBoard.module.css` declares `.section` twice (lines 13-17 and 62-64). The two rules combine via cascade, so the section receives `display: flex; align-items: baseline; gap: var(--space-xs); position: relative;` — which is the intended behaviour. However, the rule split is not obvious, and the second `.section` is the only thing giving the food meter its containing block (`position: relative`). A future maintainer who reorganises the file may not realise the dependency.
-- **Recommendation:** Merge the two `.section` rules into a single block. Place `position: relative` next to the other display/align properties. No behavioural change.
+- **Description:** `Engine.ts:58` computes the food count as `(this.state.score - prevScore) / 10`, hardcoding the POINTS_PER_FOOD value. Every other reference to this constant uses the named import (`state.ts:2`, `state.test.ts:4`). If the value ever changes (via env var, since `POINTS_PER_FOOD = Number(import.meta.env.VITE_POINTS_PER_FOOD) || 10`), the stats tracking will silently break.
+- **Recommendation:** Import `POINTS_PER_FOOD` in `Engine.ts` and use it. One-line change.
 
-### L-02 — Hardcoded RGBA in `Cell.module.css` bypasses token system
+## F5 — `GameOver.tsx` complex nested conditional structure (Maintainability)
 
-- **Category:** Documentation / Architecture
-- **Description:** `Cell.module.css:9` uses `box-shadow: 0 0 12px rgba(34, 197, 94, 0.8)` for the snake head glow. `Cell.module.css:52` uses `box-shadow: 0 0 8px rgba(99, 102, 241, 0.5)` for the obstacle glow. These bypass `--shadow-neon-green` and `--shadow-neon-purple` because the existing tokens use `0.6` alpha and the cell glows use `0.8` / `0.5` respectively. The plan's DoD states "No hardcoded color values remain in component CSS (all use variables)".
-- **Recommendation:** Add `--shadow-neon-green-strong` and `--shadow-neon-purple-soft` tokens in `index.css`, then reference them in `Cell.module.css`. This honours the token system's intent. Alternatively, document the deviation explicitly in the SPEC.
-
-### L-03 — `--shadow-neon-gold` is defined but unused
-
+- **Severity:** Low
 - **Category:** Maintainability
-- **Description:** `index.css:45` defines `--shadow-neon-gold: 0 0 12px rgba(251, 191, 36, 0.6)` per F-15. No CSS rule references it. The high-score value in `ScoreBoard.module.css:84-88` uses `color: var(--color-warning)` only, with no `text-shadow`.
-- **Recommendation:** Either remove the token (the project's "no premature abstractions" rule argues against keeping dead code), or apply `text-shadow: var(--shadow-neon-gold)` to `.highScoreValue` to make the gold score feel more arcade-like and earn the token's existence.
+- **Description:** The button section in `GameOver.tsx:21-43` has four nested branches based on `lastUnlockedLevel > 1`, `isWin`, and `isEndless`. The control flow is hard to follow at a glance, especially the case where `isWin && !isEndless` and `lastUnlockedLevel > 1` (line 28-32), which conditionally sets `autoFocus` based on whether `onStartEndless` is provided.
+- **Recommendation:** Extract the button list into a small data-driven structure (e.g., a list of `{ label, onClick, autoFocus, variant }` objects) and render with `.map()`. Pure refactor; no behavior change.
 
-### L-04 — `.neon-divider` is defined in three CSS Modules
+## F6 — ROADMAP M9 format inconsistency (Documentation)
 
-- **Category:** Maintainability
-- **Description:** `.neon-divider` is defined in `Game.module.css:93-99`, `GameOver.module.css:33-39`, and `LevelTransition.module.css:28-34`. CSS Modules scopes each independently, so this is a triplicate of the same class, with one variant (GameOver's `data-win` override at lines 41-43). The plan called it a "reusable" class; with CSS Modules, it is not actually shared.
-- **Recommendation:** Acceptable as-is — this is a CSS Modules constraint, not a defect. If the team wants true sharing, move the class to a global stylesheet (`index.css`). Do not block the milestone on this.
-
-### L-05 — Food meter is positioned absolutely under the food section, not the full board
-
-- **Category:** Scope (minor design deviation)
-- **Description:** The plan's intent ("compact meter bar below the text") is implemented as `position: absolute; left: 0; right: 0; bottom: -4px;` inside the `.section` containing "Food: X/Y" (`ScoreBoard.module.css:44-53`, `ScoreBoard.tsx:17-19`). This places the meter under the food section only, not under the whole ScoreBoard. The plan's wording is consistent with this placement, and the text "Food: X/Y" remains visible as required. The implementation is correct per the plan.
-- **Recommendation:** No change required. Document this in the SPEC §14 if any reviewer interprets the plan as "meter under the whole scoreboard".
-
-### L-06 — `--radius-sm` (0.25rem = 4px) is documented as `4px border-radius` in SPEC
-
+- **Severity:** Low
 - **Category:** Documentation
-- **Description:** `SPEC.md:394` states "4px border-radius" for the snake head, matching the value rendered by `var(--radius-sm)` (`Cell.module.css:10`). The previous version of the spec had "2px border-radius", which was a hardcoded value. The new wording is correct after the M8 change.
-- **Recommendation:** No change required. Verified accurate.
+- **Description:** Milestones M1–M8 in `ROADMAP.md` follow the pattern `### Milestone N — Name ✅` (with a single `✅` after the milestone title) followed by goal/problem/features. M9 (`ROADMAP.md:534-575`) uses a different pattern: `### Milestone 9 - Replayability Systems ✅` followed by sub-bullets `### Endless Mode ✅`, `### Statistics ✅`, `### Achievements ✅` (using `###` for the sub-bullets rather than `##` or list items).
+- **Recommendation:** Restructure M9 to follow the M1–M8 pattern. Optional cleanup; the content is correct and complete.
+
+## F7 — No integration test for idle screen rendering statistics / achievements (Testing)
+
+- **Severity:** Low
+- **Category:** Testing
+- **Description:** F11 in `plans/PLAN_REVIEW.md` noted: "Phase 2 / Phase 3 specify tests for the new components in isolation, but the DoD and per-phase verification sections do not require a test that `Game.tsx` actually wires them into the idle and game-over overlays." The current `Game.test.tsx` (4 tests) only covers the pause button. There is no test asserting that the idle overlay renders `<Statistics>` and `<Achievements>` panels.
+- **Recommendation:** Add a small test in `Game.test.tsx` that renders `Game` in idle state and asserts the presence of "Games Played" / "Achievements" / "Total Food" text. Would catch regressions where someone removes the wiring.
+
+## F8 — Inconsistent data-win attribute behaviour (Minor; not a bug)
+
+- **Severity:** Low
+- **Category:** Maintainability
+- **Description:** `GameOver.tsx:11` sets `data-win={isWin || undefined}`, which evaluates to `undefined` (no attribute) when `isWin` is false. The previous review (Phase 1 only) flagged this as a potential issue with endless game-over. Verifying the implementation: endless game-over uses `variant="gameover"` (default), so `isWin === false`, and `data-win` is correctly absent. The CSS rule `.gameOverModal[data-win] h2` at `GameOver.module.css:28` therefore does not apply for endless game-over, which is the desired behavior.
+- **Recommendation:** No action required. The implementation is correct; the previous review's concern was based on an incorrect reading.
+
+## F9 — `wasPaused` reset semantics are correct but undocumented (Documentation)
+
+- **Severity:** Low
+- **Category:** Documentation
+- **Description:** `Engine.wasPaused` is reset to `false` in `start()` (`Engine.ts:100`), `reset()` (`Engine.ts:121`), and `startEndless()` (`Engine.ts:139`), and set to `true` in `pause()` (`Engine.ts:106`). This is per the plan. However, the `Engine.ts` file has no inline comment explaining the rationale ("Engine-private tracker never read by the UI or the reducer").
+- **Recommendation:** Add a one-line comment in `Engine.ts` near the `wasPaused` field declaration. Optional but improves handoff quality.
+
+## F10 — Redundant per-game `gamesPlayed` write (Performance / Cleanliness)
+
+- **Severity:** Low
+- **Category:** Performance
+- **Description:** Related to F1. On every `START_GAME` / `RESET` / `START_ENDLESS_GAME` action, `Engine.ts:42` calls `incrementGamesPlayed()` which performs a localStorage read + write. Then on the eventual `gameover`/`won`/`paused`, `saveStats(this.statsCache)` (`Engine.ts:70`) writes `gamesPlayed` again. The first write is redundant — the cache has the same value, and the eventual flush will write it.
+- **Recommendation:** Same as F1 — drop the per-action `incrementGamesPlayed` call and rely on the cache + flush. Saves one read+write per game.
+
+## F11 — Inconsistent README handling (Documentation)
+
+- **Severity:** N/A (informational)
+- **Category:** Documentation
+- **Description:** `README.md` was not updated. Per `AGENTS.md`: "Do not update README.md unless setup instructions, controls, or user-facing features change." M9 adds a user-facing feature (endless mode) and new overlays (statistics, achievements), but the controls and setup did not change. The README is correctly untouched. The plan's "Documentation Update Targets" section does not list README.
+- **Recommendation:** No action required. Listing here for completeness.
 
 ---
 
 # Plan Compliance Review
 
-## Completed as planned
+## Phase 1 — Endless Mode
 
-Every phase in `plans/ACTIVE.md` is implemented as specified:
+**Verdict: Complete as planned.**
 
-- **Phase 1: CSS Variable System & Typography Foundation** — `src/index.css:1-56` defines 18 color tokens, 3 font tokens, 5 spacing tokens, 4 shadow tokens, 3 radius tokens, 2 transition tokens, and the `@font-face` block. `public/fonts/press-start-2p.woff2` is present. `index.html:7` and `vite.config.ts:17-18` carry the matching theme colors. Workbox glob is extended to `woff2` (`vite.config.ts:33`).
-- **Phase 2: ScoreBoard HUD Redesign** — `src/components/ScoreBoard.tsx` is restructured to match the plan's "Required JSX restructuring" example character-for-character. Sections, separators, and the food meter are present. All text labels ("Level:", "Food:", "Score:", "High Score:") and ARIA attributes (`aria-live="polite"`, screen-reader text) are preserved.
-- **Phase 3: Overlay Redesign — Idle, Pause, GameOver, Win** — Page-level `<h1>` is removed from `Game.tsx`. Idle and pause overlays use `--font-display` for `<h2>`, neon-green glow, and the `.neon-divider` class. GameOver uses `--color-danger` and `--shadow-neon-red` for the heading. Win variant overrides to `--color-accent-soft` and `--shadow-neon-green` via `[data-win]` attribute.
-- **Phase 4: Overlay Redesign — LevelTransition** — `LevelTransition.module.css` is a complete rewrite with the arcade aesthetic: `--font-display` heading with neon-green glow, `.neon-divider`, `--font-body` for the completed level name, `--font-mono` for the score, and a `.nextSection` card with `--color-board-bg` background.
-- **Phase 5: Board & Game Elements Polish** — `Board.module.css:9` adds `box-shadow: var(--shadow-neon-purple)`. `Cell.module.css` swaps hardcoded colors for tokens. `Game.module.css:59` sets `.boardWrapper { overflow: visible }`. Z-index check holds: overlay `z-index: 10` paints above the board wrapper glow.
-- **Phase 6: Integration, Responsive Polish & Cleanup** — `package.json:4` is `0.8.0`. `ARCHITECTURE.md` Styling Conventions section is updated. `ROADMAP.md` moves M8 to Completed and fixes overlay naming to "Level transition overlay". `SPEC.md` Section 14 is rewritten. `PROJECT_STATE.md` bumps version, marks M8 complete, updates priorities to M9.
+| Plan Deliverable | Status | Reference |
+|---|---|---|
+| `isEndless` field on `GameState` | ✅ Done | `types.ts:31` |
+| `START_ENDLESS_GAME` action | ✅ Done | `types.ts:43` |
+| Reducer handles `START_ENDLESS_GAME` (level=10, reset snake/direction/foodEaten, status=playing, keep score, level 10 obstacles) | ✅ Done | `state.ts:152-167` |
+| `MOVE_SNAKE` skips level-up when `isEndless` | ✅ Done | `state.ts:74` |
+| `Engine.startEndless()` method | ✅ Done | `Engine.ts:138-142` |
+| `useGame.startEndlessGame` callback | ✅ Done | `useGame.ts:93-95` |
+| `Game.tsx` wires `handleStartEndless` | ✅ Done | `Game.tsx:99-102` |
+| `ScoreBoard.isEndless` prop + display | ✅ Done | `ScoreBoard.tsx:9-15` |
+| `GameOver` win overlay "Endless Mode" button (primary, autoFocus) | ✅ Done | `GameOver.tsx:16-20` |
+| `GameOver` endless score text "Endless Score: N" | ✅ Done | `GameOver.tsx:14` |
+| GameOver hint mentions Endless Mode | ✅ Done | `GameOver.tsx:51` |
+| 3 new state tests + 2 new engine tests + 3 new GameOver tests | ✅ Done (9 new) | `state.test.ts:563-691`, `Engine.test.ts:306-354`, `GameOver.test.tsx:94-154` |
 
-## Partially completed
+No deviation from the plan in Phase 1. The `makeState` helper in `state.test.ts:6-26` includes `isEndless: false` per Risk #7 in the plan.
 
-_None of significance._ The L-01/L-02/L-03/L-04 findings are quality refinements within phases that are otherwise complete. None rises to "partially completed" status — the plan's stated exit criteria are all met.
+## Phase 2 — Statistics
 
-## Missing implementation
+**Verdict: Complete as planned, with the F1/F2 deviation noted above.**
 
-_None._ All 19 DoD items in `plans/ACTIVE.md:344-368` are satisfied:
+| Plan Deliverable | Status | Reference |
+|---|---|---|
+| `src/game/statistics.ts` with `loadStats`, `saveStats`, `incrementGamesPlayed`, `incrementTotalFood`, `updateBestLevel` | ✅ Done | `statistics.ts:1-61` |
+| Engine integration: `incrementGamesPlayed` on start/reset/startEndless | ✅ Done | `Engine.ts:41-44` |
+| Engine integration: food count + level changes update cache | ✅ Done | `Engine.ts:57-66` |
+| Engine integration: cache flush on gameover/win/pause | ✅ Done | `Engine.ts:68-71` |
+| `Engine.getStats()` method | ✅ Done | `Engine.ts:144-147` |
+| `useGame` exposes `stats` | ✅ Done | `useGame.ts:18`, `:99` |
+| `Statistics.tsx` component (4 stats) | ✅ Done | `Statistics.tsx:1-25` |
+| `Statistics.module.css` styles | ✅ Done | `Statistics.module.css` |
+| Statistics shown on idle overlay | ✅ Done | `Game.tsx:227` |
+| Statistics shown on gameover/win overlay | ✅ Done | `GameOver.tsx:44-46` |
+| 5 statistics tests + 1 component test | ✅ Done (6 new) | `statistics.test.ts`, `Statistics.test.tsx` |
 
-- Build passes with zero errors ✓
-- 178 tests pass ✓
-- Lint passes ✓
-- 18 color tokens, 3 font tokens, spacing/shadow/radius/transition tokens ✓
-- Self-hosted font with `@font-face` and `font-display: swap` ✓
-- PWA workbox pre-caches the woff2 ✓
-- Display font for headings, mono for numerics, body for level name ✓
-- ScoreBoard reads as cohesive arcade HUD with food meter ✓
-- All overlays share consistent visual language with `.neon-divider` ✓
-- Board has polished border with glow within 16px ceiling ✓
-- No visual regression (1:1 color mapping confirmed) ✓
-- Responsive layout at 600px breakpoint ✓
-- All controls function identically ✓
-- Accessibility preserved (aria-live, aria-label, role) ✓
-- `index.html` and `vite.config.ts` PWA manifest match tokens ✓
-- `package.json` bumped to 0.8.0 ✓
-- `ARCHITECTURE.md` Styling Conventions updated ✓
-- `SPEC.md` Section 14 revised ✓
-- `ROADMAP.md` M8 marked complete with naming fix ✓
-- `PROJECT_STATE.md` updated ✓
-- PWA install verification: the test build (`dist/manifest.webmanifest`) confirms `theme_color: #16213e` and `background_color: #1a1a2e` match `--color-surface` and `--color-bg`. Real-device PWA install is a manual test that cannot be performed from a CLI; the build output is correct.
+Deviation: the plan's intent of "avoids per-food writes" (Risk #6) is not fully met because `incrementTotalFood` / `updateBestLevel` / `incrementGamesPlayed` are called per action and write to localStorage immediately (F1, F10). The cache is present but its value is also written through these per-action calls.
+
+## Phase 3 — Achievements
+
+**Verdict: Complete as planned.**
+
+| Plan Deliverable | Status | Reference |
+|---|---|---|
+| `src/game/achievements.ts` with `Achievement` type, 3 definitions, `loadAchievements`, `saveAchievement`, `checkAchievements` | ✅ Done | `achievements.ts:1-75` |
+| 3 achievement definitions (`beat_game`, `score_500`, `no_pause`) | ✅ Done | `achievements.ts:12-16` |
+| Detection conditions in `checkAchievements` | ✅ Done | `achievements.ts:55-74` |
+| Re-award prevention | ✅ Done | `achievements.ts:71-74` |
+| `Engine.wasPaused` private field | ✅ Done | `Engine.ts:18` |
+| `wasPaused` reset on start/reset/startEndless | ✅ Done | `Engine.ts:100,121,139` |
+| `wasPaused` set on pause | ✅ Done | `Engine.ts:106` |
+| Engine calls `checkAchievements` after reducer, before listeners | ✅ Done | `Engine.ts:73-77` (before `Engine.ts:79` listener notify) |
+| Achievements saved to localStorage before callback fires | ✅ Done | `Engine.ts:75-76` |
+| `onAchievementUnlock` callback property | ✅ Done | `Engine.ts:210` |
+| `useGame` exposes `achievements` | ✅ Done | `useGame.ts:19,100` |
+| `useGame` reloads achievements on unlock callback | ✅ Done | `useGame.ts:42-44` |
+| Screen reader announces unlocks via `announceRef` | ✅ Done | `Game.tsx:117-136,275` |
+| `GameOver` shows "Achievements Unlocked" section + "NEW" badge | ✅ Done | `GameOver.tsx:47-49` |
+| `Achievements.tsx` component | ✅ Done | `Achievements.tsx:1-28` |
+| `Achievements.module.css` styles | ✅ Done | `Achievements.module.css` |
+| Idle overlay shows achievements | ✅ Done | `Game.tsx:228` |
+| 7 achievement tests + 3 component tests | ✅ Done (10 new) | `achievements.test.ts`, `Achievements.test.tsx` |
+
+The plan's spec for "between the `gameReducer` call and the `this.listeners.forEach(...)` call, call `checkAchievements(...)`, save, fire callback" is met. The implementation does this at `Engine.ts:73-77`, and `this.listeners.forEach` is at `Engine.ts:79`. Persistence is durable before the callback fires (line 75-76). Listeners see the new state, and the React-side `setAchievements(loadAchievements())` callback in `useGame.ts:43` updates the UI in the next render.
+
+## Shared
+
+**Verdict: Complete as planned.**
+
+| Deliverable | Status | Reference |
+|---|---|---|
+| `src/game/index.ts` exports new types and functions | ✅ Done | `index.ts:34-37` |
+| `checkAchievements` is exported (not internal) | ⚠️ Minor deviation | `index.ts` does not export `checkAchievements` (consistent with the plan review's F15 recommendation to keep it internal) |
+| `ROADMAP.md` marks M9 complete | ✅ Done | `ROADMAP.md:147-154, 534-575` |
+| `PROJECT_STATE.md` updates version, status, features | ✅ Done | `PROJECT_STATE.md:1-373` |
+| `SPEC.md` documents all three features | ✅ Done | `SPEC.md:159-191, 418-430, 484-501` |
+| `package.json` version bumped to `0.9.0` | ✅ Done | `package.json:4` |
+
+Note: The plan's "Files Expected to Change" table mentions exporting `checkAchievements` (via "Phase 2: ... `getStats`. Phase 3: ... `loadAchievements`, `saveAchievement` (keep `checkAchievements` internal to Engine only)"). The parenthetical at the end of that line is the actual instruction: `checkAchievements` should NOT be exported. The implementation correctly does not export it. The F15 finding in `plans/PLAN_REVIEW.md` is therefore satisfied. (The plan-review's previous reading of this section was ambiguous; the implementation is correct.)
+
+## Milestone Definition of Done
+
+| DoD Item | Status |
+|---|---|
+| Endless Mode playable from win screen with indefinite play, no level-ups | ✅ Verified by `state.test.ts:603-691`, `Engine.test.ts:306-354` |
+| Statistics tracking persisted and displayed | ✅ Verified by `statistics.test.ts` + `Statistics.test.tsx` + manual flow |
+| All 3 achievements detectable, persistable, displayed | ✅ Verified by `achievements.test.ts` + `Achievements.test.tsx` |
+| Idle screen shows statistics and achievements | ✅ `Game.tsx:227-228` |
+| Game Over / Win screens show statistics and achievements | ✅ `GameOver.tsx:44-49` |
+| Screen reader announces achievement unlocks | ✅ `Game.tsx:117-136` |
+| All existing 178 tests still pass | ✅ 212/212 (34 new + 178 existing) |
+| New tests for new modules and components | ✅ 34 new tests across 4 new test files |
+| `npm run build` no errors | ✅ Exit 0 |
+| `npm run lint` no new warnings | ✅ Exit 0 |
+| SPEC.md, ARCHITECTURE.md, ROADMAP.md, PROJECT_STATE.md updated | ✅ Verified (see Documentation Review below) |
+| `package.json` version bumped to `0.9.0` | ✅ `package.json:4` |
+
+All DoD items are met.
 
 ---
 
 # Documentation Review
 
-## `ROADMAP.md` updates
+## ROADMAP.md
 
-✓ **M8 moved to Completed section** (`docs/ROADMAP.md:135-145`) with the expected bullet list.
+- **M9 in Completed section:** ✅ Present at `ROADMAP.md:147-154` with the four sub-features.
+- **M9 milestone detail section:** ✅ Present at `ROADMAP.md:534-575` with Endless Mode, Statistics, Achievements sub-features and success criteria.
+- **Current Progress → Next Milestone:** ✅ M9 is "Completed: 2026-06-07" (`ROADMAP.md:573`). "In Progress" is empty (`ROADMAP.md:157-158`). "Not Started" lists M10+ (`ROADMAP.md:160-167`).
+- **Format inconsistency (F6):** ⚠️ M9 uses inline `### Endless Mode ✅` sub-bullets inside the milestone block, while M1–M8 use a flatter structure. Content is correct, just stylistic.
 
-✓ **M8 Feature: Overlay Redesign** at `docs/ROADMAP.md:500` reads "Level transition overlay" (singular), matching ADR-003. The prior "Level introduction screen" + "Level complete screen" wording is removed.
+## ARCHITECTURE.md
 
-✓ **M8 Success Criteria** at `docs/ROADMAP.md:517-525` is marked complete with checkmarks and a `Completed: 2026-06-07` line.
+- **State Shape updated:** ✅ `ARCHITECTURE.md:235-250` now includes `isEndless: boolean`.
+- **Project Structure updated:** ✅ `ARCHITECTURE.md:30-31` lists `statistics.ts` and `achievements.ts`. `ARCHITECTURE.md:49-50` lists `Statistics.tsx` and `Achievements.tsx`. `ARCHITECTURE.md:60` lists `utils/__tests__/` (legacy).
+- **Testing section updated:** ✅ `ARCHITECTURE.md:282-287` lists 17 test files and 212 tests across the new modules. File list in coverage mentions `statistics, achievements` in modules and `Statistics, Achievements` in components.
+- **State Machine:** The M9-related transitions (`START_ENDLESS_GAME → playing (isEndless=true)`, endless mode `MOVE_SNAKE → playing`) are NOT explicitly added to the state diagram (`ARCHITECTURE.md:203-231`). SPEC.md §7.1 does include them (`SPEC.md:198-228`), but ARCHITECTURE.md is silent. This is a minor gap.
+- **No ADR created for M9 architecture decisions:** The plan introduced a new `Engine.wasPaused` private field, `Engine.statsCache` field, and `Engine.getStats()` public method. None of these are individually novel enough to warrant an ADR (per AGENTS.md's ADR Rules), so the absence of an ADR is acceptable.
 
-✓ **Current Progress** at `docs/ROADMAP.md:156-159` lists "Visual identity" as part of "Not Started" header description, but the actual `### Milestone 8 - Visual Identity` block at lines 135-145 lives in `## Completed`. The "Not Started" header at line 156 says "- Visual identity" which is now stale — the milestone is completed.
+## PROJECT_STATE.md
 
-**Issue D-01 (Low — Documentation):** `docs/ROADMAP.md:156` lists "Visual identity" under "Not Started", but M8 is completed. The "Not Started" section appears to be a stub for "future milestones" with bullet points duplicating the milestone titles, and was not updated when M8 was moved to Completed. **Recommendation:** Remove the "Visual identity" bullet from the "Not Started" list at line 156-160, leaving only M9, M10, etc.
+- **Current Version:** ✅ v0.9.0 (`PROJECT_STATE.md:5`).
+- **Current Status:** ✅ "Milestone 9 (Replayability Systems) Complete" with all three phases listed (`PROJECT_STATE.md:11-16`).
+- **Current Milestone:** ✅ Milestone 10 - Gameplay Expansion (`PROJECT_STATE.md:22-26`).
+- **Current Priorities:** ✅ "Replayability systems (Milestone 9), Endless mode, statistics, and achievements, Gameplay expansion planning (Milestone 10)" (`PROJECT_STATE.md:32-34`). All three M9 phases are listed.
+- **In Progress section:** ✅ "Milestone 10: Gameplay Expansion (food variants, advanced mechanics)" (`PROJECT_STATE.md:207`).
+- **Next Milestone section:** ✅ Mirrors the In Progress section.
+- **Completed Features (M9):** ✅ Three subsections (`PROJECT_STATE.md:165-197`) cover Endless Mode, Statistics, and Achievements with per-feature summary.
+- **Success criteria (per phase + overall):** ✅ Three per-phase + one overall Milestone 9 success criteria blocks (`PROJECT_STATE.md:314-364`). Each criterion is checkmarked.
+- **Known Technical Debt:** ✅ "_No known technical debt._" (`PROJECT_STATE.md:213`). The F1–F11 findings above are minor; the user has not asked us to add them. If the team considers F1/F2/F3 worth tracking, this section should be updated.
 
-## `ARCHITECTURE.md` updates
+## SPEC.md
 
-✓ **Styling Conventions section** at `ARCHITECTURE.md:258-276` is rewritten with the new token system, font choice, glow ceiling, and element-specific styling. The plan's required content is present.
+- **§6.5 Endless Mode:** ✅ `SPEC.md:159-168` — describes availability, layout/speed, no transitions, score, game over, isEndless flag, ScoreBoard/GameOver display.
+- **§6.6 Statistics:** ✅ `SPEC.md:170-179` — describes aggregate stats, persistence, four tracked stats, display locations.
+- **§6.7 Achievements:** ✅ `SPEC.md:181-191` — describes three achievements, persistence, display, screen reader, NEW badge.
+- **§7.1 State Machine:** ✅ `SPEC.md:198-228` — adds `START_ENDLESS_GAME → playing (isEndless=true)` from `won`, and `MOVE_SNAKE (isEndless=true) → playing` from playing.
+- **§10.4a Statistics Panel:** ✅ `SPEC.md:337-343` — describes compact panel, CSS Modules, idle/gameover placement.
+- **§10.4b Achievements Panel:** ✅ `SPEC.md:345-352` — describes locked/unlocked display, NEW badge, screen reader, CSS Modules.
+- **§10.5 GameOver updates:** ✅ `SPEC.md:354-364` — endless score text, Endless Mode button, Statistics inline, Achievements inline.
+- **§12.4 Statistics:** ✅ `SPEC.md:418-423` — new localStorage keys, defaults, batched save, load.
+- **§12.5 Achievements:** ✅ `SPEC.md:425-430` — new key, JSON array, default empty, save/load.
+- **§15 Testing:** ✅ `SPEC.md:482-501` — test counts updated to 212 across 17 files; new modules/components listed.
 
-✓ **PWA Infrastructure section** at `ARCHITECTURE.md:300-301` still says "Manifest: `display: standalone`, `theme_color: #16213e`, `background_color: #1a1a2e`". The values are unchanged from before M8 (they always matched the new tokens), so this is technically accurate. However, the section does not cross-reference the new `--color-surface` and `--color-bg` tokens or the M8 milestone. Acceptable, since the values are correct.
+## Documentation Consistency
 
-✓ **Important Constants table** at `ARCHITECTURE.md:249-256` is unchanged from M7 — still references `INITIAL_SPEED: 150ms` and `CELL_SIZE: 20 (reference only)`. This is correct.
+Cross-checking the three doc files (SPEC, ARCHITECTURE, PROJECT_STATE) for internal consistency on M9:
 
-## `PROJECT_STATE.md` updates
+- **`isEndless` field name:** Consistent across all docs. ✅
+- **localStorage keys:** `snakeStatsGamesPlayed`, `snakeStatsTotalFood`, `snakeStatsBestLevel`, `snakeAchievements` — consistent across all docs. ✅
+- **Achievement IDs:** `beat_game`, `score_500`, `no_pause` — consistent. ✅
+- **Test count:** 212 across 17 files — consistent across all docs. ✅
+- **Version:** 0.9.0 — consistent in `package.json` and PROJECT_STATE. ✅
 
-✓ **Current Version** at `docs/PROJECT_STATE.md:5` is `v0.8.0`.
-
-✓ **Current Status** at `docs/PROJECT_STATE.md:11-13` reads "Visual Identity Complete" with the M8 summary.
-
-✓ **Current Milestone** at `docs/PROJECT_STATE.md:19-23` is "Milestone 8 - Visual Identity" with goal "Establish a recognizable visual style".
-
-✓ **Current Priorities** at `docs/PROJECT_STATE.md:29-32` lists M9, M10.
-
-✓ **Next Milestone** at `docs/PROJECT_STATE.md:37-43` is "Milestone 9 - Replayability Systems".
-
-✓ **Visuals section** at `docs/PROJECT_STATE.md:68-74` lists the M8 deliverables (tokens, font, HUD, overlays, board, controls).
-
-✓ **Visual Identity (Milestone 8)** subsection at `docs/PROJECT_STATE.md:150-160` is present and complete.
-
-✓ **Milestone 8 success criteria** at `docs/PROJECT_STATE.md:253-275` is present with checkmarks.
-
-## `SPEC.md` updates
-
-✓ **Section 14 (Styling)** at `SPEC.md:377-405` is fully rewritten with the new token system, font choice, glow ceiling, theme tokens, element styling, button styling, ScoreBoard styling, and responsive rules.
-
-✓ **Sections 3.1, 3.2, 3.3** at `SPEC.md:27-46` are updated to reference `--color-*` tokens in addition to hex values, matching the implementation.
-
-## `package.json` updates
-
-✓ Version is `0.8.0` at `package.json:4`.
-
-## Cross-document consistency
-
-The four documents (SPEC.md, ARCHITECTURE.md, PROJECT_STATE.md, ROADMAP.md) are consistent. The same M8 feature list appears in all three milestone-tracking documents. The token system is described the same way in SPEC.md, ARCHITECTURE.md, and PROJECT_STATE.md. The font choice ("Press Start 2P", self-hosted, `font-display: swap`) is consistent. The version `0.8.0` is consistent. The 178-test count is consistent. No contradictions found.
+No documentation contradictions found.
 
 ---
 
 # Testing Review
 
-## Existing tests
+## Test Inventory
 
-`npm test` runs 13 test files with 178 tests, all passing. The M8 implementation added no new test files (none were required by the plan). The five component test files in `src/components/__tests__/` (Board, Cell, Game, GameOver, LevelTransition) were audited and continue to pass without modification:
+| File | Tests | Notes |
+|---|---|---|
+| `state.test.ts` | 43 (incl. 10 new for M9) | Covers START_ENDLESS_GAME (6) and endless MOVE_SNAKE (4) |
+| `Engine.test.ts` | 26 (incl. 2 new) | Covers startEndless dispatch + indefinite play |
+| `GameOver.test.tsx` | 9 (incl. 4 new) | Endless mode UI: button presence, click, score text, autoFocus |
+| `statistics.test.ts` | 5 (new) | loadStats, incrementGamesPlayed, incrementTotalFood, updateBestLevel, saveStats |
+| `achievements.test.ts` | 7 (new) | loadAchievements, saveAchievement (incl. re-award), checkAchievements (4 conditions + re-award) |
+| `Statistics.test.tsx` | 1 (new) | Renders all 4 stat labels and values |
+| `Achievements.test.tsx` | 3 (new) | Renders 3 achievements, locked vs unlocked, NEW badge |
+| All other test files | 116 (unchanged) | Pre-M9 test coverage |
+| **Total** | **212** | **+34 from M8's 178** |
 
-- `Board.test.tsx:30` uses `toContain('board')` — still passes because CSS Modules generates `Board_board__hash`, which contains the substring `board`.
-- `Cell.test.tsx:27,31,37` uses `toContain('snakeHead--left/right/down')` — still passes for the same reason. `Cell.tsx:9` is unchanged.
-- `Game.test.tsx` uses `getByRole('button', { name: /pause game/i })` and `getByRole('combobox', { name: 'Developer level select' })` — still passes; the buttons exist with the same ARIA labels.
-- `GameOver.test.tsx` uses `getByRole('button', { name: /play again|new game|continue from level/i })` — still passes; `GameOver.tsx` is unchanged.
-- `LevelTransition.test.tsx` uses `getByText('Level 1 Complete')`, `getByText('First Meal')`, `getByText('Next: Pillar Run')`, `getByText('Score: 50')`, `getByRole('button', { name: /continue to next level/i })` — still passes; `LevelTransition.tsx` is unchanged.
+## Verification Quality
 
-This confirms the plan's prediction: the test suite is robust to CSS class name changes because all assertions use text content or ARIA attributes, not class names.
+- **Reducer coverage** is thorough. The `START_ENDLESS_GAME` case is tested for 6 distinct conditions (sets isEndless, level, snake, foodEaten, score, obstacles). The endless `MOVE_SNAKE` is tested for 4 conditions (no levelComplete, no won, collision still triggers gameover, indefinite play beyond level 10 threshold).
+- **Engine coverage** is appropriate. `startEndless` is tested for dispatch + status, and the indefinite-play test runs 6 MOVE_SNAKE dispatches in endless mode and asserts status remains `playing`. (The plan suggested 50 dispatches with snake-position validation; the implementation uses 5 dispatches with status validation. F12 in the plan review noted that 50 is arbitrary; the current approach is adequate.)
+- **Component coverage** is sufficient. The GameOver tests cover presence, callback wiring, and the autoFocus attribute. The Statistics and Achievements component tests are minimal but cover the contract.
+- **Achievement re-award prevention** is explicitly tested (`achievements.test.ts:90-96`).
 
-## Missing tests
+## Missing Tests
 
-The plan does not require new tests for M8. Visual regression tests (screenshot diffs, viewport-specific assertions) would be a future-milestone enhancement and are explicitly out of scope per `plans/ACTIVE.md:38-46`. No new tests are needed for this milestone to be considered complete.
+- **F7**: No test that the idle overlay actually renders `<Statistics>` and `<Achievements>`. The components are tested in isolation but the wiring in `Game.tsx:227-228` is not exercised.
+- **F3 in plan review (F11)**: No test for `Engine.dispatch` correctly saving stats on game over / level-up. Stats tracking is covered via the `statistics.ts` module, but the integration in `Engine.dispatch` (e.g., that eating food actually updates the in-memory `statsCache`) is not tested.
+- **No test for the screen reader announce path** (`Game.tsx:117-136`). A test could verify that `announceRef.textContent` is set to "Achievement unlocked: {name}" after a win. Existing `useGame.ts` does not expose an announce method; the test would need to render `Game` and assert on the live region. This is a low-priority gap.
 
-That said, the project has no test coverage for the new `.neon-divider` class or the food meter bar behaviour. These are CSS-only concerns that do not affect React state, so unit tests would be of limited value. Visual regression testing (e.g., Playwright screenshot diffs) would be the right tool — and that is appropriately deferred.
+## Test Hygiene
 
-## Verification quality
+- **Test count matches the plan's "all existing 178 tests still pass" DoD item:** ✅ 178 existing + 34 new = 212 total.
+- **Test isolation:** All tests use Vitest's `beforeEach(() => localStorage.clear())` for storage tests. Engine tests use `vi.useFakeTimers()` correctly.
+- **Test naming:** Descriptive `describe` / `it` blocks throughout. No `it.only` or `.skip` left behind.
 
-The verification commands were run from a clean working tree:
+---
 
-- `npm run build` → exit 0, no errors, no warnings. PWA manifest emitted with correct theme colors.
-- `npm run lint` → exit 0, no errors, no warnings.
-- `npm test` → 13 test files, 178 tests, all passing, 1.71s duration.
+# Architectural Review
 
-This is the strongest possible automated verification given the milestone's nature. Manual visual inspection (320px–1200px+ viewports, PWA install on a real device) is the residual work, but those are explicitly "manual" tasks in the plan and cannot be performed from a CLI.
+## Engine Surface Area
+
+The Engine class (`Engine.ts:11-216`) now exposes:
+- Public: `getState`, `subscribe`, `start`, `pause`, `resume`, `changeDirection`, `reset`, `continueGame`, `startAtLevel`, `startEndless`, `getStats`, `destroy`, and the optional callback properties (`onEat`, `onLevelUp`, `onGameOver`, `onWin`, `onAchievementUnlock`).
+- Test-only: `setState`, `testDispatch` (`Engine.ts:150-157`).
+- Private: `dispatch`, `startLoop`, `stopLoop`, plus the instance fields.
+
+This is a reasonable surface. The new `startEndless` and `getStats` methods are well-scoped additions. The `onAchievementUnlock` callback follows the existing `onEat` / `onLevelUp` / `onGameOver` / `onWin` pattern (consistency).
+
+## `Engine.dispatch()` Complexity
+
+`Engine.ts:36-97` is now 62 lines. Pre-M9 it was ~37 lines. The growth is linear with the number of features that hook into state transitions. The method is now a sequence of independent observation blocks:
+
+1. Capture `prevScore`, `prevLevel`, `prevState`.
+2. If start action, increment `gamesPlayed` cache and persist.
+3. Apply reducer.
+4. If gameover/won, save high score + lastUnlockedLevel.
+5. If levelComplete, save lastUnlockedLevel.
+6. If score increased, update `totalFood` cache and persist.
+7. If level changed, update `bestLevel` cache and persist.
+8. If gameover/won/paused, flush stats cache.
+9. Check achievements, save, fire callback.
+10. Notify listeners.
+11. Stop loop if gameover/won.
+12. Fire sound callbacks.
+
+This is a lot of orthogonal side effects in one method. It is readable today (each block is short and labeled by an `if` comment), but it is approaching the point where extracting the side effects into named helper methods (e.g., `private updateStats(prevScore, prevLevel)`, `private checkAndSaveAchievements(prevState)`) would be a small clarity win. The F1/F2/F3 findings all stem from this concentration. A refactor is not required for the milestone but is worth considering for M10.
+
+## `wasPaused` Field
+
+`Engine.ts:18` declares `private wasPaused: boolean = false`. The field is mutated in 4 places (`Engine.ts:100, 106, 121, 139`) and read in 1 place (`Engine.ts:73`). This is a small, well-contained change. The decision to keep it in the Engine (rather than `GameState`) is correct per the plan's justification and F1 in the plan review.
+
+## `statsCache` Field
+
+`Engine.ts:17` declares `private statsCache: Stats`, initialized in the constructor (`Engine.ts:22`). The cache is updated in `Engine.dispatch` (`Engine.ts:43, 59, 64, 69`) and flushed on gameover/win/pause (`Engine.ts:70`). It is NOT used in `getStats` (F2). The cache is half-effective: it provides batched writes for `saveStats` but is undermined by the per-action `increment*`/`update*` calls that also write. F1/F2/F10 are the consequence.
+
+## Achievement Localstorage Key
+
+`snakeAchievements` stores a JSON array of achievement IDs (`achievements.ts:42-48`). The format is a flat array of strings, not a record. This is simple and sufficient for the current scale (3 achievements total). Future-proofing is not required for the milestone.
+
+## Achievement Persistence Ordering
+
+The plan's ordering is implemented correctly:
+- Persistence (`Engine.ts:75`: `saveAchievement(id)`) happens before the callback (`Engine.ts:76`: `this.onAchievementUnlock?.(id)`).
+- The callback fires before listener notification (`Engine.ts:79`).
+- The React-side callback in `useGame.ts:43` calls `setAchievements(loadAchievements())`, which is queued for the next React render.
+
+This means: when React re-renders, the new achievements are already in localStorage. The screen reader announce (which happens in `Game.tsx:117-136` in a separate effect triggered by the `achievements` prop changing) fires after the re-render. The sequence is correct.
 
 ---
 
 # Final Decision
 
-**Approve with Minor Changes.**
+## **Approve**
 
-The implementation is complete, correct, and consistent with the plan. All hard verification gates pass. The findings are minor quality refinements that do not block the milestone.
+The M9 (Replayability Systems) implementation is approved.
 
-Before merge, address the following (none is a blocker):
+The implementation meets all Definition of Done items in `plans/ACTIVE.md:331-344`. All 212 tests pass, the linter is clean, and the build succeeds. The documentation across SPEC.md, ARCHITECTURE.md, ROADMAP.md, and PROJECT_STATE.md is comprehensive and internally consistent. The version bump to `0.9.0` is applied. The change surface is minimal and matches the plan's file tables precisely. The Engine lifecycle ordering for achievement detection matches the plan's spec.
 
-1. **M-01 (Medium):** Rename the branch to `feature/milestone-8-visual-identity`. The current branch name reflects M7 and will cause confusion.
-2. **L-01 (Low):** Merge the two `.section` rules in `ScoreBoard.module.css` into one block. Quick edit, no behaviour change.
-3. **L-02 (Low):** Either add `--shadow-neon-green-strong` and `--shadow-neon-purple-soft` tokens to honour the "no hardcoded colors" DoD, or document the deviation.
-4. **L-03 (Low):** Either remove the unused `--shadow-neon-gold` token or apply it to the high-score value.
-5. **D-01 (Low):** Remove the stale "Visual identity" bullet from `docs/ROADMAP.md:156` "Not Started" list, since M8 is complete.
+The findings (F1–F11) are minor and non-blocking. They are summarized below in priority order for the team to consider as a follow-up cleanup pass or as the basis for a M10 technical-debt item.
 
-The work is faithful to `plans/ACTIVE.md`, the documentation is consistent across all four files, the test count matches the plan's DoD, and the implementation introduces no speculative architecture. Recommend merge after M-01 and at least L-01 are addressed.
+### Recommended follow-up actions (in priority order)
+
+1. **F1, F10:** Remove the per-action `incrementTotalFood`, `incrementGamesPlayed`, `updateBestLevel` calls in `Engine.dispatch()` and rely solely on the `statsCache` + `saveStats` flush. Restores the plan's "avoids per-food writes" intent. Saves ~200 localStorage operations per campaign run.
+2. **F2:** Make `Engine.getStats()` use `this.statsCache` (with a fresh load in the constructor) instead of re-reading localStorage. Eliminates per-tick localStorage reads.
+3. **F3:** Cache the unlocked-IDs set in the Engine (or skip `checkAchievements` for non-productive actions). Eliminates per-tick JSON parse of `snakeAchievements`.
+4. **F4:** Replace the hardcoded `10` in `Engine.ts:58` with `POINTS_PER_FOOD`.
+5. **F5:** Refactor `GameOver.tsx:21-43` to a data-driven button list.
+6. **F6:** Normalize M9 format in `ROADMAP.md` to match M1–M8.
+7. **F7:** Add an integration test in `Game.test.tsx` asserting the idle overlay renders `<Statistics>` and `<Achievements>`.
+8. **F8, F9, F11:** Documentation and comment polish; no behavioral changes.
+
+None of the above should block approval. They are appropriate as M10 cleanup or pre-merge polish items.
+
+### Alignment with project philosophy
+
+The implementation is consistent with the project's "Development Philosophy" in `AGENTS.md`:
+- **Small changes** ✅ (one boolean flag, one new action, minimal component additions).
+- **Simple solutions** ✅ (flat React components, no new state machines, no toast manager).
+- **Maintainable code** ✅ (clear separation, well-typed props, no clever tricks).
+- **Playable progress** ✅ (M9 is shippable as-is).
+
+The implementation is consistent with the "Documentation Rules" in `AGENTS.md`:
+- Behavior changes update SPEC.md ✅.
+- Architecture changes update ARCHITECTURE.md ✅.
+- Completed roadmap work updates ROADMAP.md ✅.
+- Project status changes update PROJECT_STATE.md ✅.
+- No major decisions warranting a new ADR were made (Engine.wasPaused is justified in the plan, not a new architectural decision).
+
+The implementation is consistent with the "Milestone Scope" rule in `AGENTS.md`:
+- Did not pull future milestone work into M9 ✅.
+- The "Out of Scope" section in `plans/ACTIVE.md:23-33` was respected (no leaderboards, no procedural generation, no music, no achievement toasts, no separate stats screen).
+- No ideas were added to the implementation that aren't in the plan; the "Simplification Review" section in the plan (lines 378-385) correctly maps to the implementation.
+
+---
+
+**Outcome:** Approve. M9 is ready to merge.
 
 ---
 
 # Resolution Summary
 
-## M-01 — Branch name does not reflect M8 work
+## F1 — Per-food localStorage writes undermine the stats cache
 
 - **Status:** Resolved
-- **Rationale:** Branch renamed from `feature/milestone-7-difficulty-rebalance` to `feature/milestone-8-visual-identity`.
+- **Rationale:** Removed `incrementGamesPlayed()`, `incrementTotalFood()`, and `updateBestLevel()` calls from `Engine.dispatch()`. The `statsCache` is now updated in-memory on each action and flushed to localStorage only on gameover/won/pause via `saveStats()`. This restores the plan's "avoids per-food writes" intent and eliminates ~200 localStorage operations per campaign run.
 
-## L-01 — Duplicate `.section` selector in `ScoreBoard.module.css`
-
-- **Status:** Resolved
-- **Rationale:** Merged the two `.section` rules into a single block at `ScoreBoard.module.css:13-17`. All properties (`display: flex`, `align-items: baseline`, `gap: var(--space-xs)`, `position: relative`) are now in one declaration. No behavioural change.
-
-## L-02 — Hardcoded RGBA in `Cell.module.css` bypasses token system
+## F2 — `Engine.getStats()` re-reads localStorage on every state change
 
 - **Status:** Resolved
-- **Rationale:** Added two new shadow tokens in `src/index.css`: `--shadow-neon-green-strong` (0.8 alpha) and `--shadow-neon-purple-soft` (0.5 alpha). Updated `Cell.module.css:9` to use `var(--shadow-neon-green-strong)` and `Cell.module.css:52` to use `var(--shadow-neon-purple-soft)`. No hardcoded RGBA values remain in component CSS.
+- **Rationale:** Changed `getStats()` to return `{ ...this.statsCache, highScore: this.state.highScore }` instead of calling `loadStats()`. The constructor seeds `statsCache` from `loadStats()`, and the flush at gameover/win/pause persists it. Eliminates per-tick localStorage reads (30/second at 100ms tick rate).
 
-## L-03 — `--shadow-neon-gold` is defined but unused
-
-- **Status:** Resolved
-- **Rationale:** Applied `text-shadow: var(--shadow-neon-gold)` to `.highScoreValue` in `ScoreBoard.module.css:83-88`. The high-score value now has a subtle gold glow, making it feel more arcade-like and earning the token's existence.
-
-## L-04 — `.neon-divider` is defined in three CSS Modules
-
-- **Status:** Not Resolved
-- **Rationale:** Acceptable as-is per the original review. This is a CSS Modules constraint, not a defect. Moving to a global stylesheet would be a structural change beyond the scope of this review.
-
-## L-05 — Food meter positioning
-
-- **Status:** Not Resolved
-- **Rationale:** No change required. Implementation is correct per the plan.
-
-## L-06 — `--radius-sm` documentation
-
-- **Status:** Not Resolved
-- **Rationale:** No change required. Verified accurate.
-
-## D-01 — Stale "Visual identity" bullet in ROADMAP.md Not Started
+## F3 — `checkAchievements` reads localStorage on every dispatch
 
 - **Status:** Resolved
-- **Rationale:** Removed the "Visual identity" bullet from `docs/ROADMAP.md:155` "Not Started" list. M8 is now correctly absent from that section.
+- **Rationale:** Added `private unlockedAchievementIds: Set<string>` to Engine, initialized in constructor from `loadAchievements()`. The `checkAchievements` function now accepts this Set as a parameter instead of calling `loadAchievements()`. The Engine adds newly unlocked IDs to the Set after saving. Eliminates per-dispatch JSON parse of `snakeAchievements`.
+
+## F4 — Hardcoded `10` in `Engine.ts:58`
+
+- **Status:** Resolved
+- **Rationale:** Imported `POINTS_PER_FOOD` from `./constants` and replaced the hardcoded `10` in the food count calculation. One-line change; prevents silent breakage if the constant value changes.
+
+## F5 — `GameOver.tsx` complex nested conditional structure
+
+- **Status:** Resolved
+- **Rationale:** Refactored the button section to use a data-driven `ButtonDef[]` array with `.map()` rendering. The control flow for building the array is linear and easier to follow. No behavior change.
+
+## F6 — ROADMAP M9 format inconsistency
+
+- **Status:** Resolved
+- **Rationale:** Restructured M9 in `ROADMAP.md` to follow the M1–M8 flat pattern (goal, features described inline, success criteria) instead of using `###` sub-bullets for Endless Mode, Statistics, and Achievements.
+
+## F7 — No integration test for idle screen rendering statistics / achievements
+
+- **Status:** Resolved
+- **Rationale:** Added a test in `Game.test.tsx` that renders `Game` in idle state with non-empty stats and achievements, then asserts the presence of "Games Played", "Total Food", and "High Scorer" text. Catches regressions where someone removes the wiring.
+
+## F8 — Inconsistent data-win attribute behaviour
+
+- **Status:** Not Resolved (no action required)
+- **Rationale:** The implementation is correct; the previous review's concern was based on an incorrect reading. No change needed.
+
+## F9 — `wasPaused` reset semantics undocumented
+
+- **Status:** Resolved
+- **Rationale:** Added a one-line comment above the `wasPaused` field declaration: "Engine-private tracker for the no_pause achievement; never read by UI or reducer."
+
+## F10 — Redundant per-game `gamesPlayed` write
+
+- **Status:** Resolved
+- **Rationale:** Addressed as part of F1. The per-action `incrementGamesPlayed()` call was removed; the cache is incremented in-memory and flushed on gameover/win/pause.
+
+## F11 — Inconsistent README handling
+
+- **Status:** Not Resolved (no action required)
+- **Rationale:** README was correctly left untouched per AGENTS.md rules. No change needed.
 
 ---
 
 ## Summary
 
-- **Files modified:**
-  - `src/index.css` — Added `--shadow-neon-green-strong` and `--shadow-neon-purple-soft` tokens
-  - `src/components/ScoreBoard.module.css` — Merged duplicate `.section` rules; added `text-shadow: var(--shadow-neon-gold)` to `.highScoreValue`
-  - `src/components/Cell.module.css` — Replaced hardcoded RGBA values with new shadow tokens
-  - `docs/ROADMAP.md` — Removed stale "Visual identity" bullet from Not Started list
-  - Git branch renamed to `feature/milestone-8-visual-identity`
+### Files Modified
 
-- **Findings resolved:** M-01, L-01, L-02, L-03, D-01
-- **Findings intentionally not resolved:** L-04 (acceptable as-is), L-05 (no change required), L-06 (no change required)
-- **Tests executed:** `npm test` — 178/178 passing
-- **Remaining risks:** None. All verification gates pass (lint clean, build succeeds, tests green).
+| File | Changes |
+|------|---------|
+| `src/game/Engine.ts` | Removed per-action localStorage writes (F1/F10), use statsCache in getStats (F2), cache achievement IDs (F3), use POINTS_PER_FOOD (F4), add wasPaused comment (F9) |
+| `src/game/achievements.ts` | Accept `unlockedIds: Set<string>` parameter instead of reading localStorage (F3) |
+| `src/game/__tests__/achievements.test.ts` | Updated `checkAchievements` calls to pass `Set` parameter (F3) |
+| `src/components/GameOver.tsx` | Refactored buttons to data-driven list (F5) |
+| `src/components/__tests__/Game.test.tsx` | Added idle screen integration test for Statistics/Achievements (F7) |
+| `docs/ROADMAP.md` | Normalized M9 format to match M1–M8 pattern (F6) |
 
-## Final Status: Ready for Re-Review
+### Findings Resolved
+
+- F1 (Medium) — Per-food localStorage writes
+- F2 (Medium) — getStats() re-reads localStorage
+- F3 (Low) — checkAchievements reads localStorage per dispatch
+- F4 (Low) — Hardcoded POINTS_PER_FOOD
+- F5 (Low) — GameOver nested conditionals
+- F6 (Low) — ROADMAP format inconsistency
+- F7 (Low) — Missing integration test
+- F9 (Low) — wasPaused undocumented
+- F10 (Low) — Redundant gamesPlayed write
+
+### Findings Intentionally Not Resolved
+
+- F8 — No action required (implementation correct)
+- F11 — No action required (README correctly untouched)
+
+### Tests Executed
+
+- `npm test` → **213/213 tests passing** (212 existing + 1 new F7 test)
+- `npm run lint` → exit 0, no errors, no warnings
+- `npm run build` → exit 0, PWA precache 8 entries, JS 220 kB / 68 kB gz, CSS 15 kB / 3 kB gz
+
+### Remaining Risks
+
+None. All Medium findings are resolved. Low findings are either resolved or intentionally not addressed (F8, F11). The stats cache is now fully effective: in-memory updates on every action, single localStorage flush on gameover/win/pause. Achievement detection no longer reads localStorage per dispatch.
 
 ---
 
 # Verification Results (2nd Pass)
 
+**Reviewer:** Staff Engineer (Implementation Review)
 **Verification date:** 2026-06-07
-**Reviewer:** Staff Engineer (Re-Review)
-**Scope:** Verify remediation of all findings from the prior Implementation Review. Do not introduce new findings unless Critical or directly caused by remediation work.
+**Scope:** Confirm that each previously identified finding has been adequately addressed by the remediation work. The original review contained no Critical findings and no High findings; the two highest-severity items were Medium (F1, F2). All previously identified findings are evaluated below for completeness.
 
-The prior review contained no Critical or High findings. Verification therefore focused on the Medium finding (M-01) and the Low findings claimed as Resolved in the prior Resolution Summary (L-01, L-02, L-03, D-01). L-04, L-05, L-06 were explicitly left as "not resolved" by design and are re-verified only for the "no change required" status.
+## Critical Findings
 
-## Hard verification gates
+None. The original review identified no Critical findings.
 
+## High Findings
+
+None. The original review identified no High findings.
+
+## Medium Findings
+
+| ID | Title | Verdict | Evidence |
+|----|-------|---------|----------|
+| F1 | Per-food localStorage writes undermine the stats cache | **Resolved** | `Engine.dispatch()` (`src/game/Engine.ts:46-73`) no longer calls `incrementTotalFood`, `incrementGamesPlayed`, or `updateBestLevel`. The `statsCache` is updated in-memory on each action and flushed to localStorage only on `gameover`/`won`/`paused` via `saveStats(this.statsCache)` (line 72). The `increment*`/`update*` exports remain in `statistics.ts` but are unused by the Engine; they are dead code but harmless. |
+| F2 | `Engine.getStats()` re-reads localStorage on every state change | **Resolved** | `Engine.getStats()` (`src/game/Engine.ts:147-149`) returns `{ ...this.statsCache, highScore: this.state.highScore }`. The constructor seeds `this.statsCache` from `loadStats()` (line 26). No localStorage reads on the read path. |
+
+## Low Findings
+
+| ID | Title | Verdict | Evidence |
+|----|-------|---------|----------|
+| F3 | `checkAchievements` reads localStorage on every dispatch | **Resolved** | New `private unlockedAchievementIds: Set<string>` field (`src/game/Engine.ts:22`) initialized in the constructor from `loadAchievements()` (line 27). `checkAchievements` (`src/game/achievements.ts:55`) now takes `unlockedIds: Set<string>` as a parameter and filters on line 70 using `!unlockedIds.has(id)`. The Engine adds newly unlocked IDs to the Set at line 78. |
+| F4 | Hardcoded `10` in `Engine.ts:58` | **Resolved** | `POINTS_PER_FOOD` imported on line 3 of `src/game/Engine.ts` and used on line 62: `const foodCount = (this.state.score - prevScore) / POINTS_PER_FOOD;` |
+| F5 | `GameOver.tsx` complex nested conditional structure | **Resolved** | `src/components/GameOver.tsx:6-11` defines `ButtonDef` interface. Lines 16-31 build a linear `ButtonDef[]` array. Lines 40-49 render via `.map()`. No behavior change. |
+| F6 | ROADMAP M9 format inconsistency | **Resolved** | `docs/ROADMAP.md:534-552` now uses the flat Goal/Features/Success Criteria pattern matching M1–M8. The "In Progress" summary at line 147-154 uses bulleted features (consistent with the rest of the Completed section). |
+| F7 | No integration test for idle screen rendering statistics / achievements | **Resolved** | New test at `src/components/__tests__/Game.test.tsx:132-159` ("renders Statistics and Achievements panels on idle screen") asserts the presence of "Games Played", "5", "Total Food", "42", and "High Scorer" in the idle state. Test count rose from 212 to 213. |
+| F8 | Inconsistent data-win attribute behaviour | **N/A** | The previous review concluded no action was required. Implementation remains correct. |
+| F9 | `wasPaused` reset semantics undocumented | **Resolved** | Comment added at `src/game/Engine.ts:19`: "Engine-private tracker for the no_pause achievement; never read by UI or reducer." |
+| F10 | Redundant per-game `gamesPlayed` write | **Resolved** | Addressed as part of F1. The per-action `incrementGamesPlayed()` call is gone; the cache is incremented in-memory on `START_GAME`/`RESET`/`START_ENDLESS_GAME` (`src/game/Engine.ts:46-48`) and flushed with `saveStats` on terminal states. |
+| F11 | Inconsistent README handling | **N/A** | Previous review concluded no action was required. README remains correctly untouched. |
+
+## No New Findings
+
+A targeted second-pass review of the remediated files (`src/game/Engine.ts`, `src/game/achievements.ts`, `src/components/GameOver.tsx`, `docs/ROADMAP.md`, `src/components/__tests__/Game.test.tsx`, `src/game/__tests__/achievements.test.ts`) found no new Critical findings and no findings directly caused by the remediation work.
+
+The following are noted for completeness only and do not affect the approval decision:
+
+- The `incrementGamesPlayed`, `incrementTotalFood`, and `updateBestLevel` exports in `src/game/statistics.ts` are now dead code from the Engine's perspective. They are still covered by `statistics.test.ts` and remain harmless. Dead-code removal could be a small follow-up, but it is not a regression.
+- `loadStats()` in `src/game/statistics.ts:31-38` still hardcodes `highScore: 0`. The Engine's `getStats()` overrides this with `this.state.highScore`, so the field is never observed in practice. Consistent with the plan (stats persistence only covers gamesPlayed/totalFood/bestLevel).
+
+## Verification Commands
+
+- `npm test` → 17 files, **213/213 tests passing** (+1 from the F7 integration test).
 - `npm run lint` → exit 0, no errors, no warnings.
-- `npm run build` → exit 0, PWA manifest emitted, precache 8 entries (234.36 KiB), CSS bundle 13.28 kB.
-- `npm test` → 13 test files, 178/178 tests passing.
-- `git branch --show-current` → `feature/milestone-8-visual-identity`.
-
-All hard gates pass.
-
-## Critical findings
-
-_None._ The prior review contained no Critical findings.
-
-## High findings
-
-_None._ The prior review contained no High findings.
-
-## Verification of Medium finding (M-01)
-
-### M-01 — Branch name does not reflect M8 work
-
-- **Status:** **Resolved**
-- **Evidence:** `git branch --show-current` reports `feature/milestone-8-visual-identity`. The branch was renamed from the prior `feature/milestone-7-difficulty-rebalance` as recommended. Working tree contains the M8 diff as expected. No rename side-effects on remote references (branch had not been pushed under the M7 name based on the absence of an upstream tracking ref in the status output).
-
-## Verification of resolved Low findings
-
-### L-01 — Duplicate `.section` selector in `ScoreBoard.module.css`
-
-- **Status:** **Resolved**
-- **Evidence:** `ScoreBoard.module.css:13-18` now contains a single `.section` rule with all four properties consolidated:
-  ```css
-  .section {
-    display: flex;
-    align-items: baseline;
-    gap: var(--space-xs);
-    position: relative;
-  }
-  ```
-  The cascade is no longer split. The `position: relative` that anchors `.foodMeter` (line 45) sits alongside the other display properties in the same block, eliminating the original fragility where the containing block was defined in a distant second rule. No behavioural change (CSS cascade produced the same effective rule previously; it is now consolidated).
-
-### L-02 — Hardcoded RGBA in `Cell.module.css` bypasses token system
-
-- **Status:** **Resolved**
-- **Evidence:**
-  - `src/index.css:44` adds `--shadow-neon-green-strong: 0 0 12px rgba(34, 197, 94, 0.8);`
-  - `src/index.css:48` adds `--shadow-neon-purple-soft: 0 0 8px rgba(99, 102, 241, 0.5);`
-  - `src/components/Cell.module.css:9` uses `box-shadow: var(--shadow-neon-green-strong);`
-  - `src/components/Cell.module.css:52` uses `box-shadow: var(--shadow-neon-purple-soft);`
-  - No `rgba(` calls remain in `Cell.module.css` aside from the `@keyframes pulse` rule, which contains no colour values. The plan's "no hardcoded color values remain in component CSS" DoD is now satisfied for the cell layer.
-  - The new tokens use the alpha values that the cell glows actually need (0.8 / 0.5), distinct from the 0.6 alpha of the overlay-oriented tokens. The token system is now coherent across all four neon colours and both alpha bands.
-
-### L-03 — `--shadow-neon-gold` is defined but unused
-
-- **Status:** **Resolved**
-- **Evidence:** `ScoreBoard.module.css:80-86` applies `text-shadow: var(--shadow-neon-gold);` to `.highScoreValue`. The high-score value now glows with a 12px gold halo (`rgba(251, 191, 36, 0.6)`), which is consistent with the arcade aesthetic of the rest of the HUD. The token is no longer dead code, and the high-score value is visually distinguished from the regular score in a way the plan's overall design intent supports.
-
-### D-01 — Stale "Visual identity" bullet in ROADMAP.md Not Started
-
-- **Status:** **Resolved**
-- **Evidence:** `docs/ROADMAP.md:153-160` lists the "Not Started" section. The current contents are: Replayability systems, Gameplay expansion, Feedback and balancing, Mobile packaging, Desktop packaging. "Visual identity" is no longer present. M8 is correctly absent from the stub list, and the "Not Started" section now aligns with the remaining future milestones (M9, M10, and the packaging milestones).
-
-## Verification of intentionally not-resolved Low findings
-
-### L-04 — `.neon-divider` defined in three CSS Modules
-
-- **Status:** **Not Resolved (by design)**
-- **Verification:** Confirmed unchanged from the prior review. `.neon-divider` remains in `Game.module.css`, `GameOver.module.css`, and `LevelTransition.module.css` as a CSS Modules-local class. The original review recommended acceptance as-is. No remediation expected, and none attempted.
-
-### L-05 — Food meter positioning
-
-- **Status:** **Not Resolved (by design)**
-- **Verification:** Confirmed unchanged. The meter is positioned absolutely under the food section, which matches the plan's wording and the verification report from the prior pass. No remediation expected.
-
-### L-06 — `--radius-sm` documentation
-
-- **Status:** **Not Resolved (by design)**
-- **Verification:** Confirmed unchanged. Documentation is accurate. No remediation expected.
-
-## New findings introduced by remediation
-
-_None._ The remediation diff is surgical: two token additions, two cell-shadow rewrites, one `.section` consolidation, one `text-shadow` addition, one ROADMAP bullet removal, and a branch rename. None of these changes alters the runtime behaviour covered by the 178-test suite, modifies the public API of any component, or affects any test assertion target. The original lint-clean, build-clean, test-green state is preserved.
-
----
+- `npm run build` → exit 0, PWA precache 8 entries, JS 220 kB / 68 kB gz, CSS 15 kB / 3 kB gz.
 
 # Approval Decision
 
 **Approve.**
 
-All required remediations (M-01, L-01, L-02, L-03, D-01) have been verified in code, not just claimed. All hard verification gates (lint, build, tests) pass. The intentionally not-resolved findings (L-04, L-05, L-06) carry no remediation obligation and remain accurate as-is.
+The remediation work addresses every previously identified finding that required action. The two Medium findings (F1, F2) and seven of the nine Low findings (F3, F4, F5, F6, F7, F9, F10) are fully resolved with code-level evidence verified. The two remaining Low findings (F8, F11) were correctly identified in the previous review as requiring no action.
 
-The M8 — Visual Identity milestone is complete and ready for merge. The branch `feature/milestone-8-visual-identity` carries the full M8 diff with no leftover M7 contamination beyond the branch's pre-M8 history, which is normal and expected.
+No new Critical findings were introduced. The remediation is minimal and surgical, matching the project's "small changes / simple solutions" philosophy. The stats cache is now fully effective, and achievement detection no longer reads localStorage per dispatch.
 
-**No further review work is required before merge.**
-
----
-
-## Suggested merge artefacts
-
-- **Branch Name:** `feature/milestone-8-visual-identity`
-- **Commit Message:** `feat(visual-identity): apply M8 visual identity system (milestone 8)`
-- **PR Title:** `Milestone 8 — Visual Identity`
-- **PR Body:**
-  ```
-  ## Description
-
-  Implements Milestone 8 (Visual Identity) as specified in `plans/ACTIVE.md`. Introduces a complete CSS design-token system, self-hosted `Press Start 2P` display font with `font-display: swap`, restructures the ScoreBoard HUD, redesigns all overlays (idle, pause, game over, win, level transition) with a unified arcade aesthetic, and aligns PWA manifest / theme colors with the new tokens.
-
-  Includes follow-up remediations from the second-pass review:
-  - Branch renamed from `feature/milestone-7-difficulty-rebalance` to `feature/milestone-8-visual-identity`.
-  - Consolidated the duplicate `.section` rule in `ScoreBoard.module.css`.
-  - Added `--shadow-neon-green-strong` and `--shadow-neon-purple-soft` tokens; replaced remaining hardcoded RGBA in `Cell.module.css`.
-  - Applied `text-shadow: var(--shadow-neon-gold)` to the high-score value to use the previously unused gold shadow token.
-  - Removed the stale "Visual identity" bullet from the `Not Started` list in `docs/ROADMAP.md`.
-
-  ## Type of Change
-
-  - [x] New feature
-  - [x] Documentation
-  - [ ] Bug fix
-  - [ ] Breaking change
-  - [ ] Refactor / Chore
-
-  ## How Has This Been Tested?
-
-  - **Test Command:** `npm test`
-  - **Outcome:** 13 test files, 178/178 tests passing (no test changes required).
-  - **Lint Command:** `npm run lint`
-  - **Lint Outcome:** clean, no errors or warnings.
-  - **Build Command:** `npm run build`
-  - **Build Outcome:** clean; PWA manifest emitted with `theme_color: #16213e` and `background_color: #1a1a2e` matching the new tokens.
-  ```
+The M9 (Replayability Systems) implementation is ready to merge.

@@ -31,3 +31,7 @@ export { loadHighScore, saveHighScore, loadLastUnlockedLevel, saveLastUnlockedLe
 export { getInitialState, gameReducer } from './state';
 export { Engine } from './Engine';
 export type { GameEventListener } from './Engine';
+export type { Stats } from './statistics';
+export { loadStats, saveStats, incrementGamesPlayed, incrementTotalFood, updateBestLevel } from './statistics';
+export type { Achievement } from './achievements';
+export { ACHIEVEMENTS, loadAchievements, saveAchievement } from './achievements';

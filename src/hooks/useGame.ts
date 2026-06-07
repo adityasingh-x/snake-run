@@ -2,6 +2,9 @@ import { useEffect, useCallback, useRef, useState } from 'react';
 import type { Direction, GameState } from '../game/types';
 import { Engine } from '../game/Engine';
 import { sharedSoundManager } from '../platform/sound';
+import type { Stats } from '../game/statistics';
+import type { Achievement } from '../game/achievements';
+import { loadAchievements } from '../game/achievements';
 
 export function useGame() {
   const engineRef = useRef<Engine | null>(null);
@@ -11,6 +14,9 @@ export function useGame() {
 
   // eslint-disable-next-line react-hooks/refs -- lazy initializer reads ref set above
   const [state, setState] = useState<GameState>(() => engineRef.current!.getState());
+  // eslint-disable-next-line react-hooks/refs -- lazy initializer reads ref set above
+  const [stats, setStats] = useState<Stats>(() => engineRef.current!.getStats());
+  const [achievements, setAchievements] = useState<Achievement[]>(() => loadAchievements());
 
   useEffect(() => {
     const engine = engineRef.current;
@@ -18,6 +24,7 @@ export function useGame() {
 
     const unsubscribe = engine.subscribe((newState) => {
       setState({ ...newState });
+      setStats(engine.getStats());
     });
     return () => {
       unsubscribe();
@@ -32,17 +39,22 @@ export function useGame() {
     const onEat = () => sharedSoundManager.playEat();
     const onCollision = () => sharedSoundManager.playCollision();
     const onLevelUp = () => sharedSoundManager.playLevelUp();
+    const onAchievementUnlock = () => {
+      setAchievements(loadAchievements());
+    };
 
     engine.onEat = onEat;
     engine.onGameOver = onCollision;
     engine.onLevelUp = onLevelUp;
     engine.onWin = onLevelUp;
+    engine.onAchievementUnlock = onAchievementUnlock;
 
     return () => {
       engine.onEat = undefined;
       engine.onGameOver = undefined;
       engine.onLevelUp = undefined;
       engine.onWin = undefined;
+      engine.onAchievementUnlock = undefined;
     };
   }, []);
 
@@ -78,11 +90,18 @@ export function useGame() {
     engineRef.current?.startAtLevel(level);
   }, []);
 
+  const startEndlessGame = useCallback(() => {
+    engineRef.current?.startEndless();
+  }, []);
+
   return {
     state,
+    stats,
+    achievements,
     initAudio,
     startGame,
     startGameAtLevel,
+    startEndlessGame,
     pauseGame,
     resumeGame,
     changeDirection,

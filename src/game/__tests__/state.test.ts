@@ -20,6 +20,7 @@ function makeState(overrides: Partial<GameState> = {}): GameState {
     obstacles: [],
     lastUnlockedLevel: 1,
     foodEaten: 0,
+    isEndless: false,
     ...overrides,
   };
 }
@@ -556,6 +557,136 @@ describe('gameReducer', () => {
       state = gameReducer(state, { type: 'CONTINUE_GAME' });
       expect(state.level).toBe(2);
       expect(state.lastUnlockedLevel).toBe(2);
+    });
+  });
+
+  describe('START_ENDLESS_GAME', () => {
+    it('sets isEndless to true and status to playing', () => {
+      const state = makeState({ status: 'won', score: 300 });
+      const next = gameReducer(state, { type: 'START_ENDLESS_GAME' });
+      expect(next.isEndless).toBe(true);
+      expect(next.status).toBe('playing');
+    });
+
+    it('sets level to LEVEL_COUNT (10)', () => {
+      const state = makeState({ status: 'won' });
+      const next = gameReducer(state, { type: 'START_ENDLESS_GAME' });
+      expect(next.level).toBe(10);
+    });
+
+    it('resets snake to initial position', () => {
+      const state = makeState({ status: 'won', snake: [{ x: 15, y: 15 }, { x: 14, y: 15 }] });
+      const next = gameReducer(state, { type: 'START_ENDLESS_GAME' });
+      expect(next.snake).toHaveLength(3);
+      expect(next.snake[0]).toEqual({ x: 10, y: 10 });
+    });
+
+    it('resets foodEaten to 0', () => {
+      const state = makeState({ status: 'won', foodEaten: 30 });
+      const next = gameReducer(state, { type: 'START_ENDLESS_GAME' });
+      expect(next.foodEaten).toBe(0);
+    });
+
+    it('keeps the current score', () => {
+      const state = makeState({ status: 'won', score: 500 });
+      const next = gameReducer(state, { type: 'START_ENDLESS_GAME' });
+      expect(next.score).toBe(500);
+    });
+
+    it('generates level 10 obstacles', () => {
+      const state = makeState({ status: 'won' });
+      const next = gameReducer(state, { type: 'START_ENDLESS_GAME' });
+      expect(next.obstacles.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('endless mode MOVE_SNAKE', () => {
+    it('never triggers levelComplete even after eating enough food', () => {
+      const level10FoodRequired = 30;
+      const state = makeState({
+        isEndless: true,
+        level: 10,
+        score: 290,
+        foodEaten: level10FoodRequired - 1,
+        snake: [
+          { x: 9, y: 10 },
+          { x: 8, y: 10 },
+          { x: 7, y: 10 },
+        ],
+        food: { x: 10, y: 10 },
+        nextDirection: 'RIGHT',
+        status: 'playing',
+      });
+      const next = gameReducer(state, { type: 'MOVE_SNAKE' });
+      expect(next.status).toBe('playing');
+      expect(next.isEndless).toBe(true);
+    });
+
+    it('never triggers won even after eating enough food', () => {
+      const level10FoodRequired = 30;
+      const state = makeState({
+        isEndless: true,
+        level: 10,
+        score: 290,
+        foodEaten: level10FoodRequired - 1,
+        snake: [
+          { x: 9, y: 10 },
+          { x: 8, y: 10 },
+          { x: 7, y: 10 },
+        ],
+        food: { x: 10, y: 10 },
+        nextDirection: 'RIGHT',
+        status: 'playing',
+      });
+      const next = gameReducer(state, { type: 'MOVE_SNAKE' });
+      expect(next.status).not.toBe('won');
+      expect(next.status).toBe('playing');
+    });
+
+    it('still triggers collision/gameover', () => {
+      const state = makeState({
+        isEndless: true,
+        level: 10,
+        snake: [{ x: 0, y: 5 }],
+        nextDirection: 'LEFT',
+        status: 'playing',
+      });
+      const next = gameReducer(state, { type: 'MOVE_SNAKE' });
+      expect(next.status).toBe('gameover');
+    });
+
+    it('continues indefinite play after many food eaten', () => {
+      // Simulate eating food well beyond level 10's requirement
+      // The key assertion: status never becomes levelComplete or won
+      let state = makeState({
+        isEndless: true,
+        level: 10,
+        score: 290,
+        foodEaten: 29,
+        snake: [
+          { x: 9, y: 10 },
+          { x: 8, y: 10 },
+          { x: 7, y: 10 },
+        ],
+        food: { x: 10, y: 10 },
+        nextDirection: 'RIGHT',
+        status: 'playing',
+        obstacles: [],
+      });
+
+      // Eat the 30th food (would normally trigger win)
+      state = gameReducer(state, { type: 'MOVE_SNAKE' });
+      expect(state.status).toBe('playing');
+      expect(state.foodEaten).toBe(30);
+
+      // Eat 5 more food items in a safe area (stay within bounds)
+      for (let i = 0; i < 5; i++) {
+        const foodX = 12 + i;
+        state = { ...state, food: { x: foodX, y: 10 }, snake: [{ x: foodX - 1, y: 10 }, { x: foodX - 2, y: 10 }, { x: foodX - 3, y: 10 }, { x: foodX - 4, y: 10 }] };
+        state = gameReducer(state, { type: 'MOVE_SNAKE' });
+        expect(state.status).toBe('playing');
+        expect(state.isEndless).toBe(true);
+      }
     });
   });
 });

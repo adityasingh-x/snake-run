@@ -28,6 +28,7 @@ export interface GameState {
   obstacles: Position[];
   lastUnlockedLevel: number;
   foodEaten: number;
+  isEndless: boolean;
 }
 
 export type GameAction =
@@ -38,4 +39,5 @@ export type GameAction =
   | { type: 'CHANGE_DIRECTION'; payload: Direction }
   | { type: 'RESET' }
   | { type: 'CONTINUE_GAME' }
-  | { type: 'START_AT_LEVEL'; payload: number };
+  | { type: 'START_AT_LEVEL'; payload: number }
+  | { type: 'START_ENDLESS_GAME' };
