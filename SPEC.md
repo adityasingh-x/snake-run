@@ -156,6 +156,40 @@ Level metadata is displayed in:
 - Win overlay displayed: "You Win! You completed the game! Score: {score}"
 - Level-up sound plays
 
+### 6.5 Endless Mode
+
+- Available from the win overlay after completing level 10
+- Indefinite play on level 10's obstacle layout at 100ms speed
+- No level transitions, no level-up checks, no win condition
+- Score continues to accumulate normally (10 points per food)
+- Game over on collision (wall, self, or obstacle)
+- `isEndless` flag set to `true` in game state
+- ScoreBoard displays "Endless" instead of level number/name, hides food progress meter
+- Game over screen shows "Endless Score: {score}" when `isEndless` is true
+
+### 6.6 Statistics
+
+- Aggregate player statistics tracked across all runs
+- Persisted to localStorage
+- Tracked stats:
+  - Games Played (`snakeStatsGamesPlayed`): incremented on each game start
+  - Total Food Eaten (`snakeStatsTotalFood`): accumulated on each food eaten
+  - Best Level (`snakeStatsBestLevel`): updated when reaching a higher level
+  - Highest Score (`snakeHighScore`): reused from existing high score system
+- Displayed on idle screen and game over/win screens
+
+### 6.7 Achievements
+
+- Three achievements that unlock on specific conditions
+- Persisted to localStorage (`snakeAchievements` key)
+- Achievement definitions:
+  - **Snake Master** (`beat_game`): Complete level 10 (status becomes `won`)
+  - **High Scorer** (`score_500`): Reach score >= 500 in a single run
+  - **Marathon Run** (`no_pause`): Complete game (win) without ever pausing
+- Unlocked achievements display on idle and game over screens
+- Screen reader announces new unlocks via existing `aria-live` region
+- Newly unlocked achievements show a "NEW" badge on game over/win screens
+
 ---
 
 ## 7. Game States
@@ -173,6 +207,7 @@ playing
   MOVE_SNAKE (collision) -> gameover
   MOVE_SNAKE (food objective reached, levels 1-9) -> levelComplete
   MOVE_SNAKE (level 10 food objective reached) -> won
+  MOVE_SNAKE (isEndless=true) -> playing (no level-up, indefinite)
 
 paused
   RESUME_GAME -> playing
@@ -189,6 +224,7 @@ gameover
 won
   RESTART -> RESET -> playing (level 1)          [New Game]
   START_AT_LEVEL(N) -> playing (level N)         [Continue from Level N]
+  START_ENDLESS_GAME -> playing (isEndless=true) [Endless Mode]
 ```
 
 ### 7.2 State Descriptions
@@ -296,6 +332,24 @@ won
 - Sound toggle button (speaker emoji, toggles between enabled/disabled)
 - `aria-live="polite"` for score/level changes
 - Screen-reader-only `aria-live="assertive"` region announces score, food progress, and level
+- **Endless mode:** When `isEndless` is true, shows "Endless" instead of level display and hides food progress meter
+
+### 10.4a Statistics Panel
+
+- Displays aggregate player stats: Games Played, Total Food, Best Level, High Score
+- Shown on idle screen (below Start button, above controls hint)
+- Shown on game over / win screens
+- Compact layout following arcade-style CSS patterns
+- Uses CSS Modules (`Statistics.module.css`)
+
+### 10.4b Achievements Panel
+
+- Displays achievement list with locked/unlocked state
+- Locked achievements shown as "???"; unlocked achievements show their name
+- Newly unlocked achievements show a "NEW" badge
+- Shown on idle screen and game over/win screens
+- Screen reader announces new unlocks via existing `aria-live` region
+- Uses CSS Modules (`Achievements.module.css`)
 
 ### 10.5 GameOver (shared component)
 
@@ -304,6 +358,10 @@ won
 - `win`: "You Win!" in green, "You completed the game! Score: {score}"
 - Renders a single "Play Again" button when `lastUnlockedLevel === 1`. When `lastUnlockedLevel > 1`, renders "Continue from Level N" (primary, green, `autoFocus`) and "New Game" (secondary, muted) buttons. The hint text adapts: "Press Space for new game — click Continue to resume" when a continue option is available, otherwise "Press Space to restart".
 - Win state styled via `data-win` attribute on modal
+- **Endless mode:** When `isEndless` is true, score text reads "Endless Score: {score}"
+- **Endless Mode button:** On win overlay, an "Endless Mode" button (primary, `autoFocus`) appears above "Continue from Level N" / "New Game". Hint text: "Press Space for new game, or choose Endless Mode"
+- **Statistics:** Displays Statistics panel inline on game over/win screens
+- **Achievements:** Displays Achievements panel on game over/win screens; newly unlocked achievements show "NEW" badge
 
 ### 10.6 LevelTransition
 
@@ -357,6 +415,20 @@ won
 - **Value:** Highest level the player has unlocked (the next level after a completed level, or the current level on gameover/win)
 - **Load:** On game init via `loadLastUnlockedLevel()`
 
+### 12.4 Statistics
+- **Storage keys:** `snakeStatsGamesPlayed`, `snakeStatsTotalFood`, `snakeStatsBestLevel`
+- **Type:** number (string in localStorage)
+- **Defaults:** 0 for games played and total food, 1 for best level
+- **Save:** Batched — flushed to localStorage on gameover, win, or pause
+- **Load:** On game init via `loadStats()`
+
+### 12.5 Achievements
+- **Storage key:** `snakeAchievements`
+- **Type:** JSON array of achievement IDs (strings)
+- **Default:** empty array
+- **Save:** When an achievement is unlocked
+- **Load:** On game init via `loadAchievements()`
+
 ---
 
 ## 13. Environment Configuration
@@ -409,20 +481,24 @@ won
 ## 15. Testing
 
 - **Framework:** Vitest with jsdom environment
-- **178 unit tests** across 13 test files:
-  - `state.test.ts` (43 tests): gameReducer state transitions (START, RESET, PAUSE, RESUME, CHANGE_DIRECTION, MOVE_SNAKE, collisions, levelComplete, CONTINUE_GAME, win, high score, START_AT_LEVEL, lastUnlockedLevel tracking)
-  - `Engine.test.ts` (26 tests): Engine class behavior (start, pause, resume, reset, continueGame, startAtLevel, loop management, subscriptions, destroy, sound callback wiring, lastUnlockedLevel persistence)
+- **212 unit tests** across 17 test files:
+  - `state.test.ts` (43 tests): gameReducer state transitions (START, RESET, PAUSE, RESUME, CHANGE_DIRECTION, MOVE_SNAKE, collisions, levelComplete, CONTINUE_GAME, win, high score, START_AT_LEVEL, lastUnlockedLevel tracking, endless mode)
+  - `Engine.test.ts` (26 tests): Engine class behavior (start, pause, resume, reset, continueGame, startAtLevel, startEndless, loop management, subscriptions, destroy, sound callback wiring, lastUnlockedLevel persistence)
   - `gameLogic.test.ts` (31 tests): positionsEqual, calculateNewHead, isWallCollision, isSelfCollision, isObstacleCollision, isCollision, spawnFood
   - `levelData.test.ts` (20 tests): getLevelData, generateObstacles, level metadata (name, description), layout validity
   - `storage.test.ts` (13 tests): loadHighScore, saveHighScore, loadLastUnlockedLevel, saveLastUnlockedLevel with localStorage mock
+  - `statistics.test.ts` (5 tests): loadStats, incrementGamesPlayed, incrementTotalFood, updateBestLevel, saveStats
+  - `achievements.test.ts` (7 tests): loadAchievements, saveAchievement, checkAchievements (beat_game, score_500, no_pause, wasPaused, re-award prevention)
   - `Cell.test.tsx` (4 tests): Cell component rendering, accessibility, and direction styling
   - `touch.test.ts` (12 tests): Gesture recognizer with axis locking, cooldown, progress, disabled state
   - `useTouch.test.tsx` (2 tests): Hook integration with touch events
-  - `Game.test.tsx` (3 tests): Pause button rendering and interaction
+  - `Game.test.tsx` (4 tests): Pause button rendering and interaction
   - `Board.test.tsx` (3 tests): Board rendering and responsive sizing
   - `pwa.test.ts` (6 tests): PWA build output verification (service worker, manifest, registration, HTML title, HTML manifest/SW links, manifest values)
   - `LevelTransition.test.tsx` (5 tests): LevelTransition component rendering, interaction, and accessibility
-  - `GameOver.test.tsx` (5 tests): GameOver component rendering with continue/new game buttons, callback verification, and win variant
+  - `GameOver.test.tsx` (9 tests): GameOver component rendering with continue/new game buttons, callback verification, win variant, endless mode UI
+  - `Statistics.test.tsx` (1 test): Statistics component rendering
+  - `Achievements.test.tsx` (3 tests): Achievements component rendering, locked/unlocked state, NEW badge
 
 ---
 
@@ -442,7 +518,7 @@ won
 1. No difficulty selection — levels are sequential only
 2. High score is local only (no level progress sync across browsers/devices yet)
 3. Sound effects are simple oscillators — no music or complex audio
-4. No analytics or scoring history
+4. Statistics and achievements are local only (no cloud sync)
 5. Grid size is fixed — not responsive to screen size beyond viewport constraints
 6. `user-scalable=no` prevents browser-level text zoom (documented accessibility trade-off)
 7. `overscroll-behavior: none` requires iOS Safari 16+ or Chrome 95+ for full support

@@ -302,4 +302,54 @@ describe('Engine', () => {
       expect(localStorage.getItem('snakeLastUnlockedLevel')).toBe('2');
     });
   });
+
+  describe('startEndless', () => {
+    it('dispatches START_ENDLESS_GAME and starts loop', () => {
+      engine.setState({
+        ...getInitialState(),
+        status: 'won',
+        score: 300,
+      });
+      engine.startEndless();
+      expect(engine.getState().status).toBe('playing');
+      expect(engine.getState().isEndless).toBe(true);
+    });
+
+    it('keeps status playing after many MOVE_SNAKE dispatches in endless mode', () => {
+      engine.setState({
+        ...getInitialState(),
+        status: 'playing',
+        isEndless: true,
+        level: 10,
+        score: 290,
+        foodEaten: 29,
+        snake: [
+          { x: 9, y: 10 },
+          { x: 8, y: 10 },
+          { x: 7, y: 10 },
+        ],
+        food: { x: 10, y: 10 },
+        nextDirection: 'RIGHT',
+        obstacles: [],
+      });
+
+      // Eat the 30th food (would normally trigger win)
+      engine.testDispatch({ type: 'MOVE_SNAKE' });
+      expect(engine.getState().status).toBe('playing');
+      expect(engine.getState().foodEaten).toBe(30);
+
+      // Eat 5 more food items (stay within grid bounds)
+      for (let i = 0; i < 5; i++) {
+        const foodX = 12 + i;
+        engine.setState({
+          ...engine.getState(),
+          food: { x: foodX, y: 10 },
+          snake: [{ x: foodX - 1, y: 10 }, { x: foodX - 2, y: 10 }, { x: foodX - 3, y: 10 }, { x: foodX - 4, y: 10 }],
+        });
+        engine.testDispatch({ type: 'MOVE_SNAKE' });
+        expect(engine.getState().status).toBe('playing');
+        expect(engine.getState().isEndless).toBe(true);
+      }
+    });
+  });
 });

@@ -144,6 +144,15 @@ Planned packaging technology:
 - Version bumped to 0.8.0
 - 178 unit tests passing
 
+### Milestone 9 - Replayability Systems
+
+- Endless Mode: indefinite play after winning, level 10 layout, 100ms speed
+- Statistics: games played, total food, best level, high score (localStorage)
+- Achievements: 3 achievements (Snake Master, High Scorer, Marathon Run)
+- Statistics and Achievements panels on idle and game over screens
+- Screen reader announces achievement unlocks
+- 212 unit tests passing
+
 ---
 
 ## In Progress
@@ -152,7 +161,6 @@ Planned packaging technology:
 
 ## Not Started
 
-- Replayability systems
 - Gameplay expansion
 - Feedback and balancing
 - Mobile packaging
@@ -523,7 +531,7 @@ Completed: 2026-06-07
 
 ---
 
-# Milestone 9 - Replayability Systems
+# Milestone 9 - Replayability Systems ✅
 
 Goal:
 
@@ -531,30 +539,17 @@ Encourage repeat play.
 
 Features:
 
-### Endless Mode
+Endless Mode: continue after level 10. Indefinite play on level 10 layout at 100ms speed with no level transitions.
 
-Continue after level 10.
+Statistics: track games played, total food eaten, highest score, best level reached. Displayed on idle screen and game over/win screens.
 
-### Statistics
-
-Track:
-
-- Games played
-- Total food eaten
-- Highest score
-- Best level reached
-
-### Achievements
-
-Examples:
-
-- Complete level 10
-- Reach 500 score
-- Complete game without pausing
+Achievements: three achievements (Snake Master, High Scorer, Marathon Run). Persisted to localStorage, displayed on idle and game over screens. Screen reader announces new unlocks.
 
 Success Criteria:
 
-- Players have reasons to return
+- Players have reasons to return ✅
+
+Completed: 2026-06-07
 
 ---
 

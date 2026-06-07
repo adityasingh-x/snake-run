@@ -21,6 +21,7 @@ export function getInitialState(): GameState {
     obstacles,
     lastUnlockedLevel: loadLastUnlockedLevel(),
     foodEaten: 0,
+    isEndless: false,
   };
 }
 
@@ -70,7 +71,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       const newFoodEaten = ateFood ? state.foodEaten + 1 : state.foodEaten;
 
       const currentConfig = getLevelData(state.level);
-      const shouldLevelUp = ateFood && newFoodEaten >= currentConfig.foodRequired;
+      const shouldLevelUp = !state.isEndless && ateFood && newFoodEaten >= currentConfig.foodRequired;
 
       if (shouldLevelUp) {
         if (state.level >= LEVEL_COUNT) {
@@ -145,6 +146,23 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         level,
         obstacles,
         foodEaten: 0,
+      };
+    }
+
+    case 'START_ENDLESS_GAME': {
+      const level10Obstacles = generateObstacles(LEVEL_COUNT);
+      const endlessFood = spawnFood(INITIAL_SNAKE, level10Obstacles);
+      return {
+        ...state,
+        snake: [...INITIAL_SNAKE],
+        food: endlessFood,
+        direction: 'RIGHT',
+        nextDirection: 'RIGHT',
+        status: 'playing',
+        level: LEVEL_COUNT,
+        obstacles: level10Obstacles,
+        foodEaten: 0,
+        isEndless: true,
       };
     }
 

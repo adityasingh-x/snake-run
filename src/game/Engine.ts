@@ -1,7 +1,11 @@
 import type { GameState, GameAction, Direction } from './types';
 import { getInitialState, gameReducer } from './state';
+import { POINTS_PER_FOOD } from './constants';
 import { getLevelData } from './levels';
 import { saveHighScore, saveLastUnlockedLevel } from './storage';
+import { loadStats, saveStats } from './statistics';
+import type { Stats } from './statistics';
+import { checkAchievements, saveAchievement, loadAchievements } from './achievements';
 
 export type GameEventListener = (state: GameState) => void;
 
@@ -11,9 +15,16 @@ export class Engine {
   private rafId: number | null = null;
   private lastTick: number = 0;
   private accumulator: number = 0;
+  private statsCache: Stats;
+  // Engine-private tracker for the no_pause achievement; never read by UI or reducer.
+  private wasPaused: boolean = false;
+  // Cached set of unlocked achievement IDs to avoid per-dispatch localStorage reads.
+  private unlockedAchievementIds: Set<string>;
 
   constructor() {
     this.state = getInitialState();
+    this.statsCache = loadStats();
+    this.unlockedAchievementIds = new Set(loadAchievements().filter(a => a.unlocked).map(a => a.id));
   }
 
   getState(): GameState {
@@ -30,6 +41,11 @@ export class Engine {
   private dispatch(action: GameAction): void {
     const prevScore = this.state.score;
     const prevLevel = this.state.level;
+    const prevState = { ...this.state };
+
+    if (action.type === 'START_GAME' || action.type === 'RESET' || action.type === 'START_ENDLESS_GAME') {
+      this.statsCache.gamesPlayed += 1;
+    }
 
     this.state = gameReducer(this.state, action);
 
@@ -42,15 +58,33 @@ export class Engine {
       saveLastUnlockedLevel(this.state.lastUnlockedLevel);
     }
 
+    if (this.state.score > prevScore) {
+      const foodCount = (this.state.score - prevScore) / POINTS_PER_FOOD;
+      this.statsCache.totalFood += foodCount;
+    }
+
+    if (this.state.level > prevLevel) {
+      this.statsCache.bestLevel = Math.max(this.statsCache.bestLevel, this.state.level);
+    }
+
+    if (this.state.status === 'gameover' || this.state.status === 'won' || this.state.status === 'paused') {
+      this.statsCache.highScore = this.state.highScore;
+      saveStats(this.statsCache);
+    }
+
+    const newlyUnlocked = checkAchievements(this.state, prevState, this.wasPaused, this.unlockedAchievementIds);
+    for (const id of newlyUnlocked) {
+      saveAchievement(id);
+      this.unlockedAchievementIds.add(id);
+      this.onAchievementUnlock?.(id);
+    }
+
     this.listeners.forEach(listener => listener(this.state));
 
     if (this.state.status === 'gameover' || this.state.status === 'won') {
       this.stopLoop();
     }
 
-    // Note: callbacks fire after listeners see the mutated state and after the
-    // loop stops on gameover/won. The engine is not re-entrant safe — a
-    // callback must not dispatch another action.
     if (this.state.score > prevScore) {
       this.onEat?.();
     }
@@ -66,11 +100,13 @@ export class Engine {
   }
 
   start(): void {
+    this.wasPaused = false;
     this.dispatch({ type: 'START_GAME' });
     this.startLoop();
   }
 
   pause(): void {
+    this.wasPaused = true;
     this.dispatch({ type: 'PAUSE_GAME' });
     this.stopLoop();
   }
@@ -85,6 +121,7 @@ export class Engine {
   }
 
   reset(): void {
+    this.wasPaused = false;
     this.dispatch({ type: 'RESET' });
     if (this.state.status === 'playing') {
       this.startLoop();
@@ -99,6 +136,16 @@ export class Engine {
   startAtLevel(level: number): void {
     this.dispatch({ type: 'START_AT_LEVEL', payload: level });
     this.startLoop();
+  }
+
+  startEndless(): void {
+    this.wasPaused = false;
+    this.dispatch({ type: 'START_ENDLESS_GAME' });
+    this.startLoop();
+  }
+
+  getStats(): Stats {
+    return { ...this.statsCache, highScore: this.state.highScore };
   }
 
   /** Test-only: set internal state for testing purposes. */
@@ -162,6 +209,7 @@ export class Engine {
   onLevelUp?: () => void;
   onGameOver?: () => void;
   onWin?: () => void;
+  onAchievementUnlock?: (id: string) => void;
 
   destroy(): void {
     this.stopLoop();

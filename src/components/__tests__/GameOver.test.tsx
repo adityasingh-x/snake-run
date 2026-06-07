@@ -90,4 +90,66 @@ describe('GameOver Component', () => {
     expect(screen.getByRole('button', { name: /continue from level 4/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /new game/i })).toBeInTheDocument();
   });
+
+  describe('endless mode', () => {
+    it('win variant shows "Endless Mode" button when onStartEndless is provided', () => {
+      const onStartEndless = vi.fn();
+      render(
+        <GameOver
+          score={500}
+          onRestart={vi.fn()}
+          onContinueFromLevel={vi.fn()}
+          lastUnlockedLevel={10}
+          variant="win"
+          onStartEndless={onStartEndless}
+        />
+      );
+      expect(screen.getByRole('button', { name: /endless mode/i })).toBeInTheDocument();
+    });
+
+    it('"Endless Mode" button triggers onStartEndless callback', async () => {
+      const onStartEndless = vi.fn();
+      const user = userEvent.setup();
+      render(
+        <GameOver
+          score={500}
+          onRestart={vi.fn()}
+          onContinueFromLevel={vi.fn()}
+          lastUnlockedLevel={10}
+          variant="win"
+          onStartEndless={onStartEndless}
+        />
+      );
+      await user.click(screen.getByRole('button', { name: /endless mode/i }));
+      expect(onStartEndless).toHaveBeenCalled();
+    });
+
+    it('endless game over shows "Endless Score" text', () => {
+      render(
+        <GameOver
+          score={300}
+          onRestart={vi.fn()}
+          onContinueFromLevel={vi.fn()}
+          lastUnlockedLevel={10}
+          isEndless
+        />
+      );
+      expect(screen.getByText(/endless score: 300/i)).toBeInTheDocument();
+    });
+
+    it('"Endless Mode" button is autoFocus on win', () => {
+      render(
+        <GameOver
+          score={500}
+          onRestart={vi.fn()}
+          onContinueFromLevel={vi.fn()}
+          lastUnlockedLevel={10}
+          variant="win"
+          onStartEndless={vi.fn()}
+        />
+      );
+      const endlessBtn = screen.getByRole('button', { name: /endless mode/i });
+      expect(endlessBtn).toHaveFocus();
+    });
+  });
 });

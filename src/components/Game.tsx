@@ -9,6 +9,8 @@ import { Board } from './Board';
 import { ScoreBoard } from './ScoreBoard';
 import { GameOver } from './GameOver';
 import { LevelTransition } from './LevelTransition';
+import { Statistics } from './Statistics';
+import { Achievements } from './Achievements';
 import styles from './Game.module.css';
 
 const DPAD_STORAGE_KEY = 'snakeDpadEnabled';
@@ -25,9 +27,12 @@ const STATUS_ANNOUNCEMENTS: Record<string, string> = {
 export const Game = () => {
   const {
     state,
+    stats,
+    achievements,
     initAudio,
     startGame,
     startGameAtLevel,
+    startEndlessGame,
     pauseGame,
     resumeGame,
     changeDirection,
@@ -91,6 +96,11 @@ export const Game = () => {
     startGameAtLevel(level);
   }, [initAudio, startGameAtLevel]);
 
+  const handleStartEndless = useCallback(() => {
+    initAudio();
+    startEndlessGame();
+  }, [initAudio, startEndlessGame]);
+
   const [devLevel, setDevLevel] = useState(1);
 
   const handleDpadUp = useCallback(() => changeDirection('UP'), [changeDirection]);
@@ -101,6 +111,29 @@ export const Game = () => {
   const announceRef = useRef<HTMLDivElement>(null);
   const boardRef = useRef<HTMLDivElement>(null);
   const prevStatusRef = useRef(state.status);
+  const [newAchievementIds, setNewAchievementIds] = useState<string[]>([]);
+  const prevUnlockedRef = useRef<Set<string>>(new Set(achievements.filter(a => a.unlocked).map(a => a.id)));
+
+  useEffect(() => {
+    const currentUnlocked = new Set(achievements.filter(a => a.unlocked).map(a => a.id));
+    const newlyUnlocked: string[] = [];
+    for (const id of currentUnlocked) {
+      if (!prevUnlockedRef.current.has(id)) {
+        newlyUnlocked.push(id);
+      }
+    }
+    if (newlyUnlocked.length > 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: track newly unlocked achievements for session display
+      setNewAchievementIds(prev => [...prev, ...newlyUnlocked]);
+      for (const id of newlyUnlocked) {
+        const achievement = achievements.find(a => a.id === id);
+        if (achievement && announceRef.current) {
+          announceRef.current.textContent = `Achievement unlocked: ${achievement.name}`;
+        }
+      }
+    }
+    prevUnlockedRef.current = currentUnlocked;
+  }, [achievements]);
 
   useKeyboard({
     status: state.status,
@@ -149,7 +182,7 @@ export const Game = () => {
           </button>
         </div>
       )}
-      <ScoreBoard score={state.score} highScore={state.highScore} level={state.level} levelName={getLevelData(state.level).name} foodEaten={state.foodEaten} foodRequired={getLevelData(state.level).foodRequired} />
+      <ScoreBoard score={state.score} highScore={state.highScore} level={state.level} levelName={getLevelData(state.level).name} foodEaten={state.foodEaten} foodRequired={getLevelData(state.level).foodRequired} isEndless={state.isEndless} />
       <div className={styles.controlsRow}>
         <button
           className={styles.toolbarBtn}
@@ -191,6 +224,8 @@ export const Game = () => {
                 Start Game
               </button>
               <p className={styles.hint}>Or press Space</p>
+              <Statistics gamesPlayed={stats.gamesPlayed} totalFood={stats.totalFood} bestLevel={stats.bestLevel} highScore={stats.highScore} />
+              <Achievements achievements={achievements} />
             </div>
           </div>
         )}
@@ -216,10 +251,10 @@ export const Game = () => {
           />
         )}
         {state.status === 'gameover' && (
-          <GameOver score={state.score} onRestart={handleRestart} onContinueFromLevel={handleStartAtLevel} lastUnlockedLevel={state.lastUnlockedLevel} />
+          <GameOver score={state.score} onRestart={handleRestart} onContinueFromLevel={handleStartAtLevel} lastUnlockedLevel={state.lastUnlockedLevel} stats={stats} achievements={achievements} newAchievementIds={newAchievementIds} />
         )}
         {state.status === 'won' && (
-          <GameOver score={state.score} onRestart={handleRestart} onContinueFromLevel={handleStartAtLevel} lastUnlockedLevel={state.lastUnlockedLevel} variant="win" />
+          <GameOver score={state.score} onRestart={handleRestart} onContinueFromLevel={handleStartAtLevel} lastUnlockedLevel={state.lastUnlockedLevel} variant="win" onStartEndless={handleStartEndless} stats={stats} achievements={achievements} newAchievementIds={newAchievementIds} />
         )}
       </div>
       <div className={`${styles.dpad} ${(state.status === 'playing' || state.status === 'paused') && dpadOn ? '' : styles.dpadHidden}`}>

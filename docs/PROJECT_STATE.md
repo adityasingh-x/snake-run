@@ -2,25 +2,28 @@
 
 ## Current Version
 
-v0.8.0
+v0.9.0
 
 ---
 
 ## Current Status
 
-Visual Identity Complete
+Milestone 9 (Replayability Systems) Complete
 
-Milestone 8 (Visual Identity) is complete. The game now features a Retro Arcade Neon visual style with CSS variable tokens, a self-hosted display font, arcade-style HUD, and polished overlays.
+All three phases of Milestone 9 are now complete:
+- Phase 1: Endless Mode — indefinite play after winning
+- Phase 2: Statistics — aggregate player stats across runs
+- Phase 3: Achievements — 3 unlockable achievements with persistence
 
 ---
 
 ## Current Milestone
 
-Milestone 8 - Visual Identity
+Milestone 10 - Gameplay Expansion
 
-Current Goal:
+Next Goal:
 
-Establish a recognizable visual style.
+Introduce new gameplay decisions (food variants, advanced level mechanics).
 
 ---
 
@@ -34,13 +37,13 @@ Establish a recognizable visual style.
 
 ## Next Milestone
 
-Milestone 9 - Replayability Systems
+Milestone 10 - Gameplay Expansion
 
 Planned Focus:
 
-- Endless mode (continue after level 10)
-- Statistics tracking (games played, food eaten, highest score, best level)
-- Achievements system
+- Food variants (gold food, poison food, speed food)
+- Advanced level mechanics (wrap-around, portals, moving obstacles)
+- Advanced challenges (enemy snake, boss levels)
 
 ---
 
@@ -159,6 +162,40 @@ Planned Focus:
 - Version bumped to 0.8.0
 - 178 unit tests passing
 
+### Replayability Systems — Endless Mode (Milestone 9, Phase 1)
+
+- `isEndless` boolean field added to GameState
+- `START_ENDLESS_GAME` action added to GameAction union
+- Endless mode reducer: sets level to 10, resets snake/food/foodEaten, keeps score, uses level 10 obstacles
+- `MOVE_SNAKE` skips level-up checks when `isEndless` is true
+- `Engine.startEndless()` method dispatches and starts loop
+- `useGame` hook exposes `startEndlessGame` callback
+- ScoreBoard shows "Endless" label and hides food meter in endless mode
+- GameOver win overlay includes "Endless Mode" button (autoFocus, primary)
+- GameOver shows "Endless Score: N" when `isEndless` is true
+
+### Replayability Systems — Statistics (Milestone 9, Phase 2)
+
+- `src/game/statistics.ts`: load/save/increment stats (gamesPlayed, totalFood, bestLevel)
+- localStorage keys: `snakeStatsGamesPlayed`, `snakeStatsTotalFood`, `snakeStatsBestLevel`
+- Engine integrates stat tracking in dispatch(): increments on game start, accumulates food, updates best level
+- Stats flushed to localStorage on gameover/win/pause
+- `Statistics.tsx` component: compact arcade-style panel with 4 stat rows
+- Stats displayed on idle screen and game over/win screens
+- `Engine.getStats()` method merges localStorage stats with current highScore
+
+### Replayability Systems — Achievements (Milestone 9, Phase 3)
+
+- `src/game/achievements.ts`: Achievement type, 3 definitions, detection, persistence
+- localStorage key: `snakeAchievements` (JSON array of unlocked IDs)
+- Achievement definitions: Snake Master (beat_game), High Scorer (score_500), Marathon Run (no_pause)
+- Engine tracks `wasPaused` flag; resets on start/reset/startEndless, sets on pause
+- `checkAchievements()` detects unlocks during state transitions
+- `onAchievementUnlock` callback fires for each newly unlocked achievement
+- `Achievements.tsx` component: locked shown as "???", unlocked shows name, "NEW" badge for recent unlocks
+- Screen reader announces new unlocks via existing `aria-live` region
+- Achievements displayed on idle screen and game over/win screens
+
 ### Testing
 
 - Automated testing infrastructure
@@ -167,7 +204,7 @@ Planned Focus:
 
 ## In Progress
 
-- Replayability Systems (Milestone 9)
+- Milestone 10: Gameplay Expansion (food variants, advanced mechanics)
 
 ---
 
@@ -274,20 +311,63 @@ Milestone 8 success criteria (completed):
 - ROADMAP.md updated — M8 marked complete ✅
 - PROJECT_STATE.md updated ✅
 
+Milestone 9 Phase 1 (Endless Mode) success criteria (completed):
+
+- Complete level 10 → win overlay shows "Endless Mode" button ✅
+- Click "Endless Mode" → game plays indefinitely, no level-ups ✅
+- Speed stays at 100ms, obstacles are level 10 layout ✅
+- ScoreBoard shows "Endless" and score only (no food meter) ✅
+- Game over in endless mode → shows "Endless Score" in overlay ✅
+- `npm run build` succeeds ✅
+- `npm test` all pass (194 tests) ✅
+- `npm run lint` passes ✅
+- SPEC.md, ARCHITECTURE.md, ROADMAP.md, PROJECT_STATE.md updated ✅
+
+Milestone 9 Phase 2 (Statistics) success criteria (completed):
+
+- Start a game, eat food, game over → games played +1, total food updated ✅
+- Complete multiple runs → games played accumulates correctly ✅
+- Reach level 5, then die → best level recorded as 5 ✅
+- Idle screen shows statistics panel ✅
+- Game over screen shows statistics summary ✅
+- `npm run build` succeeds ✅
+- `npm test` all pass ✅
+- `npm run lint` passes ✅
+
+Milestone 9 Phase 3 (Achievements) success criteria (completed):
+
+- Win the game → "Snake Master" achievement unlocks and persists ✅
+- Score 500 → "High Scorer" unlocks during gameplay ✅
+- Win without pausing → "Marathon Run" unlocks ✅
+- Achievements persist across page reloads ✅
+- Idle screen shows unlock status ✅
+- Game over/win screens show newly unlocked achievements ✅
+- Screen reader announces unlock ✅
+- `npm run build` succeeds ✅
+- `npm test` all pass ✅
+- `npm run lint` passes ✅
+
+Milestone 9 (Replayability Systems) overall success criteria (completed):
+
+- Endless Mode playable from win screen with indefinite play, no level-ups ✅
+- Statistics tracking (games played, total food, best level) persisted and displayed ✅
+- All 3 achievements detectable, persistable, and displayed ✅
+- Idle screen shows statistics and achievements ✅
+- Game Over / Win screens show statistics and newly unlocked achievements ✅
+- Screen reader announces achievement unlocks ✅
+- All existing tests still pass ✅
+- New tests added for all new modules and components ✅
+- `npm run build` completes with no errors ✅
+- `npm run lint` passes with no new warnings ✅
+- SPEC.md, ARCHITECTURE.md, ROADMAP.md, PROJECT_STATE.md updated ✅
+- `package.json` version bumped to `0.9.0` ✅
+
 ---
 
 ## Important Notes
 
-The current objective is Milestone 9 — Replayability Systems.
+Milestone 9 (Replayability Systems) is complete. All three phases — Endless Mode, Statistics, and Achievements — are fully implemented and tested.
+
+The next milestone is Milestone 10 (Gameplay Expansion), which will introduce food variants, advanced level mechanics, and new gameplay challenges.
 
 The PWA is live at `https://adityasingh-x.github.io/snake-run/` and can be installed on phones and desktops.
-
-Milestone 8 (Visual Identity) is complete. The game now features a Retro Arcade Neon visual style with CSS variable tokens, self-hosted "Press Start 2P" display font, arcade-style ScoreBoard HUD, and polished overlays.
-
-Milestone 7 (Difficulty Rebalance) is complete. Level progression now uses a food-objective system (10–30 food per level) instead of score-based targets, and the speed curve has been rebalanced from 150ms→100ms for better mobile playability.
-
-Milestone 6 (Progress Persistence & Developer Experience) is complete. Players can continue from their last unlocked level, and developers have a level select for faster iteration.
-
-Milestone 5 (Obstacle Redesign) is complete. All 10 levels now have handcrafted obstacle layouts with deterministic placement.
-
-AI-generated gameplay and content systems remain a future consideration and are not part of the current milestone.
