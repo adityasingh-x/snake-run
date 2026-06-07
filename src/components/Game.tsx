@@ -128,7 +128,6 @@ export const Game = () => {
 
   return (
     <div className={styles.gameContainer}>
-      <h1 className={styles.title}>Snake Run</h1>
       {import.meta.env.DEV && (
         <div className={styles.devSelect}>
           <select

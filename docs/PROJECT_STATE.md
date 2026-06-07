@@ -2,45 +2,45 @@
 
 ## Current Version
 
-v0.7.0
+v0.8.0
 
 ---
 
 ## Current Status
 
-Difficulty Rebalance Complete
+Visual Identity Complete
 
-Milestone 7 (Difficulty Rebalance) is complete. Food-objective progression replaces score-based level advancement, and the speed curve has been rebalanced for longer, more playable sessions.
+Milestone 8 (Visual Identity) is complete. The game now features a Retro Arcade Neon visual style with CSS variable tokens, a self-hosted display font, arcade-style HUD, and polished overlays.
 
 ---
 
 ## Current Milestone
 
-Milestone 7 - Difficulty Rebalance
+Milestone 8 - Visual Identity
 
 Current Goal:
 
-Create longer and more meaningful gameplay sessions.
+Establish a recognizable visual style.
 
 ---
 
 ## Current Priorities
 
-1. Visual identity redesign (Milestone 8)
-2. HUD and overlay polish for arcade aesthetic
-3. Typography pass for consistent visual style
+1. Replayability systems (Milestone 9)
+2. Endless mode, statistics, and achievements
+3. Gameplay expansion planning (Milestone 10)
 
 ---
 
 ## Next Milestone
 
-Milestone 8 - Visual Identity
+Milestone 9 - Replayability Systems
 
 Planned Focus:
 
-- HUD redesign (arcade-style status panel)
-- Overlay redesign (start, pause, game over, win, level transition)
-- Typography pass (headings, numeric display)
+- Endless mode (continue after level 10)
+- Statistics tracking (games played, food eaten, highest score, best level)
+- Achievements system
 
 ---
 
@@ -66,6 +66,12 @@ Planned Focus:
 ### Visuals
 
 - Directional snake eyes
+- CSS variable token system (18 color tokens, font tokens, spacing, shadows, radius, transitions)
+- Self-hosted "Press Start 2P" display font
+- Arcade-style ScoreBoard HUD with food progress meter
+- Redesigned overlays (idle, pause, game over, win, level transition) with neon aesthetic
+- Polished board border with glow, refined cell styling
+- D-pad and toolbar buttons with arcade styling
 
 ### Project Foundation
 
@@ -141,6 +147,18 @@ Planned Focus:
 - ScoreBoard HUD displays food progress ("Food: X/Y")
 - 178 unit tests passing
 
+### Visual Identity (Milestone 8)
+
+- CSS variable token system centralized in `src/index.css`
+- Self-hosted "Press Start 2P" font with `font-display: swap`
+- Arcade-style ScoreBoard HUD with food progress meter bar
+- Redesigned overlays (idle, pause, gameover, win, levelTransition) with consistent neon aesthetic
+- Board border with glow, refined cell styling
+- D-pad and toolbar buttons with arcade styling
+- PWA manifest and theme-color updated to match tokens
+- Version bumped to 0.8.0
+- 178 unit tests passing
+
 ### Testing
 
 - Automated testing infrastructure
@@ -149,7 +167,7 @@ Planned Focus:
 
 ## In Progress
 
-- Visual Identity (Milestone 8)
+- Replayability Systems (Milestone 9)
 
 ---
 
@@ -174,6 +192,7 @@ Testing:
 Styling:
 
 - CSS Modules
+- CSS Custom Properties (token system)
 
 Audio:
 
@@ -231,13 +250,39 @@ Milestone 7 success criteria (completed):
 - All 178 tests pass ✅
 - SPEC.md, ROADMAP.md, PROJECT_STATE.md, and ARCHITECTURE.md updated ✅
 
+Milestone 8 success criteria (completed):
+
+- Screenshots appear distinctive ✅
+- Visual style feels intentional ✅
+- UI no longer resembles a starter template ✅
+- `npm run build` completes with no errors ✅
+- All 178 tests pass ✅
+- `npm run lint` passes ✅
+- CSS variables defined and used consistently ✅
+- Self-hosted "Press Start 2P" font loads via `@font-face` ✅
+- ScoreBoard reads as cohesive arcade-style HUD panel ✅
+- All overlays share consistent visual language ✅
+- Board has polished border and background treatment ✅
+- Responsive layout verified on mobile and desktop ✅
+- No hardcoded color values remain in component CSS ✅
+- Keyboard and touch controls function identically ✅
+- Accessibility preserved ✅
+- PWA manifest colors match tokens ✅
+- `package.json` version bumped to 0.8.0 ✅
+- ARCHITECTURE.md Styling Conventions updated ✅
+- SPEC.md Section 14 revised ✅
+- ROADMAP.md updated — M8 marked complete ✅
+- PROJECT_STATE.md updated ✅
+
 ---
 
 ## Important Notes
 
-The current objective is Milestone 8 — Visual Identity.
+The current objective is Milestone 9 — Replayability Systems.
 
 The PWA is live at `https://adityasingh-x.github.io/snake-run/` and can be installed on phones and desktops.
+
+Milestone 8 (Visual Identity) is complete. The game now features a Retro Arcade Neon visual style with CSS variable tokens, self-hosted "Press Start 2P" display font, arcade-style ScoreBoard HUD, and polished overlays.
 
 Milestone 7 (Difficulty Rebalance) is complete. Level progression now uses a food-objective system (10–30 food per level) instead of score-based targets, and the speed curve has been rebalanced from 150ms→100ms for better mobile playability.
 

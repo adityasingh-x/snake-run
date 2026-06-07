@@ -1,9 +1,9 @@
-# Plan Review: Milestone 7 — Difficulty Rebalance
+# Plan Review: Milestone 8 — Visual Identity
 
 **Reviewer:** Staff Engineer (Plan Review)
-**Plan under review:** `plans/ACTIVE.md` (Milestone 7 — Difficulty Rebalance, Draft, 2026-06-06)
-**Source documents:** `ROADMAP.md`, `AGENTS.md`, `ARCHITECTURE.md`, `SPEC.md`, `docs/PROJECT_STATE.md`, `package.json`, `src/game/state.ts`, `src/game/types.ts`, `src/game/levels.ts`, `src/game/Engine.ts`, `src/game/__tests__/state.test.ts`, `src/game/__tests__/Engine.test.ts`, `src/utils/__tests__/levelData.test.ts`, `src/components/Game.tsx`, `src/components/ScoreBoard.tsx`, `src/components/ScoreBoard.module.css`, `src/types/components.ts`
-**Review date:** 2026-06-06
+**Plan under review:** `plans/ACTIVE.md` (Milestone 8 — Visual Identity, ACTIVE, 2026-06-07)
+**Source documents:** `ROADMAP.md`, `AGENTS.md`, `ARCHITECTURE.md`, `SPEC.md`, `docs/PROJECT_STATE.md`, current component source
+**Review date:** 2026-06-07
 
 ---
 
@@ -11,44 +11,109 @@
 
 ## Strengths
 
-1. **Right-sized for the milestone.** Two features (Food Objective System, Speed Curve Rebalance) map 1:1 to ROADMAP M7. No new abstractions, no new packages, no new files. Honours `AGENTS.md`'s "prefer simple solutions" and "avoid premature abstractions" rules.
-2. **Minimal blast radius.** The change is one new state field (`foodEaten`), one data field rename (`targetScore` → `foodRequired`), and a data-table swap in `levels.ts`. The reducer change is one condition swap. No new statuses, no new actions, no new reducer cases.
-3. **Engine and persistence are correctly identified as zero-change.** Phase 3 analysis is accurate: `Engine.ts:134-135` reads `getLevelData(state.level).speed` per tick, so the new speed table is picked up automatically. `Engine.dispatch()` sound and persistence wiring is driven by `score`/`level` deltas and status transitions, which are unaffected. `lastUnlockedLevel` from M6 continues to work because it is updated on the same status transitions that the new system preserves.
-4. **Honest bottom-up phasing.** Six phases (types → reducer → engine review → UI → tests → docs) with explicit per-phase verification. Every intermediate commit is compilable (or breaks the build by design in Phase 1, which is the right test of the type change).
-5. **Strong out-of-scope table.** HUD redesign, overlay redesign, endless mode, food variants, difficulty selection, statistics, achievements, playtesting, obstacle layout changes, score formula, grid size, mobile/desktop packaging are all explicitly fenced. Future-milestone leakage is zero.
-6. **Concrete data tables with exact values.** New `foodRequired` and `speed` values are tabulated for all 10 levels, matching `ROADMAP.md:382-416` character-for-character. The implementer cannot drift from the spec.
-7. **Score semantics are preserved correctly.** The plan keeps score accumulation per food, score carry-over between levels (via `CONTINUE_GAME`'s `...state` spread), and high-score tracking. `foodEaten` is per-level only. This is the cleanest possible factoring.
-8. **Line-numbered steps.** Phase steps reference specific line numbers in the source (`state.ts:56-104`, `types.ts:10-17`, etc.). This is a Staff-level pattern: an AI agent can verify each step before claiming completion. I verified all references against the current source — every line range is accurate.
-9. **Test count awareness.** Plan states the baseline is 173 and targets 173+. `npm test` confirms 173 passing, 13 test files, distributed as documented in `SPEC.md:386-399`.
-10. **No ADR needed.** This is a behavior change (progression condition), not an architecture redesign. Skipping an ADR is correct.
+1. **Right-sized milestone.** The plan is CSS-only. No new components, no structural changes to React, no state machine changes, no new packages, no theming library, no CSS-in-JS. This matches the project philosophy (`AGENTS.md`: "Prefer small changes, simple solutions, maintainable code, playable progress") and the ROADMAP M8 scope exactly.
+2. **Strong alignment with ROADMAP.md §M8.** All three ROADMAP features (HUD Redesign, Overlay Redesign, Typography Pass) are covered. Theme direction ("Retro Arcade Neon — dark background, bright accent colors, strong visual hierarchy, clean readability") maps directly to the ROADMAP bullet list ("Avoid: flashing effects, excessive particles, visual clutter").
+3. **Honest out-of-scope list.** Particles, scanlines, CRT effects, theme switching, audio changes, new components, and animation framework work are all explicitly fenced. M9 (statistics/achievements), M10 (food variants/level mechanics), and M12 (game polish) are correctly excluded.
+4. **Clean phase decomposition.** Six phases ordered by dependency: tokens → HUD → overlays → level-transition overlay → board/cells → integration cleanup. Each phase is independently verifiable with a build, a test run, and a visual check. No phase breaks the build at the end (unlike M7's "Phase 1 breaks the build on purpose" pattern).
+5. **Documentation discipline.** Definition of Done explicitly requires `SPEC.md`, `ROADMAP.md`, and `PROJECT_STATE.md` updates. The "Plan Review Notes" section in the plan itself is a useful self-audit.
+6. **No ADR needed.** This is a visual style refresh, not an architectural change. The plan correctly skips the ADR step.
+7. **Accessibility preservation is explicit.** Aria-live regions, screen-reader-only content, focus management, and contrast are all flagged as preserved. Phase 2 explicitly says "Keep `aria-live` regions and screen-reader-only content unchanged."
+8. **Risk table is candid.** Google Fonts latency, mobile paint performance from shadows, and visual regression from hardcoded-color churn are all real and acknowledged.
+9. **Out-of-scope table directly cites future milestones.** "No achievement/statistics UI (Milestone 9)", "No food variant visuals (Milestone 10)", "No particle effects (Milestone 12)" — this is the right level of cross-referencing.
 
 ## Weaknesses
 
-1. **Phase 5 path error.** Phase 5 lists `src/game/__tests__/levelData.test.ts` as a target file. The actual file is at `src/utils/__tests__/levelData.test.ts` (verified via `find`). The test imports from `../levelData`, which is a one-line re-export at `src/utils/levelData.ts:1` (`export { LEVELS as default, getLevelData, generateObstacles } from '../game';`). The data lives in `src/game/levels.ts`, so the rename in `src/game/levels.ts` will still propagate via the re-export — but the test file the implementer must edit is in `src/utils/`. An AI agent following the plan literally will either (a) edit the wrong file (with no effect on tests) or (b) create a new file at the wrong path and orphan the real one.
-2. **Phase 5c is wrong about `Engine.test.ts`.** The plan says: "No structural changes expected — the engine's behavior is driven by the reducer." This is incorrect. `Engine.test.ts:179-206` (`continueGame` describe block) sets state via `engine.setState({ ...getInitialState(), status: 'levelComplete', level: 1, score: 50 })` and asserts the transition. That test will still pass (it bypasses the reducer's level-up trigger by setting `status: 'levelComplete'` directly). But the `lastUnlockedLevel` persistence tests at `Engine.test.ts:248-301` use a different pattern: they set `status: 'playing'` with a `score` and `food` setup that triggers a level-up via `testDispatch({ type: 'MOVE_SNAKE' })`. After the change, `score: 40` and one food eaten at level 1 will not reach `foodRequired: 10`, so `levelComplete` will not fire and the test will fail. The plan's blanket "no structural changes expected" is misleading; the level-up and won tests in `Engine.test.ts` need the same kind of setup updates the plan prescribes for `state.test.ts`.
-3. **`state.test.ts` `makeState` helper is not called out.** `state.test.ts:6-24` builds a default `GameState` with explicit fields. After `GameState` gains `foodEaten: number`, `makeState` will fail TypeScript compilation (missing required field). The plan implies this via "Tests that check `initial state` shape — add `foodEaten: 0`" but does not explicitly say to add `foodEaten: 0` to the `makeState` helper. This is the most common omission a hurried AI agent will make — fix the explicit field assertions and forget the factory.
-4. **Documentation drift in SPEC.md §6.4 (Win Condition).** The plan updates §6.2 (level progression) and §6.3 (level metadata) but does not call out §6.4, which currently reads: "When level `LEVEL_COUNT` target score is reached (`LEVEL_COUNT * 50` points)" (`SPEC.md:140`). This sentence becomes factually wrong after the change. The win condition is now `level === LEVEL_COUNT && foodEaten >= foodRequired`.
-5. **Documentation drift in ARCHITECTURE.md line 110.** The plan updates the speed-ramp line at `ARCHITECTURE.md:154` but misses the parallel reference at `ARCHITECTURE.md:110`: "**Dynamic speed** based on current level (150ms → 60ms)". This will go stale.
-6. **Documentation drift in ARCHITECTURE.md state machine diagram.** The plan updates the Level System description and Important Constants table, but not the state machine diagram at `ARCHITECTURE.md:199-224`. Two lines are now wrong: "SCORE REACHES TARGET (levels 1-9) → LEVELCOMPLETE" (line 209) and "LEVEL 10 COMPLETE → WON" (line 210) implicitly reference the score-based trigger. They should read "FOOD OBJECTIVE REACHED" and "FOOD OBJECTIVE REACHED (level 10)".
-7. **Phase 4b screen-reader text format is unspecified.** The plan says: "Update the screen-reader-only text to include food progress." The current `aria-live="assertive"` block (`ScoreBoard.tsx:21-24`) reads `{score > 0 && \`Score: ${score}. \`}Level {level}.`. The plan does not specify where the food progress announcement goes, what it says, or whether the `score > 0` guard should be mirrored as `foodEaten > 0`. Minor ambiguity.
-8. **Plan does not address the "won" test setup explicitly.** `state.test.ts:245-260` triggers win at level 10 by setting `score: 490` and moving the snake to eat food (which pushes `score` to 500). After the change, this requires `foodEaten: 29` and the resulting `score: 290`. The plan's Phase 5b guidance is generic ("Tests that trigger `won` similarly") but does not enumerate the two test cases (the `won` status test and the `high score on win` test) that need this specific update.
+1. **Google Fonts external dependency is a real regression for an offline-first PWA.** The plan adds a runtime CDN fetch (`fonts.googleapis.com` / `fonts.gstatic.com`). The current PWA pre-caches **all static assets** (`**/*.{js,css,html,svg,png}`) and is fully playable offline. A first-time visit that loses connectivity between the HTML load and the font fetch will render the game in the system stack — silently dropping the "Retro Arcade Neon" identity exactly when the player most needs the visual hook. The mitigation "system font fallback ensures readability" addresses the bug but not the regression.
+2. **The "Possible minor JSX restructuring" in Phase 2 is mislabeled — the redesign requires it.** The current `ScoreBoard.tsx` is four flat `<div className={styles.score}>` rows. The Phase 2 redesign requires "horizontal bar with visual separators between sections", "Food progress: compact meter/bar style showing 'X/Y' with visual fill", and "High Score: gold/yellow accent color with crown-like visual treatment". A visual separator, a fill bar, and a "crown-like" treatment each demand new DOM structure. "Possible" should be "Required" with the new structure spelled out (group wrappers, meter container, etc.).
+3. **Phase 3 declares "no structural changes expected" for `Game.tsx` and then describes one.** The plan's Phase 3 file list for `Game.tsx` says "No structural changes expected", but the same phase says "remove the standalone `<h1>` above board when overlay is active, or make it larger and more arcade-like". The `<h1>` lives at `Game.tsx:131` and the idle overlay already has its own `<h2>Snake Run</h2>` at `Game.tsx:189`. Removing the page-level h1 is a behavior change that needs to be explicit and owned, not hedged.
+4. **Color token list is incomplete relative to existing palette.** The plan defines `--color-bg`, `--color-surface`, `--color-border`, `--color-text`, `--color-text-muted`, `--color-accent`, `--color-danger`, `--color-warning`, `--color-obstacle`. The current code uses at least these distinct colors that are not in the list:
+   - `#22c55e` (snake head) — neither `--color-accent` (presumably `--color-text`/`--color-accent` is for the brand) nor any other token.
+   - `#16a34a` (snake body) — not in the list.
+   - `#4ade80` (button green) — distinct from `#22c55e` (hover); not in the list.
+   - `#818cf8` (obstacle border) — distinct from the planned `--color-obstacle` fill.
+   - `#fbbf24` (high score gold) — could be `--color-warning` but warnings are conventionally amber/red, not gold.
+   - `#0f172a` (text on accent button) — needs `--color-text-on-accent` or similar.
+   - The names `bg` vs `surface` vs `card` overlap with no clear hierarchy. `SPEC.md §14` currently lists 11 specific colors; the plan should produce a 1:1 mapping of every existing hex to a token.
+5. **Font choice is undecided.** "Press Start 2P" and "Orbitron" are visually unrelated — one is a 1980s pixel font with no lowercase or diacritics, the other is a futuristic geometric sans. The visual identity of M8 will look very different depending on which is picked. This must be pinned before Phase 1 starts; "e.g." is not a decision.
+6. **Three decorative terms are undefined.** "Crown-like visual treatment" (high score), "decorative border or top/bottom accent lines on the overlay" (idle), and "decorative elements: horizontal divider lines with glow" (game over) are all decorative specifications with no concrete shape (Unicode glyph, CSS pseudo-element, SVG, emoji). An implementer will invent these and the overlays will drift apart.
+7. **PWA `manifest.webmanifest` and `theme-color` meta are not addressed.** `SPEC.md §18` and `ARCHITECTURE.md §PWA Infrastructure` both list `theme_color: #16213e` and `background_color: #1a1a2e` as PWA configuration. The PWA pre-caches the manifest, the iOS splash uses `background_color`, and the Android Chrome address bar uses `theme_color`. If `--color-surface` (the new game card) differs from `#16213e`, the splash and the in-game card will not match. The plan should call out `index.html` `theme-color` and the PWA manifest generator config (likely `vite.config.ts` / `@vite-pwa/manifest` block) explicitly.
+8. **"Test count" DoD entry is hand-wavy.** "`npm test` passes — all 178+ tests" is the right intent but the trailing "+" is a hedge. The actual count from `ARCHITECTURE.md:271` and `SPEC.md §15` is 178 — write 178, not "178+".
+9. **Phase 6 visual-inspection check is not an explicit verification step.** "Visual inspection across viewport sizes" and "PWA install test (dev server, verify in Chrome DevTools)" are listed as bullets in Phase 6, but there is no checklist of what to look for at each viewport. The previous M5 review called this out as a soft verification; the M8 plan should provide a small inspection rubric (e.g., "no text clipping at 375px", "all overlay buttons have a 44px minimum hit target at 600px", "no horizontal scrollbar at 320px").
+10. **No mention of `package.json` version bump.** M6 bumped to v0.6.0 and M7 bumped to v0.7.0. M8 is a milestone and should bump to v0.8.0. Definition of Done does not list this. The `package.json` is the actual version field; `PROJECT_STATE.md` mirrors it. The plan should own the version bump as an explicit step.
+11. **`ARCHITECTURE.md` is missing from the DoD documentation list.** `ARCHITECTURE.md` has a "Styling Conventions" section (`ARCHITECTURE.md:258–266`) that will become outdated the moment a token system replaces the hardcoded palette. The current DoD lists `SPEC.md`, `ROADMAP.md`, `PROJECT_STATE.md`, but not `ARCHITECTURE.md`. M7's plan included `ARCHITECTURE.md` updates and the M7 archived plan's DoD includes them too. This is a regression in documentation discipline.
+12. **ROADMAP.md §M8 is slightly out of sync with current implementation.** ROADMAP lists "Level introduction screen" and "Level complete screen" as separate overlay features. Since M4 (per `ADR-003`) these are a single `LevelTransition` overlay. The plan correctly references a single overlay, but the ROADMAP text is misleading and the plan's "Future-milestone leakage checked" section does not flag this. After M8 ships, ROADMAP §M8 should be tightened to say "Level transition overlay" (single).
+13. **"Subtle glow on hover" / "subtle outer glow effect" are undefined magnitudes.** The plan introduces "subtle inner shadow", "subtle outer glow", "subtle border glow" without ranges. Combined with the Risk #4 ("Mobile performance — box shadows and text-shadows can cause paint performance issues on low-end devices. Mitigation: limit glow effects to key elements only"), the implementer has no quantitative ceiling. A small rubric ("no more than 6 elements with `box-shadow` per viewport, max blur 16px") would prevent overspending on glows.
+14. **No test-file audit.** The plan claims no test regressions but does not enumerate the 13 test files (`ARCHITECTURE.md:271`). At minimum, `src/components/__tests__/GameOver.test.tsx`, `src/components/__tests__/LevelTransition.test.tsx`, and `src/components/__tests__/Board.test.tsx` should be listed and read for assertions that depend on visual identity (class names, computed text content, ARIA structure). Pure CSS changes that preserve all text content should be safe, but the plan does not state the principle ("all text content, button labels, and ARIA attributes remain identical to the current implementation") that an implementer can verify against.
+15. **Scoreboard food-progress display change is ambiguous.** Phase 2 says "compact meter/bar style showing 'X/Y' with visual fill". The current implementation is text "Food: 3/10". The new implementation could be:
+    (a) A meter bar that replaces the text — breaks the existing screen-reader announcement.
+    (b) A meter bar that augments the text — preserves accessibility.
+    (c) A meter bar that replaces the text but keeps the screen-reader announcement. The plan does not pick.
+16. **The plan's own "Plan Review Notes" section is under-checked.** The "Unnecessary complexity checked" / "Future-milestone leakage checked" / "AGENTS.md compliance" subsections are self-assessed. They do not check for: test file coverage, ARCHITECTURE.md update, package.json version bump, manifest.webmanifest, theme-color meta, font pinning, or decorative-element specification. These would all be caught by a fuller internal checklist.
+17. **Risk #1 cites `font-display: swap` as a mitigation but Phase 1 step 1 doesn't say where the `font-display` declaration lives.** For a Google Fonts `<link>` import, the browser controls `font-display` via a query parameter (`&display=swap`). For a self-hosted `@font-face`, the `font-display` descriptor goes in the `@font-face` rule. The plan doesn't pin which is used.
 
 ## Major Risks
 
-1. **Wrong-file edit (F-01).** The path error in Phase 5 will result in either (a) the real test file remaining unedited (test failures not fixed, plan appears to complete but tests fail) or (b) a new file created at the wrong path (orphan test that does not run). Severity: Critical because it is a silent failure mode. An AI agent following the plan step-by-step will not notice the discrepancy unless it grep-checks the file path first.
-2. **Test setup incompatibilities (F-02, F-03, F-08).** The `state.test.ts` `makeState` factory, the level-up tests in `state.test.ts` (lines 210-294), the won tests in `state.test.ts` (lines 245-277), the lastUnlockedLevel tests in `state.test.ts` (lines 406-481), the lastUnlockedLevel persistence tests in `Engine.test.ts` (lines 248-301), and the `Engine.test.ts:179-206` `continueGame` test all reference score-based setups or assume the absence of `foodEaten`. None of them will pass with the new system unless updated. The plan's generic guidance covers most of this, but the `Engine.test.ts` guidance is wrong ("no structural changes expected"), and the `makeState` factory update is implicit. Severity: High because the test suite is one of the Definition-of-Done gates, and silent failures during Phase 5 will cascade into Phase 6 (docs claim 173+ tests passing; in reality the suite is broken).
-3. **Documentation drift across three files (F-04, F-05, F-06).** The plan updates SPEC.md §4, §6.2, §6.3, §10.4, §13 and ARCHITECTURE.md §150-155, §154, §249-256. It misses SPEC.md §6.4, ARCHITECTURE.md §110, and ARCHITECTURE.md §199-224 (state machine diagram). `AGENTS.md`'s "Documentation Consistency" rule ("Keep SPEC.md, ARCHITECTURE.md, PROJECT_STATE.md, and ROADMAP.md consistent with one another") is partially violated. Severity: Medium because the drift is cosmetic and recoverable, but it is exactly the kind of inconsistency `AGENTS.md` warns against.
+1. **Offline-first regression from Google Fonts.** A PWA that ships a runtime font fetch is no longer "fully offline-first" in the way `ARCHITECTURE.md §PWA Infrastructure` and `SPEC.md §18` claim. Even with `font-display: swap`, the visual identity is absent in offline mode, and the PWA no longer meets the "Full offline play after first visit via pre-caching" success criterion from `ARCHITECTURE.md:294` because the font never gets pre-cached. This is a public-facing claim that will be false.
+2. **PWA splash and Android theme color mismatch.** The iOS splash and Android Chrome address bar will render the old colors (`#16213e` / `#1a1a2e`) while the in-game card shows the new colors. The PWA's first impression — the splash — will be visually inconsistent with the game. A 1-second inconsistency on every install.
+3. **Scoreboard UX change could break accessibility.** "Compact meter/bar style showing 'X/Y' with visual fill" can be implemented as a CSS-only bar with the text unchanged, or as a replacement for the text. If the text is replaced, the screen-reader announcement (`ScoreBoard.tsx:25–28` — `Food: {foodEaten} of {foodRequired}`) becomes the only text, and a visual-only player loses quick-readability. The plan does not say which.
+4. **Mobile paint performance from "subtle" glows is harder to control than the plan implies.** The plan's mobile-perf mitigation is "limit glow effects to key elements only (not every cell)". The redesign touches board, cells, head, body, food, obstacles, scoreboard, dpad, toolbar, four overlay types, and the title — and many of these are described as "subtle glow" or "border glow". Without an explicit ceiling, the cumulative `box-shadow` cost on low-end Android is real.
+5. **JSX contradiction between Phase 2 and Phase 3.** Phase 2 says "Possible minor JSX restructuring". Phase 3 says "No structural changes expected" but then asks for the `<h1>` to be removed or enlarged. An implementer who reads Phase 2 and Phase 3 sequentially will hit a wall: either they make JSX changes that Phase 3's "No changes expected" forbids, or they preserve JSX and the visual redesigns fall short.
+6. **Color token incompleteness produces drift.** If `--color-accent` is reused for "snake head green" and "primary button green" and the design later wants them to diverge, every consumer must be hand-audited. Worse, the unnamed `#4ade80` (button), `#22c55e` (head), and `#16a34a` (body) are three distinct greens with intent — collapsing them to one or two tokens loses information.
+7. **The plan does not own the scoreboard's `levelName` rendering.** `ScoreBoard.tsx:10` renders `{level}{levelName ? ` — ${levelName}` : ''}`. The current format is "Level: 1 — First Meal". The plan does not say whether the display font applies to the level number, the level name, both, or neither. This affects how the level-name token is specified.
+8. **Decorative elements invented during implementation.** "Crown-like" (high score), "decorative border or top/bottom accent lines" (idle), and "decorative elements: horizontal divider lines with glow" (game over) are not specified. An implementer will pick Unicode (e.g., ♛, ◆, ─) and CSS pseudo-elements. The overlays will look slightly different because the implementer invents three separate visual languages.
 
 ## Recommended Changes
 
-1. **Fix the path error in Phase 5 (F-01).** Change `src/game/__tests__/levelData.test.ts` to `src/utils/__tests__/levelData.test.ts` in the Phase 5 file list and in any step that references the file. The data lives in `src/game/levels.ts`; the test consumes it via the `src/utils/levelData.ts` re-export.
-2. **Add an explicit `makeState` factory update step in Phase 5b (F-03).** Add a step before the test-case updates: "Add `foodEaten: 0` to the `makeState` factory at `src/game/__tests__/state.test.ts:6-24`. This is required to satisfy the new `GameState` type."
-3. **Replace Phase 5c's "no structural changes expected" with the correct guidance (F-02).** Rewrite Phase 5c to: "`Engine.test.ts` has the same test-setup pattern as `state.test.ts`. The `lastUnlockedLevel persistence` describe block (`Engine.test.ts:243-301`) sets `score: 40` and `score: 490` to trigger `levelComplete` and `won` respectively. After the change, these setups must use `foodEaten: 9` (for level 1) and `foodEaten: 29` (for level 10), with corresponding `score: 90` and `score: 290`. The `continueGame` describe block (`Engine.test.ts:165-207`) uses `setState` to set `status: 'levelComplete'` directly and is unaffected."
-4. **Add SPEC.md §6.4 to the Phase 6a update list (F-04).** Replace `LEVEL_COUNT * 50` with "when the level 10 food objective is reached". This is a one-line change in the same file as the §6.2 update.
-5. **Add ARCHITECTURE.md §110 to the Phase 6b update list (F-05).** Replace "150ms → 60ms" with "150ms → 100ms" in the "Dynamic speed based on current level" bullet. The plan already updates line 154 (speed ramp); line 110 is the parallel reference in the Game Loop Pattern section.
-6. **Add the state machine diagram update to Phase 6b (F-06).** Update `ARCHITECTURE.md:209-210` to use the food-objective terminology: "FOOD OBJECTIVE REACHED (levels 1-9) → LEVELCOMPLETE" and "LEVEL 10 FOOD OBJECTIVE REACHED → WON". The state machine diagram is referenced by new contributors; keeping it accurate matters more than any other doc section.
-7. **Specify the screen-reader announcement format in Phase 4b (F-07).** Add a sentence: "Update the screen-reader block to read: `{score > 0 && \`Score: ${score}. \`}{foodEaten > 0 && \`Food: ${foodEaten} of ${foodRequired}. \`}Level {level}.`" Mirrors the existing `score > 0` guard pattern.
-8. **Tighten Phase 5b's "won" guidance (F-08).** Add a step: "Update the two `won` test cases at `state.test.ts:245-260` and `state.test.ts:262-277` to set `foodEaten: 29` (one food away from level 10's `foodRequired: 30`) and `score: 290` instead of `score: 490`."
+1. **Decide on font source and self-host if Google Fonts is kept.** Either:
+   (a) Self-host the chosen font as `woff2` in `public/fonts/` (or co-locate with `index.html`), add an `@font-face` block with `font-display: swap` in `index.css`, and let the existing PWA pre-cache pick it up automatically — preserving the offline guarantee.
+   (b) Accept the runtime fetch and explicitly amend `SPEC.md §18` and `ARCHITECTURE.md §PWA Infrastructure` to say "fonts loaded from Google Fonts CDN at runtime; offline play falls back to system font".
+   Pick one. Option (a) is strongly preferred for an offline-first PWA. Document the choice in Phase 1.
+2. **Pin the display font name in Phase 1.** Replace "e.g., 'Press Start 2P' or 'Orbitron'" with a single decision. (Recommendation: **'Press Start 2P'** for headings/titles, because it is the more distinctive "retro arcade" choice; **system mono** for numerics, because pixel fonts are typically too small to read at score sizes. Confirm before implementation.)
+3. **Convert Phase 2's "Possible minor JSX restructuring" to a "Required" step with explicit new structure.** Spell out the new `ScoreBoard.tsx` shape: a section wrapper around each label/value pair, a meter container around food progress, and a high-score wrapper. Provide the new JSX as a target.
+4. **Reconcile Phase 2 and Phase 3 JSX scope.** Either:
+   (a) Move the `<h1>` change to Phase 2 (it's HUD-adjacent) and remove the contradiction.
+   (b) Add a new Phase 2.5 ("Game.tsx h1 alignment") that owns the change with explicit before/after JSX.
+   (c) Decide that the `<h1>` stays as-is and update Phase 3 to remove the "remove the standalone h1" option. Pick one.
+5. **Enumerate every existing color in Phase 1 with a target token.** The plan should produce a one-to-one mapping:
+   | Current hex | Token | Usage |
+   |---|---|---|
+   | `#1a1a2e` | `--color-bg` | Page background |
+   | `#16213e` | `--color-surface` | Game card / overlay surface |
+   | `#0f172a` | `--color-text-on-accent` | Text on green buttons |
+   | `#f8fafc` | `--color-text` | Primary text |
+   | `#94a3b8` | `--color-text-muted` | Secondary text |
+   | `#64748b` | `--color-text-dim` | Hint text |
+   | `#4ade80` | `--color-accent-soft` | Primary button |
+   | `#22c55e` | `--color-accent` | Snake head / hover |
+   | `#16a34a` | `--color-accent-deep` | Snake body |
+   | `#ef4444` | `--color-danger` | Food / game over |
+   | `#fbbf24` | `--color-warning` | High score |
+   | `#6366f1` | `--color-obstacle` | Obstacle fill |
+   | `#818cf8` | `--color-obstacle-edge` | Obstacle border |
+   | `#475569` | `--color-border` | Default border |
+   | `#1e293b` | `--color-cell-border` | Cell grid line |
+   | `#334155` | `--color-board-border` | Board border (current) |
+   This list is derived from the current code; the plan should be a superset of it.
+6. **Add `manifest.webmanifest` and `theme-color` to Phase 1 or Phase 6 file lists.** Pin which file controls the PWA theme (likely `vite.config.ts` with the `@vite-pwa/manifest` block) and update the values to match the new `--color-surface` and `--color-bg`. Also update `<meta name="theme-color">` in `index.html` to `--color-bg` (or the equivalent token). Otherwise the iOS splash and Android address bar will be visually inconsistent.
+7. **Replace "decorative" with concrete specifications.** Three options:
+   (a) Pin each decorative element to a specific Unicode glyph (e.g., `▔`, `═`, `▁`) and a CSS position.
+   (b) Add a small inline SVG block per overlay (1–2 lines) with a "neon underline" shape.
+   (c) Remove the decorative elements and rely on typography + glow + spacing for the visual identity.
+   The plan currently says "decorative" three times without defining. Pick one path.
+8. **Define "subtle" glow with a quantitative ceiling.** Add to Phase 1: "Glow effects are limited to: (i) one outer `box-shadow` per overlay surface, (ii) one `text-shadow` per heading, (iii) snake head, (iv) obstacle edges, (v) scoreboard border. Max blur radius: 16px. No glow on individual cells, dpad buttons, or toolbar buttons." This is the kind of constraint that prevents performance drift.
+9. **Add `package.json` version bump (0.7.0 → 0.8.0) to Phase 6.** This matches the milestone pattern (M6 → 0.6.0, M7 → 0.7.0).
+10. **Add `ARCHITECTURE.md` to the DoD documentation list.** Phase 6 should update the "Styling Conventions" section (lines 258–266) to reference the new token system and the self-hosted (or CDN) font choice.
+11. **Specify the food-progress presentation.** "Phase 2 redesigns the food progress as a CSS meter bar that augments (does not replace) the existing 'Food: X/Y' text. Screen-reader announcement at `ScoreBoard.tsx:25–28` is unchanged." This single sentence prevents a UX regression.
+12. **Add a test-file audit step to Phase 6 verification.** "Phase 6 verification: read `src/components/__tests__/GameOver.test.tsx`, `src/components/__tests__/LevelTransition.test.tsx`, `src/components/__tests__/Board.test.tsx`, `src/components/__tests__/Cell.test.tsx`, and `src/components/__tests__/Game.test.tsx` to confirm none of the assertions depend on CSS class names that may be renamed during the redesign." Five minutes of reading, prevents a missed regression.
+13. **Pin the `<h1>` decision before Phase 3.** Either the page-level h1 is removed (because the idle overlay already shows "Snake Run" as h2) or it is enlarged. Whichever is chosen, write it down so the implementer doesn't have to choose.
+14. **Add a viewport-inspection rubric to Phase 6 verification.** Replace "Visual inspection across viewport sizes" with:
+    - 320px wide: no horizontal scrollbar; all overlay buttons ≥ 44px hit target.
+    - 375px (iPhone SE): idle overlay text fits without ellipsis; ScoreBoard wraps gracefully.
+    - 600px (tablet portrait): ScoreBoard is single-row; controls toolbar is right-aligned.
+    - 768px (tablet landscape): default layout, no media query changes.
+    - 1200px+ (desktop): board is `min(90vw, 70dvh, 400px)` and centered.
+15. **Update ROADMAP.md §M8 to reflect the single-overlay design.** Replace "Level introduction screen" + "Level complete screen" with "Level transition overlay" (matching `ADR-003`). Move M8 to "Completed" after the milestone ships.
+16. **Specify the `font-display` strategy concretely.** If Google Fonts is used, add `&display=swap` to the URL. If self-hosted, add `font-display: swap;` to the `@font-face` block. Either way, write the rule.
 
 ---
 
@@ -56,157 +121,218 @@
 
 ## Critical
 
-### F-01. Wrong test file path in Phase 5
-
+### F-01. Google Fonts external dependency breaks the offline-first PWA claim
 - **Severity:** Critical
-- **Description:** Phase 5 (`/Users/adityasingh/Documents/snake-run/plans/ACTIVE.md:239-287`) lists `src/game/__tests__/levelData.test.ts` in the Phase 5 file list (line 247) and in the Phase 5a sub-step (line 251). The actual test file is at `src/utils/__tests__/levelData.test.ts`. Verified via `find` and `Read`. The data source (`src/game/levels.ts`) is correctly identified, and the re-export (`src/utils/levelData.ts:1`) will propagate the rename transparently — but the test assertions live in the `src/utils/` file. An AI agent following the plan literally will:
-  - (a) Try to edit `src/game/__tests__/levelData.test.ts` (does not exist) — TypeScript/build errors or silent no-op.
-  - (b) Or use Glob/LS to discover the right file — possible, but not guaranteed.
-  - The plan's other file references in Phase 5 (`state.test.ts`, `Engine.test.ts`) are correct. Only `levelData.test.ts` has the wrong path.
-- **Recommendation:** Change the Phase 5 file list entry to `src/utils/__tests__/levelData.test.ts`. Change any sub-step that references the file. Add a one-line note in Phase 5 explaining that `src/utils/levelData.ts` is a re-export of `src/game/levels.ts`, so the test updates are independent of the data-layer change in Phase 1.
+- **Description:** The plan introduces a runtime CDN fetch for a display font (Phase 1 step 1, "Add Google Fonts preconnect links in `index.html`"). `ARCHITECTURE.md:294` claims "Full offline play after first visit via pre-caching" and `SPEC.md:443` claims "Full offline play after first visit via pre-caching." The current pre-cache glob is `**/*.{js,css,html,svg,png}` — no `woff2`, no Google Fonts stylesheet. After this milestone, a player who loads the page once and then plays offline will see the game in the system stack — exactly the visual identity gap the milestone is trying to close. The plan's mitigation ("system font fallback in font stack ensures readability") is correct for the bug but not for the regression: the README/PWA manifest/iOS-splash would still advertise an offline-first product that is no longer offline-first for its core visual element.
+- **Recommendation:** Self-host the chosen font. Place `*.woff2` in `public/fonts/` (or a co-located asset path), add an `@font-face` block with `font-display: swap;` in `index.css`, and let the existing PWA pre-cache pick it up via the `**/*.{js,css,html,svg,png}` glob (or extend it to include `woff2`). This preserves the offline guarantee and removes the third-party runtime dependency.
+
+### F-02. Phase 2's "Possible minor JSX restructuring" is a contradiction with the redesign
+- **Severity:** Critical
+- **Description:** Phase 2 says "Possible minor JSX restructuring (add grouping `div`s)" — the word "possible" treats the JSX change as optional. But the redesign description requires "visual separators between sections" (requires wrapper elements around each label/value pair), "compact meter/bar style showing 'X/Y' with visual fill" (requires a meter container element with a fill child), and "crown-like visual treatment" (requires a child element or pseudo-element). A pure CSS rewrite of the current flat `ScoreBoard.tsx` cannot achieve any of these. The current `<div className={styles.score}>` rows must be split or wrapped.
+- **Recommendation:** Change Phase 2 to "Required JSX restructuring" and provide the new `ScoreBoard.tsx` shape: section wrappers, food progress meter, high-score wrapper. The plan is currently a CSS-only plan; that premise is wrong for the HUD.
+
+### F-03. Phase 3 and Phase 2 disagree on whether `Game.tsx` changes
+- **Severity:** Critical
+- **Description:** Phase 2's "Files" list for `ScoreBoard.tsx` says "Possible minor JSX restructuring (optional)". Phase 3's "Files" list for `Game.tsx` says "No structural changes expected", but the same phase's "Changes" section says "remove the standalone `<h1>` above board when overlay is active, or make it larger and more arcade-like". An implementer cannot satisfy both. The current `Game.tsx:131` has `<h1 className={styles.title}>Snake Run</h1>` and the idle overlay at `Game.tsx:189` has `<h2>Snake Run</h2>` — they coexist today. Removing or enlarging the page-level h1 is a real JSX change.
+- **Recommendation:** Decide once. Recommended: remove the page-level h1 entirely (the idle overlay already shows the title; the page-level h1 is redundant during idle and cluttering during play/pause/gameover/levelComplete). Update Phase 2 to "no JSX changes" and Phase 3 to "remove the `<h1>` at `Game.tsx:131` and rely on the overlay h2 for idle title visibility."
+
+### F-04. PWA manifest and theme-color meta are not in the change list
+- **Severity:** Critical
+- **Description:** `SPEC.md §18` and `ARCHITECTURE.md §PWA Infrastructure` both document `theme_color: #16213e` and `background_color: #1a1a2e` in the PWA manifest (generated by `vite-plugin-pwa`). `index.html:7` carries `<meta name="theme-color" content="#16213e" />`. If the new `--color-surface` (game card) and `--color-bg` (page) are different values, the iOS splash screen and the Android Chrome address bar will show the old colors while the in-game card shows the new ones. The first impression on every install will be visually inconsistent.
+- **Recommendation:** Add to Phase 1 (or a new Phase 1.5) an explicit step: "Update `index.html` `<meta name="theme-color">` to match the new `--color-bg` (or `--color-surface` if a different surface color is intended for the iOS bar). Locate the PWA manifest block in `vite.config.ts` (or wherever `@vite-pwa/manifest` is configured) and update `theme_color` and `background_color` to match the new tokens." Verification: "Build the PWA, inspect `dist/manifest.webmanifest` to confirm the new values are emitted, and load on a real iOS device or simulator to confirm the splash matches the in-game card."
 
 ## High
 
-### F-02. `Engine.test.ts` level-up tests use score-based setup that will silently fail
-
+### F-05. Color token list does not cover the existing palette
 - **Severity:** High
-- **Description:** `Engine.test.ts:248-301` (the `lastUnlockedLevel persistence` describe block) uses `engine.setState({ ...getInitialState(), status: 'playing', level: 1, score: 40, ... })` followed by `engine.testDispatch({ type: 'MOVE_SNAKE' })` to trigger `levelComplete` and assert persistence. After the change, `score: 40` is irrelevant to the level-up condition; the trigger is now `foodEaten >= foodRequired`. The test sets `foodEaten: 0` (from `getInitialState()`), and one food eaten yields `foodEaten: 1` — nowhere near level 1's `foodRequired: 10`. `MOVE_SNAKE` will not transition to `levelComplete`; the assertion will fail.
-  - Similarly, `Engine.test.ts:263-281` (won persistence) sets `score: 490` and `level: 10`. After the change, `foodEaten: 0` and one food eaten = `foodEaten: 1`, not the 30 required for level 10 win. Test will fail.
-  - The plan's Phase 5c says "Tests that verify level-up callbacks remain valid (conditions unchanged)" and "No structural changes expected — the engine's behavior is driven by the reducer." Both statements are wrong. The engine test setup *is* the issue: it does not go through the reducer to reach the level-up state; it relies on the `MOVE_SNAKE` reducer call to trigger the transition, and that reducer call now has a different condition.
-- **Recommendation:** Rewrite Phase 5c to: "Update the `lastUnlockedLevel persistence` describe block in `src/game/__tests__/Engine.test.ts:243-301`. Replace the score-based setups with foodEaten-based setups. For `levelComplete` at level 1, set `foodEaten: 9` and `score: 90` (one food away from `foodRequired: 10`). For `won` at level 10, set `foodEaten: 29` and `score: 290`. For `gameover`, the existing setup (`Engine.test.ts:248-261`) is unaffected because the collision path is independent of `foodEaten`. The `continueGame` describe block (`Engine.test.ts:165-207`) sets `status: 'levelComplete'` directly via `setState` and is unaffected. The `startAtLevel` describe block (`Engine.test.ts:209-241`) does not trigger level-up and is unaffected. The `sound callback wiring` describe block (`Engine.test.ts:109-163`) is unaffected."
+- **Description:** The plan defines 9 color tokens (`--color-bg`, `--color-surface`, `--color-border`, `--color-text`, `--color-text-muted`, `--color-accent`, `--color-danger`, `--color-warning`, `--color-obstacle`). The current code uses at least 14 distinct hex values across `index.css`, `Game.module.css`, `Cell.module.css`, `Board.module.css`, `GameOver.module.css`, `LevelTransition.module.css`, and `ScoreBoard.module.css`. Mapping every existing color to a token requires at least 14 tokens, not 9. The plan's "remove hardcoded color values from `index.css` body/html rules, referencing variables instead" (Phase 1 step 4) implies a full migration, but the token list is too small to do it.
+- **Recommendation:** Expand the token list in Phase 1 to cover every existing hex value. A reference table is provided in Recommended Change #5 above. Pin the semantic intent of each token (e.g., `--color-accent-soft` for primary button fill, `--color-accent` for snake head / hover, `--color-accent-deep` for snake body) so the three distinct greens don't collapse.
 
-### F-03. `state.test.ts` `makeState` factory needs explicit `foodEaten: 0`
-
+### F-06. Font choice is undecided
 - **Severity:** High
-- **Description:** `state.test.ts:6-24` defines a `makeState` helper that returns a partial `GameState`. The returned object explicitly enumerates every field except `foodEaten`. After `GameState` gains `foodEaten: number` as a required field (`types.ts:19-30` will be updated in Phase 1), the `makeState` factory will fail TypeScript compilation with "Property 'foodEaten' is missing in type '{...}'". The plan's Phase 5b says: "Tests that check `initial state` shape — add `foodEaten: 0`". This is generic and could be interpreted as "update the explicit field assertions in each `it()` block" without touching the factory. The factory is the higher-leverage fix because every test that uses `makeState()` flows through it.
-- **Recommendation:** Add a new step at the start of Phase 5b: "Add `foodEaten: 0` to the `makeState` factory at `src/game/__tests__/state.test.ts:6-24`. This is required to satisfy the new `GameState` type and is the single change that makes 24+ existing tests compile." Then the existing per-test guidance applies on top.
+- **Description:** Phase 1 step 1 says "for a retro display font (e.g., 'Press Start 2P' or 'Orbitron')". "Press Start 2P" is a 1980s pixel font with no lowercase letters, no diacritics, and a fixed x-height; it is unreadable at body sizes. "Orbitron" is a futuristic geometric sans-serif with full Unicode coverage. The visual identity of M8 will look completely different depending on which is chosen. This is the most important design decision in the milestone, and "e.g." is not a decision.
+- **Recommendation:** Pin the choice before Phase 1 starts. Recommend "Press Start 2P" for headings (the more distinctive "retro arcade" choice) and a system mono stack for numerics (pixel fonts are typically too small to read at score sizes). The plan should say "Display font: 'Press Start 2P' (self-hosted, woff2). Numeric font: system mono stack via `--font-mono`." This decision is also relevant to F-01 (self-hosting) and F-13 (level-name rendering).
 
-### F-04. SPEC.md §6.4 (Win Condition) is not in the Phase 6a update list
+### F-07. Three decorative terms are undefined
+- **Severity:** High
+- **Description:** The plan says "Crown-like visual treatment" (high score), "decorative border or top/bottom accent lines on the overlay" (idle), and "decorative elements: horizontal divider lines with glow" (game over). None of these are defined. An implementer will pick Unicode (`♛`, `◆`, `─`, `═`), CSS pseudo-elements, or inline SVGs, and the three overlays will end up with three different visual languages.
+- **Recommendation:** Pick one approach for all three. Recommended: a single `.neon-divider` class (e.g., `border-top: 1px solid; border-image: linear-gradient(90deg, transparent, var(--color-accent), transparent) 1;`) reusable across overlays. Drop "crown-like" — use a gold accent on the high-score value and let the typography carry the visual. This is simpler and more consistent.
 
-- **Severity:** Medium
-- **Description:** `SPEC.md:140` reads: "When level `LEVEL_COUNT` target score is reached (`LEVEL_COUNT * 50` points)". After the change, the win condition is no longer score-based. This sentence is factually wrong. The plan's Phase 6a updates §6.2, §6.3, §10.4, §13 but does not list §6.4.
-- **Recommendation:** Add a step to Phase 6a: "**Section 6.4 (Win Condition, lines 139-144):** Replace `LEVEL_COUNT * 50` with a food-objective-based description: 'When the level 10 food objective is reached (30 food eaten at level 10)'. Keep the status-change and high-score-save behavior unchanged."
+### F-08. No `package.json` version bump
+- **Severity:** High
+- **Description:** M6 bumped to v0.6.0 and M7 bumped to v0.7.0 (per archived plans). M8 is a milestone and should bump to v0.8.0. Definition of Done does not list this. `package.json` is the canonical version field; `PROJECT_STATE.md` mirrors it. The previous archived plan for M7 explicitly included `package.json` in its Phase 6 file list (archived plan "6e. Bump `package.json` version"). This milestone's plan drops that step.
+- **Recommendation:** Add to Phase 6: "Bump `package.json` from `0.7.0` to `0.8.0`." Add `package.json` to the Phase 6 file list.
+
+### F-09. `ARCHITECTURE.md` is missing from the DoD documentation list
+- **Severity:** High
+- **Description:** Definition of Done lists `SPEC.md`, `ROADMAP.md`, and `PROJECT_STATE.md` updates, but not `ARCHITECTURE.md`. The current `ARCHITECTURE.md:258–266` ("Styling Conventions") describes the dark theme with hardcoded hex codes that become obsolete the moment Phase 1 introduces the token system. M7's plan included `ARCHITECTURE.md` updates (its DoD item 10: "`SPEC.md`, `ARCHITECTURE.md`, `PROJECT_STATE.md`, and `ROADMAP.md` are updated and consistent with the implementation"). M8's plan regresses on this.
+- **Recommendation:** Add `ARCHITECTURE.md` to DoD. Phase 6 should update the "Styling Conventions" section to reference the new token system and the chosen font.
+
+### F-10. Scoreboard food-progress presentation is ambiguous
+- **Severity:** High
+- **Description:** Phase 2 says "Food progress: compact meter/bar style showing 'X/Y' with visual fill". Three reasonable implementations:
+    (a) Meter bar replaces the text — breaks quick-readability and the screen-reader text at `ScoreBoard.tsx:25–28` is the only source of food count.
+    (b) Meter bar augments the text — text is preserved, meter is a visual aid.
+    (c) Meter bar replaces the text visually but a separate `.sr-only` element preserves the announcement. The plan does not pick. A safe default is (b) — minimal change, preserves accessibility, and looks arcade-y.
+- **Recommendation:** Pin the choice. Recommended: option (b) — the meter is a CSS-only addition to the existing food-progress row, the text "Food: X/Y" remains visible and announced. The plan should say "Food progress retains the visible 'Food: X/Y' text and adds a meter bar below or beside it. The screen-reader announcement at `ScoreBoard.tsx:25–28` is unchanged."
 
 ## Medium
 
-### F-05. ARCHITECTURE.md line 110 ("Dynamic speed") is not in the Phase 6b update list
-
+### F-11. Mobile paint performance: "subtle glow" is unbounded
 - **Severity:** Medium
-- **Description:** `ARCHITECTURE.md:110` reads: "**Dynamic speed** based on current level (150ms → 60ms)". After the change, the upper bound is 100ms, not 60ms. The plan updates `ARCHITECTURE.md:154` (speed ramp) but misses line 110. Two parallel references to the speed range will diverge.
-- **Recommendation:** Add a step to Phase 6b: "**Game Loop Pattern section (line 110):** Replace `150ms → 60ms` with `150ms → 100ms`. Mirrors the update to the speed ramp line at 154."
+- **Description:** Risk #4 acknowledges that box-shadows and text-shadows cost paint time on low-end devices. The mitigation is "limit glow effects to key elements only (not every cell)". The redesign then describes glows on: board border, board wrapper, snake head, obstacle borders, food (existing), scoreboard border, four overlay surfaces, overlay headings, and button hover. That's at least 12 distinct shadow-bearing elements visible at once. The mitigation is correct in spirit but the ceiling is unspecified.
+- **Recommendation:** Add a quantitative ceiling to Phase 1: "Glow effects are limited to: (i) one outer `box-shadow` per overlay surface (4 surfaces), (ii) one `text-shadow` per heading (5–6 headings), (iii) snake head, (iv) obstacle edges, (v) scoreboard border, (vi) button hover. Max blur radius: 16px. No glow on individual cells, dpad buttons, toolbar buttons, or the controls row." This prevents overspending.
 
-### F-06. ARCHITECTURE.md state machine diagram is not in the Phase 6b update list
-
+### F-12. No test-file audit
 - **Severity:** Medium
-- **Description:** `ARCHITECTURE.md:199-224` contains a state machine diagram. Line 209 reads: "SCORE REACHES TARGET (levels 1-9) → LEVELCOMPLETE". Line 210 reads: "LEVEL 10 COMPLETE → WON". After the change, the trigger is food-based, not score-based. The diagram is the most-referenced artifact in ARCHITECTURE.md for new contributors; keeping it accurate matters.
-- **Recommendation:** Add a step to Phase 6b: "**State Machine diagram (lines 209-210):** Replace `SCORE REACHES TARGET (levels 1-9) → LEVELCOMPLETE` with `FOOD OBJECTIVE REACHED (levels 1-9) → LEVELCOMPLETE`. Replace `LEVEL 10 COMPLETE → WON` with `FOOD OBJECTIVE REACHED (level 10) → WON`."
+- **Description:** The plan runs `npm test` after each phase and asserts "no test regressions". It does not enumerate the 13 test files or state the principle that an implementer can verify against. Pure CSS changes that preserve all text content should be safe, but a rename of `.scoreboard` to `.arcadeHud` would not break a text-based test — but would break any test that asserts on class names. The plan does not say "all text content, button labels, and ARIA attributes remain identical to the current implementation".
+- **Recommendation:** Add to Phase 6 verification: "Read `src/components/__tests__/GameOver.test.tsx`, `src/components/__tests__/LevelTransition.test.tsx`, `src/components/__tests__/Board.test.tsx`, `src/components/__tests__/Cell.test.tsx`, and `src/components/__tests__/Game.test.tsx` to confirm none of the assertions depend on CSS class names that may be renamed during the redesign." Also: state as a principle in the plan: "All text content, button labels, and ARIA attributes remain identical to the current implementation; the visual refresh is presentation-only."
 
-### F-07. Phase 4b screen-reader text format is unspecified
+### F-13. `<h1>` decision in Phase 3 is a real JSX change
+- **Severity:** Medium
+- **Description:** Phase 3's file list says `Game.tsx` requires "No structural changes expected", but the changes section says "remove the standalone `<h1>` above board when overlay is active, or make it larger and more arcade-like". This is a JSX change. (See also F-03.)
+- **Recommendation:** Pick one. Recommended: remove the page-level h1 (the idle overlay already shows the title; the page-level h1 is redundant during idle and cluttering during play/pause/gameover/levelComplete). Update Phase 2 to "no JSX changes" and Phase 3 to "remove the `<h1>` at `Game.tsx:131` and rely on the overlay h2 for idle title visibility."
 
-- **Severity:** Low
-- **Description:** The plan says: "Update the screen-reader-only text to include food progress." The current `aria-live="assertive"` block (`ScoreBoard.tsx:21-24`) reads `{score > 0 && \`Score: ${score}. \`}Level {level}.`. The plan does not specify the new format, the placement of the food progress sentence, or whether the existing `score > 0` guard should be mirrored as `foodEaten > 0`. An implementer has to invent the format.
-- **Recommendation:** Tighten the Phase 4b step to: "Update the screen-reader block at `src/components/ScoreBoard.tsx:21-24` to read: `{score > 0 && \`Score: ${score}. \`}{foodEaten > 0 && \`Food: ${foodEaten} of ${foodRequired}. \`}Level {level}.` Mirrors the existing `score > 0` guard pattern so the announcement is silent on initial render."
+### F-14. ROADMAP.md §M8 is slightly out of sync with current implementation
+- **Severity:** Medium
+- **Description:** ROADMAP §M8 lists "Level introduction screen" and "Level complete screen" as separate overlay features. Since M4 (per `ADR-003`) these are a single `LevelTransition` overlay. The plan correctly refers to a single overlay, but the ROADMAP text is misleading and the plan's "Future-milestone leakage checked" section does not flag this.
+- **Recommendation:** After M8 ships, update ROADMAP §M8 to use "Level transition overlay" (single). The plan should note this as part of the ROADMAP update step.
 
-### F-08. Phase 5b "won" test updates are generic
+### F-15. Shadow tokens are color-specific, not generic
+- **Severity:** Medium
+- **Description:** Plan defines `--shadow-neon-green`, `--shadow-neon-red`, `--shadow-neon-purple`. This bakes the three colors into the shadow tokens. If a future phase needs a yellow shadow (high score) or a white shadow (overlay border), a new token is needed. Not a blocker for M8, but worth noting.
+- **Recommendation:** Acceptable for M8 scope. If `--color-warning` (high score) is rendered as `#fbbf24` (gold), the existing `--shadow-neon-purple` token is wrong for it. The plan should either add `--shadow-neon-gold` or define shadows via a single `box-shadow` value per element (not a token). Pick one and stick to it.
 
-- **Severity:** Low
-- **Description:** The plan's Phase 5b guidance is correct in principle ("Tests that trigger `won` similarly") but does not enumerate the two specific test cases in `state.test.ts` that trigger won (lines 245-260 and 262-277). Both set `score: 490` and `level: 10` and move the snake to eat food at (10,10) to push score to 500. After the change, they need `foodEaten: 29` and `score: 290` (so eating the 30th food triggers win). A hurried implementer may miss the second test.
-- **Recommendation:** Add a step to Phase 5b: "Update the two `won` test cases at `src/game/__tests__/state.test.ts:245-260` and `:262-277` to set `foodEaten: 29` (one food away from level 10's `foodRequired: 30`) and `score: 290` instead of `score: 490`. The `MOVE_SNAKE` dispatch will increment both fields and trigger the level-10 win path."
+### F-16. `ScoreBoard` `levelName` rendering not addressed by the typography pass
+- **Severity:** Medium
+- **Description:** `ScoreBoard.tsx:10` renders `{level}{levelName ? ` — ${levelName}` : ''}`. The current format is "Level: 1 — First Meal". Phase 1 step 3 says "Define heading styles: `h1`, `h2` using display font; numeric classes `.score-value`, `.level-value` using a monospaced numeric style". The plan defines `.level-value` for the level number but does not specify whether the level name uses the display font or the body font. With a pixel font like "Press Start 2P" (no lowercase), the name "First Meal" cannot render in lowercase. This is a design constraint that the plan does not address.
+- **Recommendation:** Specify. Recommended: the level number uses `--font-display` (e.g., "Press Start 2P") so "1" looks arcade-y; the level name uses `--font-body` (system stack) so "First Meal" remains readable and lowercase-capable. The `—` separator remains in `--font-body`.
+
+### F-17. Z-index landscape not enumerated
+- **Severity:** Medium
+- **Description:** `Game.module.css` uses `z-index: 10` on overlays. The d-pad and controls row are above the board. The plan adds glows on the board wrapper and the overlays. If a glow renders outside its parent's bounding box (a common box-shadow behavior), it could be clipped by a parent or appear above an overlay incorrectly. The plan says "Test overlay stacking and z-index behavior" in Phase 6, but the test is after the fact.
+- **Recommendation:** In Phase 5, when adding the board wrapper glow, specify `overflow: visible` (or test that the glow is contained). In Phase 6, the z-index check should be a checkbox: "Overlay z-index 10, no overlap with board wrapper glow at any viewport."
+
+### F-18. The plan's "Plan Review Notes" section is incomplete
+- **Severity:** Medium
+- **Description:** The "Unnecessary complexity checked" / "Future-milestone leakage checked" / "AGENTS.md compliance" subsections are self-assessed and miss: test file coverage, ARCHITECTURE.md update, package.json version bump, manifest.webmanifest, theme-color meta, font pinning, decorative-element specification. These would all be caught by a fuller internal checklist.
+- **Recommendation:** Add to the plan's review notes: "Test files: enumerated and audited (all text content preserved)." "Documentation: SPEC.md, ARCHITECTURE.md, PROJECT_STATE.md, ROADMAP.md, package.json all updated." "PWA: theme-color meta and manifest colors updated to match new tokens." "Font: pinned to a single named family, self-hosted."
 
 ## Low
 
-### F-09. Plan does not mention the `lastUnlockedLevel` accumulator test
-
+### F-19. "Test count" DoD entry is hand-wavy
 - **Severity:** Low
-- **Description:** `state.test.ts:461-480` is a multi-step test that triggers two `MOVE_SNAKE` and one `CONTINUE_GAME` to verify `lastUnlockedLevel` accumulates correctly across multiple level completions. After the change, the first `MOVE_SNAKE` will not trigger levelComplete (because `foodEaten: 0` and one food eaten = `foodEaten: 1`, not 10). The test will fail. The plan's generic guidance covers it, but it is worth calling out specifically because the test is the only one in the file that exercises the multi-step accumulator behavior.
-- **Recommendation:** Add a step to Phase 5b: "Update the accumulator test at `src/game/__tests__/state.test.ts:461-480` to set `foodEaten: 9` and `score: 90` (instead of `score: 40`) so the first `MOVE_SNAKE` triggers `levelComplete` and `lastUnlockedLevel` increments from 1 to 2."
+- **Description:** "`npm test` passes — all 178+ tests" — the actual count is 178 (per `ARCHITECTURE.md:271` and `SPEC.md §15`). The "+" is a hedge.
+- **Recommendation:** Replace "178+ tests" with "all 178 tests" or "all 178+ tests (count may grow if Phase 2 JSX changes add a ScoreBoard test)."
 
-### F-10. Plan does not mention updating `Engine.test.ts:187-191` `setState` call
-
+### F-20. Phase 1 verification "CSS variables are available in browser dev tools" is vague
 - **Severity:** Low
-- **Description:** `Engine.test.ts:187-191` uses `engine.setState({ ...getInitialState(), status: 'levelComplete', level: 1, score: 50 })`. After the change, `getInitialState()` will include `foodEaten: 0` (from the Phase 2a update), so the `...getInitialState()` spread will include it. The setState call does not need updating. The plan correctly does not call this out, but a thorough implementation review would verify this. Verified manually: no update needed.
-- **Recommendation:** None (already correct). Add a note to Phase 5c verifying that `Engine.test.ts:187-191` and `Engine.test.ts:218-223` use `...getInitialState()` and are automatically covered by the Phase 2a `getInitialState()` change.
+- **Description:** "Visual inspection: CSS variables are available in browser dev tools" — the action is unspecified.
+- **Recommendation:** Replace with: "Open Chrome DevTools → Elements → inspect `<html>` → Computed → confirm `--color-bg` (and the other 14 tokens) are defined on `:root` with non-empty values. Spot-check a Cell: confirm `var(--color-accent)` resolves to `#22c55e` (or the chosen new value)."
+
+### F-21. No CHANGELOG or version note in `package.json`
+- **Severity:** Low
+- **Description:** (See F-08.) The version bump is the user-visible release signal.
+- **Recommendation:** Addressed by F-08.
+
+### F-22. The PWA install test in Phase 6 is a single bullet
+- **Severity:** Low
+- **Description:** "PWA install test (dev server, verify in Chrome DevTools)" — the install test should specify what to verify: install prompt fires, app launches in standalone mode, theme color renders correctly, splash background matches the in-game card.
+- **Recommendation:** Expand to: "PWA install test (Chrome DevTools → Application → Manifest): confirm `theme_color` and `background_color` match the new tokens; install the PWA on a real device or Android emulator and confirm the splash and address bar match the in-game card on first launch."
 
 ---
 
 # Handoff Assessment
 
-## Phase Structure
+## Phase structure
 
-**Rating: Good.**
+**Verdict:** Mostly good, with two corrections.
 
-Six phases, logical bottom-up order. The "break the build by design" pattern in Phase 1 (type changes with no consumer update) is a deliberate TDD-style red step that verifies the type change is real. Phase 2 restores the build by updating the consumer. This is a Senior-level pattern and is correctly described.
+The six-phase ordering (tokens → HUD → overlays → level-transition overlay → board/cells → integration cleanup) is sensible. Each phase produces a buildable, test-passing state. The phases are small enough that an AI agent can execute one in a single sitting.
 
-The `Phase 3: Engine Review` step is unusual but valuable — it explicitly confirms zero changes are needed in `Engine.ts` and documents the reasoning. This pre-empts an over-zealous implementer who might add unnecessary code to the engine.
+**Issues:**
+- Phase 1 is overloaded. It tries to do (a) font self-hosting, (b) color tokens, (c) spacing/shadow/radius/transition tokens, (d) typography classes, (e) PWA theme-color meta, (f) manifest.webmanifest updates, and (g) body/html hardcoded color cleanup. That's seven distinct changes; AI-agent execution benefits from a 3–5 step phase. Consider splitting Phase 1 into "1a: tokens" and "1b: typography + body" with a verification between.
+- Phase 2 is mislabeled as "CSS only" when it is actually "CSS + JSX". The label is misleading; an AI agent reading "CSS only" will skip the JSX restructure.
+- Phase 6 is doing both "audit hardcoded values" and "responsive verification" and "PWA install test". Three concerns. Consider splitting into "6a: cleanup audit" and "6b: responsive/PWA verification".
 
-The `Phase 6: Documentation Updates` step is appropriately placed at the end. Documentation updates are an integration step that benefits from a working code state.
+## Task decomposition
 
-## Task Decomposition
+**Verdict:** Acceptable, with caveats.
 
-**Rating: Mostly Good.**
+Tasks are concrete and file-scoped. CSS-module files are correctly identified. The `Game.tsx` ownership across phases is the only one with a contradiction (F-03, F-13).
 
-Each step is small, verifiable, and references a specific line range. The line numbers I verified against the current source are accurate (`state.ts:9-24`, `state.ts:56-104`, `state.ts:106-125`, `state.ts:127-142`, `types.ts:10-17`, `types.ts:19-30`, `Game.tsx:153`, `components.ts:20-25`). The `levelData.test.ts` path is the one error (F-01).
+**Caveats:**
+- "Possible minor JSX restructuring" (Phase 2) needs to become a required step with the new JSX shape spelled out. (F-02)
+- "Subtle border glow" (Phase 5 board) is undefined. The plan should specify `box-shadow: 0 0 8px var(--shadow-neon-green)` or similar concrete value.
+- "Decorative elements" (Phase 3 game over) is undefined. (F-07)
+- The plan should enumerate the 13 test files at the bottom and state the principle that an implementer can verify against. (F-12)
 
-Phase 5 (tests) is the weakest decomposition. The `state.test.ts` update guidance is generic; specific test cases that need updating are not enumerated. Phase 5c is factually wrong about `Engine.test.ts` (F-02).
+## Verification strategy
 
-## Verification Strategy
+**Verdict:** Weak.
 
-**Rating: Good.**
+The verification steps are "run build", "run test", "visual inspection", "responsive check". For a CSS-only milestone, that's the right kind of verification — but the steps are not specific enough.
 
-Each phase ends with explicit verification:
-- Phase 1: `npm run build` (expected to fail).
-- Phase 2: `npm run build`, `npm run lint`.
-- Phase 3: Manual play-test.
-- Phase 4: `npm run build`, `npm run lint`, visual check.
-- Phase 5: `npm test`, `npm run build`, `npm run lint`.
-- Phase 6: `git diff` review.
-
-The `npm test` gate in Phase 5 is the most important verification — it catches all the test setup incompatibilities (F-02, F-03, F-08, F-09). The plan correctly states "Expected test count: 173+ (same or slightly more due to new foodEaten tests)". I verified the baseline of 173 via `npm test`.
+**Issues:**
+- "Visual inspection: CSS variables are available in browser dev tools" is not an action an AI agent can take. Replace with a specific browser step. (F-20)
+- "Visual inspection: ScoreBoard reads as a cohesive arcade panel across mobile and desktop" — at which viewport? With which content? (F-22)
+- "PWA install test (dev server, verify in Chrome DevTools)" is one bullet for an entire PWA milestone. (F-22)
+- The plan's "Phase 5: Visual inspection: Board has a polished arcade cabinet feel on both desktop and mobile" is a soft verification with no rubric. (F-22)
 
 ## Definition of Done
 
-**Rating: Good, with one reword needed.**
+**Verdict:** Strong on intent, weak on completeness.
 
-11 explicit bullets, mostly concrete. DoD bullet 9 is good: "No new architectural abstractions, packages, or framework additions introduced. Existing state machine shape preserved; one new state field (`foodEaten`) added and two data fields renamed (`targetScore` → `foodRequired`)." This is accurate and a model for future milestone plans.
+The DoD is comprehensive and includes build, test, lint, accessibility, responsive, and documentation checks. Two omissions:
 
-DoD bullet 11 ("`package.json` version bumped to `0.7.0`") is good. Verified `package.json:4` is currently `0.6.0`.
+- `ARCHITECTURE.md` is not in the documentation list. (F-09)
+- `package.json` version bump is not listed. (F-08)
 
-DoD bullets 6-8 (lint, build, test gates) are the right gates. The plan does not state a specific test count target beyond "173+"; a tighter statement would be "All existing 173 tests pass + 3+ new `foodEaten` tests added (counter increment, level-up trigger, reset behavior)."
+The DoD also includes the right success criteria from the ROADMAP M8 section: "Screenshots appear distinctive", "Visual style feels intentional", "UI no longer resembles a starter template". These are qualitative, but they are the right top-level check.
 
-## AI-Agent Execution Readiness
+## AI-agent execution readiness
 
-**Rating: At risk.**
+**Verdict:** Mostly ready, with two blockers.
 
-The plan is detailed enough that an AI agent could execute it end-to-end, *if* the implementer double-checks the test file path (F-01) and understands that the Engine.test.ts and state.test.ts updates are non-trivial (F-02, F-03, F-08, F-09). The current text of Phase 5 is generic enough to allow an implementer to "complete" Phase 5 without actually fixing the test setups, because:
+A second AI agent can read this plan and start Phase 1 with reasonable confidence. The blockers:
 
-- Phase 5b says "Replace score-based setup" generically.
-- Phase 5c says "no structural changes expected" (wrong).
-- The factory update for `makeState` is implicit.
+1. **Font choice.** Without pinning the font, the agent has to make an irreversible design decision. (F-06)
+2. **JSX vs. CSS scope for the ScoreBoard.** The agent will be confused by "Possible" and "No structural changes expected" in two phases. (F-02, F-03)
 
-The `npm test` gate will catch the failures, but only if the implementer runs `npm test` and reads the failure output carefully. A more defensive plan would include a Phase 5 verification sub-step: "Run `npm test` and confirm that the test names that previously asserted `score >= targetScore` (specifically: 'transitions to levelComplete when score reaches target', 'sets won status when level 10 is completed', 'preserves high score on levelComplete', 'sets lastUnlockedLevel = level + 1 on levelComplete', 'accumulates correctly across multiple level completions', plus the three `Engine.test.ts` lastUnlockedLevel persistence tests) now pass with the foodEaten-based setup."
+If these two are resolved, the plan is executable. Phase 1 is heavy (F-PhaseStructure-1) — splitting it into 1a/1b would improve execution confidence.
+
+A test-file audit is missing (F-12). The agent may rename `.scoreboard` to `.hud` and not realize a test asserts on a class name. The probability is low (existing tests use `screen.getByText` not `getByTestId` on class names) but a 5-minute audit is cheap insurance.
+
+The PWA manifest and theme-color meta updates are not in the change list (F-04). An agent following this plan will ship a PWA with a visually inconsistent splash.
 
 ---
 
 # Final Recommendation
 
-**Approve with Minor Changes.**
+## Approve with Major Changes
 
-The plan is well-conceived, tightly scoped, and aligned with the project's principles (small changes, simple solutions, maintainable code, playable progress). The implementation strategy is sound. The new data tables are correct. The phase ordering is right. The Definition of Done is appropriate.
+**Rationale:** The plan is well-scoped, well-decomposed, and aligned with the project's philosophy. The phase structure is right; the out-of-scope fence is right; the documentation discipline is right (with two omissions). But the plan has four issues that will block a clean handoff to another AI agent or cause a public-facing regression:
 
-The blocking issues are:
+1. **Google Fonts external dependency breaks the offline-first PWA claim** (F-01). This is a public-facing regression in a milestone whose success criterion is "Screenshots appear distinctive." If the screenshot is captured offline, the screenshot doesn't look distinctive.
+2. **Phase 2 and Phase 3 contradict each other on JSX scope** (F-02, F-03). An AI agent cannot execute both faithfully.
+3. **PWA theme-color and manifest.webmanifest are not in the change list** (F-04). iOS splash and Android address bar will be visually inconsistent with the in-game card.
+4. **Font, decorative elements, glow ceilings, and the food-progress presentation are all left to the implementer** (F-06, F-07, F-10, F-11). For a milestone whose deliverable is a "polished, distinctive" visual identity, the plan should pin the design decisions, not defer them to the implementer.
 
-1. **F-01** (Critical): Wrong test file path in Phase 5. A one-line fix.
-2. **F-02** (High): Phase 5c is factually wrong about `Engine.test.ts`. Needs a rewrite of one paragraph.
-3. **F-03** (High): `state.test.ts` `makeState` factory update is implicit. Needs a one-line addition.
-4. **F-04, F-05, F-06** (Medium): Three documentation sections are missed. Each is a one-line addition to Phase 6a/6b.
-5. **F-07, F-08, F-09, F-10** (Low): Minor clarifications.
+None of these are deal-breakers individually. Together, they make a second-iteration almost certain: the implementer will either make the wrong call or produce a result that doesn't match the user's vision, and a follow-up milestone (or a follow-up phase) will be needed to fix the gaps.
 
-None of these require redesign. All are small, localized corrections. After these are applied, the plan is ready to execute with high confidence that the next AI agent will:
-- Edit the correct test files.
-- Update the correct test setups.
-- Produce a passing test suite of 173+ tests.
-- Update the correct documentation sections.
-- Bump the package.json version.
-- Produce a consistent documentation set across SPEC.md, ARCHITECTURE.md, PROJECT_STATE.md, and ROADMAP.md.
+**To upgrade this to "Approve with Minor Changes":** Resolve F-01, F-02, F-03, F-04, F-06, F-07, F-10, F-11 in a revision. The other 14 findings are nice-to-haves; the eight above are the must-haves.
 
-The plan honors AGENTS.md's "small changes, simple solutions, maintainable code, playable progress" principles. It does not introduce new abstractions, packages, or framework changes. It is a model for future behavior-change milestones.
+**Specific changes to make before approval:**
+
+1. Pin the font (F-06) and decide on self-hosting vs. CDN (F-01). If CDN, amend the offline-first claim in `ARCHITECTURE.md` and `SPEC.md`. If self-hosted, add a Phase 1 sub-step for the `@font-face` block and woff2 placement.
+2. Make Phase 2's JSX restructure a required step with the new `ScoreBoard.tsx` shape spelled out (F-02).
+3. Move the `<h1>` decision out of Phase 3 and resolve the contradiction with Phase 2 (F-03, F-13).
+4. Add `index.html` `theme-color` and `vite.config.ts` (or equivalent) PWA manifest block updates to the change list (F-04).
+5. Replace "decorative" with concrete specifications or remove the decorative elements (F-07).
+6. Pin the food-progress presentation: text-augmenting meter bar, screen-reader text unchanged (F-10).
+7. Add a quantitative glow ceiling to Phase 1 (F-11).
+8. Add `package.json` version bump (0.7.0 → 0.8.0) to Phase 6 (F-08).
+9. Add `ARCHITECTURE.md` to the DoD documentation list and Phase 6 file list (F-09).
+10. Add a test-file audit step to Phase 6 (F-12).
+
+After these ten changes, this is a clean, executable plan that an AI agent can pick up and ship.

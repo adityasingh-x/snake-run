@@ -8,70 +8,86 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   z-index: 10;
 }
 
 .gameOverModal {
   text-align: center;
-  padding: 32px;
+  padding: var(--space-xl);
 }
 
 .gameOverModal h2 {
-  font-size: 2rem;
-  margin-bottom: 16px;
-  color: #ef4444;
-  text-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  margin-bottom: var(--space-md);
+  color: var(--color-danger);
+  text-shadow: var(--shadow-neon-red);
 }
 
 .gameOverModal[data-win] h2 {
-  color: #4ade80;
-  text-shadow: 0 0 10px rgba(74, 222, 128, 0.5);
+  color: var(--color-accent-soft);
+  text-shadow: var(--shadow-neon-green);
+}
+
+.neon-divider {
+  border: none;
+  border-top: 2px solid;
+  border-image: linear-gradient(90deg, transparent, var(--color-danger), transparent) 1;
+  margin: var(--space-sm) auto;
+  width: 80%;
+}
+
+.gameOverModal[data-win] .neon-divider {
+  border-image: linear-gradient(90deg, transparent, var(--color-accent), transparent) 1;
 }
 
 .finalScore {
-  font-size: 1.3rem;
-  margin-bottom: 24px;
-  color: #f8fafc;
+  font-family: var(--font-mono);
+  font-size: 1.1rem;
+  margin-bottom: var(--space-lg);
+  color: var(--color-text-primary);
 }
 
 .restartButton {
-  background: #4ade80;
-  color: #0f172a;
-  border: none;
-  padding: 12px 32px;
-  font-size: 1.1rem;
-  font-weight: 700;
-  border-radius: 8px;
+  background: var(--color-accent-soft);
+  color: var(--color-text-on-accent);
+  border: 2px solid var(--color-accent-soft);
+  padding: 14px 36px;
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  border-radius: var(--radius-md);
   cursor: pointer;
-  transition: all 0.2s;
-  margin-bottom: 8px;
+  transition: all var(--transition-fast);
+  margin-bottom: var(--space-sm);
+  box-shadow: var(--shadow-neon-green);
 }
 
 .restartButton:hover {
-  background: #22c55e;
+  background: var(--color-accent);
+  border-color: var(--color-accent);
   transform: scale(1.05);
 }
 
 .secondaryButton {
   background: transparent;
-  color: #94a3b8;
-  border: 2px solid #475569;
-  padding: 12px 32px;
-  font-size: 1.1rem;
-  font-weight: 700;
-  border-radius: 8px;
+  color: var(--color-text-label);
+  border: 2px solid var(--color-border-default);
+  padding: 14px 36px;
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  border-radius: var(--radius-md);
   cursor: pointer;
-  transition: all 0.2s;
-  margin-bottom: 8px;
+  transition: all var(--transition-fast);
+  margin-bottom: var(--space-sm);
 }
 
 .secondaryButton:hover {
   background: rgba(71, 85, 105, 0.3);
-  color: #f8fafc;
+  color: var(--color-text-primary);
 }
 
 .hint {
-  color: #64748b;
+  color: var(--color-text-hint);
   font-size: 0.85rem;
 }

@@ -132,6 +132,18 @@ Planned packaging technology:
 - ScoreBoard displays food progress
 - 178 unit tests passing
 
+### Milestone 8 - Visual Identity
+
+- CSS variable token system (18 color tokens, font tokens, spacing, shadows, radius, transitions)
+- Self-hosted "Press Start 2P" display font with `font-display: swap`
+- Arcade-style ScoreBoard HUD with food progress meter
+- Redesigned overlays (idle, pause, game over, win, level transition) with consistent neon aesthetic
+- Polished board border with glow, refined cell styling
+- D-pad and toolbar buttons with arcade styling
+- PWA manifest and theme-color updated to match tokens
+- Version bumped to 0.8.0
+- 178 unit tests passing
+
 ---
 
 ## In Progress
@@ -140,7 +152,6 @@ Planned packaging technology:
 
 ## Not Started
 
-- Visual identity
 - Replayability systems
 - Gameplay expansion
 - Feedback and balancing
@@ -488,8 +499,7 @@ Improve:
 - Pause screen
 - Game over screen
 - Win screen
-- Level introduction screen
-- Level complete screen
+- Level transition overlay
 
 ---
 
@@ -503,11 +513,13 @@ Define:
 
 ---
 
-## Success Criteria
+## Success Criteria ✅
 
-- Screenshots appear distinctive
-- Visual style feels intentional
-- UI no longer resembles a starter template
+- Screenshots appear distinctive ✅
+- Visual style feels intentional ✅
+- UI no longer resembles a starter template ✅
+
+Completed: 2026-06-07
 
 ---
 
