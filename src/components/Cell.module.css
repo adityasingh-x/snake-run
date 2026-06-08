@@ -47,10 +47,18 @@
 }
 
 .gold {
+  position: relative;
   background: var(--color-warning);
-  border-radius: 2px;
-  transform: rotate(45deg);
   animation: pulse 0.5s infinite;
+}
+
+.gold::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: inherit;
+  transform: rotate(45deg) scale(0.7);
+  border-radius: 2px;
 }
 
 .poison {

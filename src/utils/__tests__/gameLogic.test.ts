@@ -223,4 +223,14 @@ describe('spawnFood', () => {
       expect(isOnPortal).toBe(false);
     }
   });
+
+  it('produces at least 2 of 3 special food types in 200 spawns', () => {
+    const types = new Set<string>();
+    for (let i = 0; i < 200; i++) {
+      const food = spawnFood(snake, []);
+      types.add(food.type);
+    }
+    const special = [...types].filter(t => t !== 'normal');
+    expect(special.length).toBeGreaterThanOrEqual(2);
+  });
 });

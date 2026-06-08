@@ -4,7 +4,7 @@ import { positionsEqual, isCollision } from './collision';
 import { spawnFood } from './food';
 import { calculateNewHead } from './snake';
 import { loadHighScore, loadLastUnlockedLevel } from './storage';
-import { getLevelData, generateObstacles } from './levels';
+import { getLevelData, generateObstacles, getPortalPositions } from './levels';
 
 export function getInitialState(): GameState {
   const obstacles = generateObstacles(1);
@@ -89,7 +89,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         const newTimer = currentFood.timer - 1;
         if (newTimer === 0) {
           // Spawn replacement normal food
-          const portals = levelData.portals?.flat() ?? [];
+          const portals = getPortalPositions(state.level);
           currentFood = spawnFood(state.snake, state.obstacles, portals);
         } else {
           currentFood = { ...currentFood, timer: newTimer };
@@ -130,7 +130,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
             break;
         }
 
-        const portals = levelData.portals?.flat() ?? [];
+        const portals = getPortalPositions(state.level);
         finalFood = spawnFood(newSnake, state.obstacles, portals);
       }
 
@@ -184,8 +184,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
       const nextLevel = state.level + 1;
       const nextObstacles = generateObstacles(nextLevel);
-      const nextLevelData = getLevelData(nextLevel);
-      const nextPortals = nextLevelData.portals?.flat() ?? [];
+      const nextPortals = getPortalPositions(nextLevel);
       const nextFood = spawnFood(INITIAL_SNAKE, nextObstacles, nextPortals);
 
       return {
@@ -205,8 +204,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     case 'START_AT_LEVEL': {
       const level = Math.min(Math.max(1, action.payload), LEVEL_COUNT);
       const obstacles = generateObstacles(level);
-      const startLevelData = getLevelData(level);
-      const startPortals = startLevelData.portals?.flat() ?? [];
+      const startPortals = getPortalPositions(level);
       const food = spawnFood(INITIAL_SNAKE, obstacles, startPortals);
       return {
         ...state,

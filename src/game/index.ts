@@ -28,7 +28,7 @@ export {
 
 export { spawnFood } from './food';
 export { calculateNewHead } from './snake';
-export { default as LEVELS, getLevelData, generateObstacles } from './levels';
+export { default as LEVELS, getLevelData, generateObstacles, getPortalPositions } from './levels';
 export { loadHighScore, saveHighScore, loadLastUnlockedLevel, saveLastUnlockedLevel } from './storage';
 export { getInitialState, gameReducer } from './state';
 export { Engine } from './Engine';

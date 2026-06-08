@@ -361,5 +361,46 @@ describe('Engine', () => {
       });
       expect(engine.getState().speedEffectTicks).toBe(5);
     });
+
+    it('slows the game loop when speedEffectTicks > 0', () => {
+      // Level 5 speed = 115ms; with multiplier = 115 * 1.3 = 149.5ms
+      // Count state changes (each MOVE_SNAKE triggers a state change)
+
+      // Without speed effect
+      engine.startAtLevel(5);
+      engine.setState({
+        ...engine.getState(),
+        snake: [{ x: 5, y: 10 }, { x: 4, y: 10 }, { x: 3, y: 10 }],
+        food: { position: { x: 15, y: 15 }, type: 'normal', timer: -1 },
+        obstacles: [],
+      });
+      let moveCountWithout = 0;
+      const unsubWithout = engine.subscribe(() => { moveCountWithout += 1; });
+      for (let i = 0; i < 30; i++) {
+        vi.advanceTimersByTime(50);
+      }
+      unsubWithout();
+
+      // Reset and test with speed effect
+      engine.destroy();
+      engine = new Engine();
+      engine.startAtLevel(5);
+      engine.setState({
+        ...engine.getState(),
+        speedEffectTicks: 100,
+        snake: [{ x: 5, y: 10 }, { x: 4, y: 10 }, { x: 3, y: 10 }],
+        food: { position: { x: 15, y: 15 }, type: 'normal', timer: -1 },
+        obstacles: [],
+      });
+      let moveCountWith = 0;
+      const unsubWith = engine.subscribe(() => { moveCountWith += 1; });
+      for (let i = 0; i < 30; i++) {
+        vi.advanceTimersByTime(50);
+      }
+      unsubWith();
+
+      // With the slow effect, fewer ticks fire
+      expect(moveCountWith).toBeLessThan(moveCountWithout);
+    });
   });
 });

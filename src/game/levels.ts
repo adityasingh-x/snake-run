@@ -147,3 +147,7 @@ export function generateObstacles(levelId: number): Position[] {
   const data = getLevelData(levelId);
   return [...data.layout];
 }
+
+export function getPortalPositions(levelId: number): Position[] {
+  return getLevelData(levelId).portals?.flat() ?? [];
+}

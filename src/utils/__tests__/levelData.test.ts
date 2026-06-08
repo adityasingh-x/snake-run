@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getLevelData, generateObstacles } from '../levelData';
+import { getLevelData, generateObstacles, getPortalPositions } from '../levelData';
 import { GRID_SIZE } from '../constants';
 import { INITIAL_SNAKE } from '../../game/constants';
 
@@ -194,6 +194,20 @@ describe('portals', () => {
       if (i === 7) continue;
       const data = getLevelData(i);
       expect(data.portals).toBeUndefined();
+    }
+  });
+
+  it('getPortalPositions(7) returns exactly 2 positions', () => {
+    const positions = getPortalPositions(7);
+    expect(positions).toHaveLength(2);
+    expect(positions).toContainEqual({ x: 2, y: 4 });
+    expect(positions).toContainEqual({ x: 16, y: 15 });
+  });
+
+  it('getPortalPositions returns [] for all non-portal levels', () => {
+    for (let i = 1; i <= 10; i++) {
+      if (i === 7) continue;
+      expect(getPortalPositions(i)).toEqual([]);
     }
   });
 });
