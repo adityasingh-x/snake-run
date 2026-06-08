@@ -323,7 +323,7 @@ Document findings.
 
 Goal:
 
-Make the game feel like a complete product rather than a development build.
+Make the game feel like a complete product rather than a development build, including navigation, settings, and player personalization.
 
 Problem Statement:
 
@@ -390,11 +390,86 @@ Display:
 Settings:
 
 - Sound on/off
+- Theme selection
 - Reset progress
 - Reset statistics
 - Reset achievements
 
 Dangerous actions require confirmation.
+
+### Theme Selection
+
+Allow players to choose from multiple visual themes.
+
+Themes should be implemented using the existing design token system introduced in Milestone 8.
+
+Requirements:
+
+- Theme selection available from Settings
+- Theme choice persists between sessions
+- Theme changes apply immediately without page reload
+- All game screens must support themes
+- All HUD elements must support themes
+- All overlays must support themes
+- Accessibility contrast requirements must still be met
+
+Initial themes:
+
+#### Neon Arcade (Default)
+
+Current visual style.
+
+Characteristics:
+
+- Dark navy background
+- Cyan glow
+- Green snake
+- Purple obstacles
+
+#### Classic Snake
+
+Inspired by classic mobile snake games.
+
+Characteristics:
+
+- Light background
+- Dark snake
+- Minimal glow effects
+- Retro appearance
+
+#### Terminal
+
+Inspired by retro computer terminals.
+
+Characteristics:
+
+- Black background
+- Green monochrome palette
+- Minimal visual effects
+
+#### High Contrast
+
+Accessibility-focused theme.
+
+Characteristics:
+
+- Maximum contrast
+- Highly distinguishable gameplay elements
+- Reduced decorative effects
+
+Implementation Notes:
+
+- Themes should modify design tokens only
+- Components should not contain theme-specific logic
+- Existing CSS variable architecture should remain the single source of truth
+- New themes should be addable without modifying gameplay components
+
+Theme Success Criteria:
+
+- Players can switch themes at any time
+- Theme selection persists across sessions
+- All game screens render correctly in every theme
+- New themes can be added with minimal engineering effort
 
 ---
 
@@ -422,6 +497,8 @@ Pause screen should expose:
 
 - Players always know what to do next
 - Navigation feels intentional
+- Settings feel complete
+- Theme selection works across the entire application
 - Game feels complete
 
 ---
