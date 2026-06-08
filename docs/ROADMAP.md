@@ -120,576 +120,674 @@ Planned packaging technology:
 
 ### Milestone 6 - Progress Persistence & Developer Experience
 
-- Continue from last reached level (localStorage persistence)
-- New Game option on Game Over and Win screens
-- Developer level select (dev-only, tree-shaken from production)
-- 173 unit tests passing
+- Continue from last reached level
+- New Game option
+- Developer level select
+- Local persistence
 
 ### Milestone 7 - Difficulty Rebalance
 
-- Food-objective progression system (10–30 food per level)
-- Speed curve rebalanced (150ms → 100ms)
-- ScoreBoard displays food progress
-- 178 unit tests passing
+- Food-objective progression system
+- Speed curve rebalance
+- HUD food progress display
 
 ### Milestone 8 - Visual Identity
 
-- CSS variable token system (18 color tokens, font tokens, spacing, shadows, radius, transitions)
-- Self-hosted "Press Start 2P" display font with `font-display: swap`
-- Arcade-style ScoreBoard HUD with food progress meter
-- Redesigned overlays (idle, pause, game over, win, level transition) with consistent neon aesthetic
-- Polished board border with glow, refined cell styling
-- D-pad and toolbar buttons with arcade styling
-- PWA manifest and theme-color updated to match tokens
-- Version bumped to 0.8.0
-- 178 unit tests passing
+- Tokenized design system
+- Retro arcade visual identity
+- HUD redesign
+- Overlay redesign
+- Typography pass
 
 ### Milestone 9 - Replayability Systems
 
-- Endless Mode: indefinite play after winning, level 10 layout, 100ms speed
-- Statistics: games played, total food, best level, high score (localStorage)
-- Achievements: 3 achievements (Snake Master, High Scorer, Marathon Run)
-- Statistics and Achievements panels on idle and game over screens
-- Screen reader announces achievement unlocks
-- 212 unit tests passing
+- Endless Mode
+- Statistics
+- Achievements
+- Persistence-backed progression
+
+### Milestone 10 - Gameplay Expansion
+
+- Gold food
+- Poison food
+- Slow food
+- Wrap-around gameplay
+- Portal gameplay
 
 ---
 
 ## In Progress
 
+None
+
 ---
 
 ## Not Started
 
-- Feedback and balancing
-- Mobile packaging
-- Desktop packaging
+- Gameplay validation
+- UX and navigation
+- Onboarding
+- Polish
+- Accessibility pass
+- Mobile release
+- Desktop release
 
 ---
 
-# Milestone 1 - Foundation Refactor ✅
+# Current Project Assessment
 
-Goal:
+The game has moved beyond the "Playable Game" stage.
 
-Prepare the codebase for future growth.
+The project already contains:
 
-Success Criteria:
+- Full gameplay loop
+- 10 handcrafted levels
+- Multiple gameplay mechanics
+- Replayability systems
+- Persistence systems
+- Mobile support
+- PWA deployment
+- Accessibility foundations
+- Endless mode
 
-- React-independent game engine
-- Platform abstraction layer
-- Automated tests
+The next phase should focus on:
 
----
+1. Validation
+2. User experience
+3. Polish
+4. Packaging
 
-# Milestone 2 - Mobile Experience ✅
-
-Goal:
-
-Create a reliable mobile gameplay experience.
-
-Success Criteria:
-
-- Comfortable touch controls
-- Responsive layouts
-- Mobile-friendly gameplay
-
----
-
-# Milestone 3 - PWA Release ✅
-
-Goal:
-
-Distribute the game quickly.
-
-Success Criteria:
-
-- Public URL
-- Offline support
-- Installable application
+Large gameplay feature additions are intentionally paused until validation is complete.
 
 ---
 
-# Milestone 4 - Level Progression System ✅
+# Milestone 11 - Gameplay Validation & Stability
 
 Goal:
 
-Make progression understandable and visible.
+Guarantee that all gameplay systems are correct, stable, completable, and free of progression blockers.
 
 Problem Statement:
 
-Current level progression is difficult to notice.
+Recent testing identified level-start issues and potential level design defects.
 
-Players may not understand:
+Handcrafted levels currently lack automated validation.
 
-- When a level ends
-- Why the snake resets
-- What changed in the next level
-- What makes levels different
+The game must prove that every level is playable before further expansion.
 
 ---
 
-## Feature: Level Metadata System ✅
+## Feature: Spawn Safety Validation
 
-Introduce explicit level definitions.
+Every level must guarantee:
 
-Each level contains:
-
-- id
-- name
-- description
-- foodRequired
-- speed
+- Snake does not overlap obstacles
+- Snake does not overlap portals
+- Snake does not overlap food
+- Snake spawn is inside board bounds
+- Snake has at least one valid movement option
 
 ---
 
-## Feature: Level Complete Overlay ✅
+## Feature: Level Integrity Validation
 
-When a level is completed:
+Every level must guarantee:
 
-Pause gameplay.
+- Obstacles remain inside board bounds
+- No overlapping obstacle coordinates
+- No overlapping special objects
+- No unreachable board sections caused by layout errors
+
+---
+
+## Feature: Reachability Validation
+
+Every level must guarantee:
+
+- Food can spawn in reachable locations
+- Food cannot spawn inside obstacles
+- Food cannot spawn inside portals
+- Level objectives can always be completed
+
+---
+
+## Feature: Portal Validation
+
+Portal levels must guarantee:
+
+- Exactly two portal endpoints
+- No portal overlap with obstacles
+- No portal overlap with spawn locations
+- Teleport destinations remain safe
+
+---
+
+## Feature: Wrap-Around Validation
+
+Wrap-around levels must guarantee:
+
+- Consistent edge behavior
+- No collision bugs during wrapping
+- Correct interaction with food and obstacles
+
+---
+
+## Feature: Persistence Validation
+
+Verify:
+
+- Continue progression
+- High score persistence
+- Statistics persistence
+- Achievement persistence
+
+---
+
+## Feature: Automated Gameplay Validation Suite
+
+Create tests for:
+
+- Every level definition
+- Every food variant
+- Portals
+- Wrap-around logic
+- Progression
+- Endless mode
+
+---
+
+## Manual Validation Requirement
+
+Complete:
+
+- One full Level 1–10 run
+- One Endless Mode run
+- One keyboard-only run
+- One mobile run
+
+Document findings.
+
+---
+
+## Success Criteria
+
+- No broken levels
+- No impossible starts
+- No progression blockers
+- No known gameplay defects
+- All validation tests passing
+
+---
+
+# Milestone 12 - User Experience & Navigation
+
+Goal:
+
+Make the game feel like a complete product rather than a development build.
+
+Problem Statement:
+
+The game contains many systems, but players are not guided through them.
+
+Current navigation is functional but developer-oriented.
+
+---
+
+## Feature: Main Menu
+
+Create a dedicated entry experience.
+
+Options:
+
+- Continue
+- New Game
+- Statistics
+- Achievements
+- Settings
+- Credits
+
+---
+
+## Feature: Continue Experience
 
 Display:
 
-- Completed level number and name
-- Current score
-- Next level name and description
-- Continue button (or Space key)
+- Last unlocked level
+- High score
+- Best level reached
 
-Combined overlay replaces the originally planned separate "Level Introduction Overlay" and "Level Complete Overlay" (see ADR-003).
-
----
-
-## Feature: Level Name in HUD ✅
-
-Current level name displayed alongside level number in ScoreBoard.
+Continue should clearly communicate what will happen.
 
 ---
 
-## Success Criteria ✅
+## Feature: Statistics Screen
 
-- Players understand progression
-- Level transitions are clear
-- Foundation established for future level design
+Dedicated screen.
+
+Display:
+
+- Games played
+- Food eaten
+- High score
+- Best level reached
 
 ---
 
-# Milestone 5 - Obstacle Redesign ✅
+## Feature: Achievements Screen
+
+Dedicated screen.
+
+Display:
+
+- Achievement list
+- Locked achievements
+- Unlock requirements
+
+---
+
+## Feature: Settings Screen
+
+Settings:
+
+- Sound on/off
+- Reset progress
+- Reset statistics
+- Reset achievements
+
+Dangerous actions require confirmation.
+
+---
+
+## Feature: Credits Screen
+
+Display:
+
+- Project name
+- Author
+- Technology stack
+
+---
+
+## Feature: Improved Pause Experience
+
+Pause screen should expose:
+
+- Resume
+- Restart level
+- Return to menu
+
+---
+
+## Success Criteria
+
+- Players always know what to do next
+- Navigation feels intentional
+- Game feels complete
+
+---
+
+# Milestone 13 - Onboarding & Discoverability
 
 Goal:
 
-Make levels memorable.
+Teach players the game's mechanics without requiring external documentation.
 
 Problem Statement:
 
-Current single-tile obstacles rarely influence gameplay.
+The game now contains mechanics that are not self-explanatory.
+
+A new player may not understand:
+
+- Gold food
+- Poison food
+- Slow food
+- Portals
+- Wrap-around levels
+- Endless mode
+- Achievements
 
 ---
 
-## Feature: Handcrafted Layout System ✅
+## Feature: First-Time Player Experience
 
-Create predefined obstacle layouts.
+Show onboarding only when appropriate.
 
-Remove random obstacle generation from progression levels.
-
-Level layouts become authored content.
+Must be skippable.
 
 ---
 
-### For Individual Level Designs
+## Feature: Gameplay Guide
 
-Read:
+Create an in-game guide.
 
-- docs/design/LEVEL_DESIGN.md
+Explain:
 
----
-
-## Success Criteria ✅
-
-- Every level feels different
-- Obstacles influence decisions
-- Levels become memorable
+- Controls
+- Objectives
+- Scoring
+- Progression
 
 ---
 
-# Milestone 6 - Progress Persistence & Developer Experience ✅
+## Feature: Mechanics Guide
+
+Explain:
+
+### Gold Food
+
+- Bonus score
+- Temporary availability
+
+### Poison Food
+
+- Snake shrinking behavior
+
+### Slow Food
+
+- Temporary speed reduction
+
+### Portals
+
+- Teleportation rules
+
+### Wrap-Around Levels
+
+- Edge behavior
+
+---
+
+## Feature: Endless Mode Explanation
+
+Explain:
+
+- Unlock conditions
+- Endless progression
+- Scoring expectations
+
+---
+
+## Success Criteria
+
+- New players understand all mechanics
+- No external documentation required
+
+---
+
+# Milestone 14 - Game Polish
 
 Goal:
 
-Reduce friction when replaying and testing levels.
+Improve game feel and presentation.
 
 Problem Statement:
 
-Players currently must restart from Level 1 after every game over.
-
-Developers must replay earlier levels to test later content.
-
-Both issues slow down gameplay iteration and development.
+The game is feature-complete but lacks the feedback expected from a finished game.
 
 ---
 
-## Feature: Continue From Last Reached Level ✅
+## Feature: Food Collection Effects
 
-Allow players to continue from the most recently unlocked level.
+Add:
 
-When a run ends, provide options to:
-
-- Continue from last unlocked level
-- Start a completely new game
-
-Continuing should:
-
-- Start at the beginning of the selected level
-- Reset snake state
-- Reset score and level-specific progress
-- Preserve the intended challenge of the level
+- Glow pulse
+- Particle burst
+- Collection animation
 
 ---
 
-## Feature: New Game Option ✅
+## Feature: Snake Death Effects
 
-Allow players to explicitly restart progression from Level 1.
+Add:
 
-This option is available from:
-
-- Game Over screen
-- Victory screen
-
----
-
-## Feature: Developer Level Select ✅
-
-Provide a development-only level selection mechanism.
-
-Capabilities:
-
-- Jump directly to any level
-- Start gameplay immediately
-- Bypass normal progression requirements
-
-Purpose:
-
-- Faster testing
-- Faster balancing
-- Faster obstacle layout iteration
-
-This feature is not exposed in production builds.
+- Death animation
+- Impact feedback
+- Screen response
 
 ---
 
-## Success Criteria ✅
+## Feature: Level Completion Effects
 
-- Players can quickly resume progress after failure
-- Players can choose to restart from Level 1
-- Developers can instantly test any level
-- Testing and balancing workflows become faster
+Add:
 
----
-
-# Milestone 7 - Difficulty Rebalance ✅
-
-Goal:
-
-Create longer and more meaningful gameplay sessions.
-
-Problem Statement:
-
-Current levels are too short.
-
-Difficulty relies too heavily on speed increases.
+- Completion celebration
+- Improved transitions
+- Visual reward feedback
 
 ---
 
-## Feature: Food Objective System ✅
+## Feature: Achievement Popups
 
-Replace score-based progression.
+Display:
 
-Target progression:
-
-| Level | Food Required |
-| ----- | ------------- |
-| 1     | 10            |
-| 2     | 12            |
-| 3     | 14            |
-| 4     | 16            |
-| 5     | 18            |
-| 6     | 20            |
-| 7     | 22            |
-| 8     | 24            |
-| 9     | 26            |
-| 10    | 30            |
+- Achievement name
+- Description
+- Temporary notification
 
 ---
 
-## Feature: Speed Curve Rebalance ✅
-
-Current speed progression is too aggressive.
-
-Target progression:
-
-| Level | Speed |
-| ----- | ----- |
-| 1     | 150ms |
-| 2     | 140ms |
-| 3     | 130ms |
-| 4     | 120ms |
-| 5     | 115ms |
-| 6     | 110ms |
-| 7     | 110ms |
-| 8     | 105ms |
-| 9     | 105ms |
-| 10    | 100ms |
-
-Difficulty should come primarily from layouts rather than reaction limits.
-
----
-
-## Success Criteria ✅
-
-- Levels last longer ✅
-- Mobile remains playable ✅
-- Difficulty feels fair ✅
-
-Completed: 2026-06-06
-
----
-
-# Milestone 8 - Visual Identity
-
-Goal:
-
-Establish a recognizable visual style.
-
-Problem Statement:
-
-Current presentation resembles a default application rather than a game.
-
----
-
-## Theme Direction
-
-Retro Arcade Neon
-
-Characteristics:
-
-- Dark background
-- Bright accent colors
-- Strong visual hierarchy
-- Clean readability
-
-Avoid:
-
-- Flashing effects
-- Excessive particles
-- Visual clutter
-
----
-
-## Feature: HUD Redesign
+## Feature: HUD Animation Pass
 
 Improve:
 
-- Score display
-- Level display
-- High score display
-
-Goal:
-
-Create an arcade-style status panel.
+- Score updates
+- Food counters
+- Level indicators
 
 ---
 
-## Feature: Overlay Redesign
+## Feature: Menu Animation Pass
 
 Improve:
 
-- Start screen
-- Pause screen
-- Game over screen
-- Win screen
-- Level transition overlay
+- Screen transitions
+- Overlay transitions
+- Button interactions
 
 ---
 
-## Feature: Typography Pass
+## Feature: Audio Expansion
 
-Define:
+Add:
 
-- Primary heading style
-- Secondary heading style
-- Numeric display style
+- Menu sounds
+- Achievement sounds
+- Better level-complete sounds
+- Improved death sounds
 
----
-
-## Success Criteria ✅
-
-- Screenshots appear distinctive ✅
-- Visual style feels intentional ✅
-- UI no longer resembles a starter template ✅
-
-Completed: 2026-06-07
+Do not add background music in this milestone.
 
 ---
 
-# Milestone 9 - Replayability Systems ✅
+## Success Criteria
+
+- Stronger game feel
+- Better feedback
+- More satisfying gameplay
+
+---
+
+# Milestone 15 - Accessibility & Quality
 
 Goal:
 
-Encourage repeat play.
-
-Features:
-
-Endless Mode: continue after level 10. Indefinite play on level 10 layout at 100ms speed with no level transitions.
-
-Statistics: track games played, total food eaten, highest score, best level reached. Displayed on idle screen and game over/win screens.
-
-Achievements: three achievements (Snake Master, High Scorer, Marathon Run). Persisted to localStorage, displayed on idle and game over screens. Screen reader announces new unlocks.
-
-Success Criteria:
-
-- Players have reasons to return ✅
-
-Completed: 2026-06-07
+Improve inclusivity, maintainability, and long-term stability.
 
 ---
 
-# Milestone 10 - Gameplay Expansion ✅
+## Feature: Accessibility Audit
 
-Goal:
+Review:
 
-Introduce new gameplay decisions.
-
-Features:
-
-**Food Variants:**
-- Gold food: +30 points, diamond shape, despawns after 10 ticks
-- Poison food: shrinks snake by 1 (floored at 3), square shape, persistent
-- Slow food: speed × 1.3 for 10 ticks, triangle shape, despawns after 8 ticks
-- Normal food: +10 points, circle shape, persistent (80% spawn rate)
-
-**Wrap-Around Levels:**
-- Level 5 (Maze Runner): snake exits one edge and appears on opposite edge
-- Visual indicator: dashed border on the board
-
-**Portal Levels:**
-- Level 7 (Four Chambers): one portal pair connecting opposite chambers
-- Teleport on head landing; collision checked at destination
-- Food does not spawn on portal tiles
-- Purple rotating ring visual
-
-Success Criteria:
-
-- Runs become less predictable ✅
-- New mechanics create meaningful decisions ✅
-
-Completed: 2026-06-07
-
-#### Design Note — Visual Tokens Added (Reviewer Guidance)
-
-> **This section is here to prevent future review agents from flagging the new CSS tokens as arbitrary or out of scope.**
-
-M10 introduces three new gameplay objects that all live on the same board as the existing snake, obstacles, and normal food: 3 food variants (gold, poison, slow) and 1 portal type. The M8 visual identity (see Milestone 8 — Visual Identity) established an 18-token palette that is fully consumed by the existing game elements. When M10 maps the new objects onto the existing palette naively:
-
-- Slow food → `--color-accent-soft` (green) = identical to the snake head glow
-- Poison food → `--color-obstacle` (indigo) = identical to obstacles
-- Portal tiles → `--color-warning` (amber) = identical to gold food and high-score highlights
-
-This creates real visual ambiguity at 100–150ms tick speeds, where players must distinguish food types and obstacles in real time. Shape encoding alone (diamond/square/triangle) is insufficient for color-blind users and small mobile screens.
-
-**Therefore M10 adds 3 new tokens to `src/index.css`:**
-
-| Token | Value | Used by |
-|-------|-------|---------|
-| `--color-food-poison` | `#d946ef` (magenta) | Poison food cell |
-| `--color-food-slow` | `#22d3ee` (cyan) | Slow food cell |
-| `--color-portal` | `#a855f7` (purple) | Portal cell |
-
-All three are neon-arcade-saturated and pairwise distinguishable from the existing palette. No existing tokens are renamed, removed, or repurposed. The change is additive only and scoped to `src/index.css`.
-
-**Minimal visual redesign accompanies the tokens** (documented in the active plan's "Visual Design Additions" section): a 1px outer border on special food types and a slow 4s rotation on portal tiles. No other components, overlays, fonts, or layout tokens change in M10.
-
-This is not a visual identity overhaul — it is a targeted addition required to ship M10's mechanics without breaking the M8 design system. Any broader visual work belongs in Milestone 12 (Game Polish).
+- Keyboard navigation
+- Screen readers
+- Focus management
+- Contrast ratios
 
 ---
 
-# Milestone 11 - Feedback & Balancing
+## Feature: Color-Blind Review
 
-Goal:
+Verify:
 
-Validate gameplay with real players.
-
-Tasks:
-
-- Playtesting
-- Difficulty tuning
-- Balance adjustments
-- UX improvements
-
-Success Criteria:
-
-- Difficulty feels fair
-- Major frustrations resolved
+- Food variants remain distinguishable
+- Portals remain distinguishable
+- Obstacles remain distinguishable
 
 ---
 
-# Milestone 12 - Game Polish
+## Feature: Reduced Motion Support
 
-Goal:
+Support browser motion preferences.
 
-Improve game feel.
+Reduce:
 
-Features:
-
-- Particle effects
-- Animation improvements
-- Audio improvements
-- Accessibility improvements
-- Theme support
-
-Success Criteria:
-
-- Professional presentation
-- Strong game feel
+- Animations
+- Effects
+- Transitions
 
 ---
 
-# Milestone 13 - Mobile App Release
+## Feature: UI Testing
+
+Introduce automated UI validation.
+
+Cover:
+
+- Main menu
+- Progression flow
+- Achievement flow
+- Statistics flow
+- Settings flow
+
+---
+
+## Success Criteria
+
+- Better accessibility
+- Better quality guarantees
+- Reduced regression risk
+
+---
+
+# Milestone 16 - Mobile App Release
 
 Technology:
 
-- Capacitor
+Capacitor
 
-Success Criteria:
+Goal:
 
-- Android build
-- iOS build
+Ship native mobile versions.
 
 ---
 
-# Milestone 14 - Desktop Release
+## Feature: Capacitor Integration
+
+Support:
+
+- Android
+- iOS
+
+---
+
+## Feature: Mobile QA
+
+Verify:
+
+- Gestures
+- Touch controls
+- Safe areas
+- Orientation handling
+
+---
+
+## Feature: Store Assets
+
+Create:
+
+- App icons
+- Splash screens
+- Screenshots
+
+---
+
+## Success Criteria
+
+- Android build available
+- iOS build available
+
+---
+
+# Milestone 17 - Desktop Release
 
 Technology:
 
-- Tauri
+Tauri
 
-Success Criteria:
+Goal:
 
-- Windows build
-- macOS build
-- Linux build
+Ship native desktop versions.
+
+---
+
+## Feature: Desktop Packaging
+
+Support:
+
+- Windows
+- macOS
+- Linux
+
+---
+
+## Feature: Desktop QA
+
+Verify:
+
+- Keyboard controls
+- Window resizing
+- Fullscreen behavior
+- Offline behavior
+
+---
+
+## Success Criteria
+
+- Windows build available
+- macOS build available
+- Linux build available
 
 ---
 
 # Future Opportunities
 
-Intentionally deprioritized.
+Only consider after Milestone 17.
 
-Possible Future Features:
+Potential future additions:
 
 - Global leaderboards
-- Ghost runs
 - Cloud saves
-- Multiplayer
 - Daily challenges
+- Ghost runs
+- Multiplayer
 - Procedural challenge generation
-- Adaptive difficulty
+- Additional level packs
+- Additional achievements
+- Theme packs
+- Seasonal events
 - AI-assisted content generation
+
+---
+
+# Roadmap Governance
+
+When completing a milestone:
+
+1. Update roadmap progress
+2. Update PROJECT_STATE.md
+3. Archive implementation plans
+4. Verify documentation matches implementation
+
+A milestone is not complete until documentation has been updated.
+
+The roadmap is the source of truth for project direction.

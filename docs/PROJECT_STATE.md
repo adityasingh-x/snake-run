@@ -19,32 +19,32 @@ All three phases of Milestone 10 are now complete:
 
 ## Current Milestone
 
-Milestone 11 - Feedback & Balancing
+Milestone 11 - Gameplay Validation & Stability
 
 Next Goal:
 
-Playtesting, difficulty tuning, and balance adjustments.
+Guarantee that all gameplay systems are correct, stable, completable, and free of progression blockers.
 
 ---
 
 ## Current Priorities
 
-1. Feedback and balancing (Milestone 11)
-2. Playtesting and UX improvements
-3. Mobile packaging planning (Milestone 13)
+1. Gameplay validation (Milestone 11)
+2. Automated gameplay validation suite
+3. Manual playthrough verification
 
 ---
 
 ## Next Milestone
 
-Milestone 11 - Feedback & Balancing
+Milestone 12 - User Experience & Navigation
 
 Planned Focus:
 
-- Playtesting
-- Difficulty tuning
-- Balance adjustments
-- UX improvements
+- Main menu
+- Statistics and achievements screens
+- Settings and credits screens
+- Improved pause and navigation experience
 
 ---
 
@@ -234,7 +234,7 @@ Planned Focus:
 
 ## In Progress
 
-- Milestone 11: Feedback & Balancing (playtesting, tuning)
+None — validating future milestone scope.
 
 ---
 
@@ -281,6 +281,16 @@ Gameplay Principles:
 ---
 
 ## Success Definition For Current Milestone
+
+### Milestone 11 — Gameplay Validation & Stability
+
+Target:
+
+- No broken levels
+- No impossible starts
+- No progression blockers
+- No known gameplay defects
+- All validation tests passing
 
 Milestone 4 success criteria (completed):
 
@@ -419,6 +429,8 @@ Milestone 10 (Gameplay Expansion) success criteria (completed):
 
 Milestone 10 (Gameplay Expansion) is complete. All three phases — Food Variants, Wrap-Around Levels, and Portal Levels — are fully implemented and tested.
 
-The next milestone is Milestone 11 (Feedback & Balancing), which will focus on playtesting and tuning.
+The next milestone is Milestone 11 (Gameplay Validation & Stability), which will focus on validating all gameplay systems.
+
+Large gameplay feature additions are intentionally paused until validation is complete.
 
 The PWA is live at `https://adityasingh-x.github.io/snake-run/` and can be installed on phones and desktops.

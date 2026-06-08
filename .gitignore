@@ -14,6 +14,7 @@ dist-ssr
 
 # Local code review notes (ephemeral, not part of the project)
 review.md
+work-extras/
 
 # Editor directories and files
 .vscode/*
