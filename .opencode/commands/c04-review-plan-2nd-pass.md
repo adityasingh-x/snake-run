@@ -1,6 +1,6 @@
 ---
 description: Verify plan review findings were addressed
-model: opencode/minimax-m3-free
+model: opencode-go/minimax-m3
 ---
 
 Read and execute:

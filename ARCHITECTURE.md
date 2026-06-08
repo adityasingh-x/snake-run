@@ -305,7 +305,7 @@ interface GameState {
 ## Testing
 
 - **Framework:** Vitest with jsdom
-- **255 unit tests** across 17 test files
+- **356 unit tests** across 19 test files
 - **Coverage:** game/ modules (state, Engine, collision, food, snake, levels, storage, statistics, achievements), hooks, utilities, touch recognizer, components (Game, Board, Cell, LevelTransition, GameOver, Statistics, Achievements)
 - **Run:** `npm test` or `npm run test:watch`
 

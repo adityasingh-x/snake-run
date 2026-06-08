@@ -96,4 +96,13 @@ describe('achievements', () => {
       expect(unlocked).not.toContain('beat_game');
     });
   });
+
+  describe('corruption resilience', () => {
+    it('loadAchievements returns defaults when localStorage data is corrupt', () => {
+      localStorage.setItem('snakeAchievements', 'not-valid-json');
+      const achievements = loadAchievements();
+      expect(achievements).toHaveLength(3);
+      achievements.forEach(a => expect(a.unlocked).toBe(false));
+    });
+  });
 });

@@ -59,4 +59,27 @@ describe('statistics', () => {
       expect(stats.bestLevel).toBe(8);
     });
   });
+
+  describe('round-trip', () => {
+    it('saveStats + loadStats round-trips correctly', () => {
+      saveStats({ gamesPlayed: 15, totalFood: 75, bestLevel: 9, highScore: 450 });
+      const stats = loadStats();
+      expect(stats.gamesPlayed).toBe(15);
+      expect(stats.totalFood).toBe(75);
+      expect(stats.bestLevel).toBe(9);
+      expect(stats.highScore).toBe(0);
+    });
+  });
+
+  describe('corruption resilience', () => {
+    it('loadStats returns defaults when localStorage contains corrupt data', () => {
+      localStorage.setItem('snakeStatsGamesPlayed', 'not-a-number');
+      localStorage.setItem('snakeStatsTotalFood', 'garbage');
+      localStorage.setItem('snakeStatsBestLevel', '%%%');
+      const stats = loadStats();
+      expect(stats.gamesPlayed).toBe(0);
+      expect(stats.totalFood).toBe(0);
+      expect(stats.bestLevel).toBe(1);
+    });
+  });
 });

@@ -154,6 +154,16 @@ Planned packaging technology:
 - Wrap-around gameplay
 - Portal gameplay
 
+### Milestone 11 - Gameplay Validation & Stability
+
+- BFS-based reachability analysis module
+- Portal safety validation (bounds, overlap, distinctness)
+- Food spawn capacity validation (all 10 levels)
+- Systematic level-by-level validation suite (75 tests)
+- Persistence corruption resilience (statistics, achievements)
+- Engine persistence validation (destroy+recreate, pause stats, playing high score)
+- Manual validation documentation
+
 ---
 
 ## In Progress
@@ -164,7 +174,6 @@ None
 
 ## Not Started
 
-- Gameplay validation
 - UX and navigation
 - Onboarding
 - Polish

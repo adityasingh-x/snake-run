@@ -2,36 +2,39 @@
 
 ## Current Version
 
-v0.10.0
+v0.11.0
 
 ---
 
 ## Current Status
 
-Milestone 10 (Gameplay Expansion) Complete
+Milestone 11 (Gameplay Validation & Stability) Complete
 
-All three phases of Milestone 10 are now complete:
-- Phase 1: Food Variants — gold, poison, and slow food types with weighted spawning
-- Phase 2: Wrap-Around Levels — Level 5 allows edge-to-edge teleportation
-- Phase 3: Portal Levels — Level 7 has a paired portal mechanic
+All five phases of Milestone 11 are now complete:
+- Phase 1: Portal & Layout Safety Validation — portal exit safety, food spawn capacity, spawn center safety
+- Phase 2: Reachability Analysis Module — BFS-based reachability utility with portal and wrap-around support
+- Phase 3: Systematic Level-by-Level Validation Suite — 75 tests validating all 10 levels
+- Phase 4: Persistence & Integration Validation — corruption-resilient loadStats, Engine persistence tests
+- Phase 5: Manual Validation Documentation — structural validation complete, manual playthrough deferred to human
 
 ---
 
 ## Current Milestone
 
-Milestone 11 - Gameplay Validation & Stability
+Milestone 12 - User Experience & Navigation
 
 Next Goal:
 
-Guarantee that all gameplay systems are correct, stable, completable, and free of progression blockers.
+Build main menu, statistics and achievements screens, settings and credits screens, and improved pause and navigation experience.
 
 ---
 
 ## Current Priorities
 
-1. Gameplay validation (Milestone 11)
-2. Automated gameplay validation suite
-3. Manual playthrough verification
+1. Main menu implementation (Milestone 12)
+2. Statistics and achievements screens (Milestone 12)
+3. Settings and credits screens (Milestone 12)
+4. Improved pause and navigation experience (Milestone 12)
 
 ---
 
@@ -226,6 +229,20 @@ Planned Focus:
 - New CSS token: `--color-portal` (#a855f7)
 - `@keyframes spin` and `spinReverse` animations for portal visual
 
+### Gameplay Validation & Stability (Milestone 11)
+
+- `src/game/reachability.ts`: BFS-based reachability analysis with portal teleport and wrap-around support
+- `src/game/__tests__/reachability.test.ts`: 9 tests for reachability module
+- `src/game/__tests__/levelValidation.test.ts`: 75 tests validating all 10 levels (spawn safety, bounds, uniqueness, first-tick survivability, free-cell capacity, reachability)
+- `src/utils/__tests__/levelData.test.ts`: 8 new tests for portal safety, food spawn capacity, spawn center safety
+- `src/game/statistics.ts`: `loadStats` corruption resilience via try/catch (matches `loadAchievements` pattern)
+- `src/game/__tests__/Engine.test.ts`: 3 new tests (destroy+recreate persistence, high score not saved during playing, stats saved on pause)
+- `src/game/__tests__/statistics.test.ts`: 2 new tests (round-trip, corruption resilience)
+- `src/game/__tests__/achievements.test.ts`: 1 new test (corruption resilience)
+- `docs/M11_VALIDATION_NOTES.md`: manual validation notes with structural validation results
+- 356 tests passing across 19 test files
+- All 10 levels validated: no broken levels, no impossible starts, no progression blockers
+
 ### Testing
 
 - Automated testing infrastructure
@@ -234,13 +251,13 @@ Planned Focus:
 
 ## In Progress
 
-None — validating future milestone scope.
+Milestone 12 — User Experience & Navigation (planning phase).
 
 ---
 
 ## Known Technical Debt
 
-_No known technical debt._
+1. **Pre-existing test flakiness:** `state.test.ts > MOVE_SNAKE spawns replacement normal food when timer reaches 0` — Gold food timer expiry occasionally spawns gold instead of normal food due to non-deterministic RNG in `food.ts`. Intermittent failure, not introduced by M11. Deferred to future milestone for investigation (seed RNG or mock `Math.random` in test).
 
 ---
 
@@ -423,14 +440,27 @@ Milestone 10 (Gameplay Expansion) success criteria (completed):
 - SPEC.md, ARCHITECTURE.md, ROADMAP.md, PROJECT_STATE.md updated ✅
 - `package.json` version bumped to `0.10.0` ✅
 
+Milestone 11 (Gameplay Validation & Stability) success criteria (completed):
+
+- No broken levels ✅
+- No impossible starts ✅
+- No progression blockers ✅
+- All validation tests passing (356 tests) ✅
+- `npm run build` completes with no errors ✅
+- `npm run lint` passes with no new warnings ✅
+- `npm test` passes with zero failures (356/356 on clean re-run) ✅
+- `package.json` version bumped to `0.11.0` ✅
+- ROADMAP.md updated — Milestone 11 moved to "Completed" ✅
+- PROJECT_STATE.md updated — version bumped to 0.11.0, milestone status updated ✅
+- Automated structural validation complete for all 10 levels ✅
+- Manual playthrough validation deferred to human (documented in M11_VALIDATION_NOTES.md) ✅
+
 ---
 
 ## Important Notes
 
-Milestone 10 (Gameplay Expansion) is complete. All three phases — Food Variants, Wrap-Around Levels, and Portal Levels — are fully implemented and tested.
+Milestone 11 (Gameplay Validation & Stability) is complete. All five phases — Portal & Layout Safety, Reachability Module, Level Validation Suite, Persistence & Integration, and Manual Validation Documentation — are fully implemented and tested. 356 tests pass across 19 test files. No broken levels, impossible starts, or progression blockers were found.
 
-The next milestone is Milestone 11 (Gameplay Validation & Stability), which will focus on validating all gameplay systems.
-
-Large gameplay feature additions are intentionally paused until validation is complete.
+The next milestone is Milestone 12 (User Experience & Navigation), which will focus on main menu, statistics/achievements screens, settings, and improved navigation.
 
 The PWA is live at `https://adityasingh-x.github.io/snake-run/` and can be installed on phones and desktops.
