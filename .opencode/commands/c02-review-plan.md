@@ -1,6 +1,6 @@
 ---
 description: Review implementation plan
-model: opencode/minimax-m3-free
+model: opencode-go/minimax-m3
 ---
 
 Read and execute:

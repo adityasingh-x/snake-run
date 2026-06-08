@@ -1,9 +1,9 @@
-# Plan Review — Milestone 10: Gameplay Expansion
+# Plan Review — Milestone 11: Gameplay Validation & Stability
 
-**Plan under review:** `plans/ACTIVE.md` (Milestone 10 — Food Variants, Wrap-Around, Portals)
+**Plan under review:** `plans/ACTIVE.md` (Milestone 11)
 **Reviewer role:** Staff Engineer
-**Date:** 2026-06-07
-**Baseline:** v0.9.0 (M9 complete), 212 unit tests passing
+**Date:** 2026-06-08
+**Baseline:** v0.10.0 (M10 complete), 259 unit tests passing (verified via `npm test`)
 
 ---
 
@@ -11,159 +11,134 @@
 
 ## Strengths
 
-- **Roadmap alignment is precise and well-scoped.** The three feature tracks (food variants, wrap-around, portals) map directly onto the M10 features listed in `docs/ROADMAP.md` §Milestone 10. The plan inherits the "Design Note — Visual Tokens Added" rationale from the ROADMAP and re-states it in its own "Visual Design Additions" section, which is exactly the kind of traceability a future maintainer needs.
-- **Scope discipline is exceptional.** The "Out of Scope" list is unusually thorough (14 explicit non-goals) and aligns with `AGENTS.md`'s "ship the game" philosophy. Moving obstacles, enemy snakes, boss levels, achievements tied to food variants, and per-level probability configuration are all cleanly deferred. The "Why Each Phase Is Not Over-Engineered" and "What Was Explicitly Rejected" subsections are a strong handoff artifact.
-- **Cross-Phase Constraints are well-designed guardrails.** Especially #1 (one food at a time), #4 (no architecture changes), #6 (deterministic tests via `makeState`), and #7 (test file convention). These would prevent an implementation agent from over-extending the work.
-- **Type-level refactor is shaped to minimize cascading changes.** Changing `GameState.food: Position` to `Food` is a deliberate breaking change that is contained to a small number of files; the plan correctly identifies the touch points (`BoardProps`, `CellProps`, `state.ts`, `food.ts`, `Engine.ts`, components) and the test-helper that anchors everything.
-- **Phases are independently shippable and revertable.** Each phase is its own commit/PR with no forward dependencies. The ordering is justified (Phase 1 introduces the `Food` shape that the board/cell components will read in Phases 2 and 3).
-- **Concrete file references with line numbers.** The plan references `src/game/__tests__/state.test.ts:6`, `Game.tsx:185`, `Game.tsx:217`, `Engine.ts:167`, and `src/game/levels.ts:79-85`. I verified each of these line numbers against the current source — they all check out.
-- **Documentation updates are well-catalogued.** Phase 4 enumerates exactly which sections of SPEC.md, ARCHITECTURE.md, ROADMAP.md, and PROJECT_STATE.md must change. This is significantly more thorough than the previous milestones.
-- **Visual token addition is justified by the M8 palette constraint.** The plan correctly identifies that the existing 18-token palette is fully consumed (food = danger, obstacles = indigo, snake = green, etc.), so the 3 new tokens (poison magenta, slow cyan, portal purple) are necessary, not arbitrary.
-- **Risk and assumption table is thorough.** 12 risks identified; mitigations are concrete. Particularly strong: Risk 10 (existing 212 tests break from `Food` shape change) — this is the highest-impact risk and is correctly flagged.
+- **Roadmap alignment is direct and complete.** Every feature in the plan (Spawn Safety, Level Integrity, Reachability, Portal, Wrap-Around, Persistence validation, automated suite, manual validation) maps to a feature in `docs/ROADMAP.md` §Milestone 11. No drift, no scope expansion.
+- **AGENTS.md compliance is strong.** The plan respects "small changes, simple solutions, maintainable code, playable progress." No new abstractions, no framework changes, no speculative architecture. The only new source module (`reachability.ts`) is a pure utility — minimal surface area, easily testable, no React/game-engine coupling.
+- **Architecture alignment is correct.** The proposed `src/game/reachability.ts` lives in the framework-agnostic engine layer (`src/game/`), consistent with the pattern of `collision.ts`, `food.ts`, `snake.ts`. The barrel-export pattern (`src/game/index.ts`) and the legacy re-export (`src/utils/gameLogic.ts`) are both already established — the plan correctly proposes using them.
+- **Test count math is honest and conservative.** The plan claims ~57 new tests (12 + 30 + 15). The estimated ranges and explicit per-phase breakdowns allow an implementer to verify the count incrementally.
+- **Out-of-scope list is exemplary.** Explicit exclusions (no AI simulation, no procedural generation, no balancing, no visual changes, no performance work, no a11y work, no future milestone work) are tightly aligned with AGENTS.md's "milestone scope" rule. Future ideas belong in `IDEAS_BACKLOG.md`, not in this plan.
+- **The new module is justified and minimal.** BFS on a 20×20 grid is the simplest correct approach for connectivity analysis. The plan explicitly rejects Dijkstra, A*, and simulation engines — this is the right call. ~50 lines source / ~80 lines test is appropriately small.
+- **Risk table is realistic.** The risks (existing levels not fully reachable, manual validation surfacing real bugs, conservative reachability threshold, shared test state) are the actual risks. Mitigations are sensible and avoid the trap of "loosen the test" if a level fails.
+- **Phase decomposition is parallelizable.** Phases 1, 2, 4 can run in parallel; Phase 3 depends on Phase 2; Phase 5 follows everything. The dependency diagram is small and correct.
 
 ## Weaknesses
 
-- **A `Food` type shape change touches every existing test that constructs state.** The plan updates `makeState` (Phase 1.4) but does not enumerate the inline `food: { x, y }` overrides scattered through `src/game/__tests__/state.test.ts` (e.g., lines 100-108, 114-127, 130-141, 210-220, 234-249, 254-272, 274-289, 292-...). These will all fail to typecheck after the type change. The plan should call this out as a sub-task, not just a risk.
-- **Behavior of stacking / re-eating slow food is unspecified.** If the snake eats slow food while `speedEffectTicks > 0`, the plan's `MOVE_SNAKE` step says `speedEffectTicks = 10` (assignment, not increment). This resets the effect, which is a sensible default but should be stated explicitly with a one-line test.
-- **One decision is left as "or" in Phase 3.5.** "`spawnFood(snake, obstacles, portals: Position[] = [])` ... Backward compatible: omit the third argument to get the previous behavior." The plan does not commit to whether the third argument is required (with `[]` default) or optional (`portals?: Position[]`). Pick one. Same ambiguity for the `getPortalPositions` helper — the plan does not specify whether it returns an empty array or `undefined` for non-portal levels.
-- **The "Determinism for tests" constraint partially contradicts the "statistical smoke test" verification.** Cross-Phase Constraint #6 says tests must not rely on `Math.random`, but Phase 1.10 lists a "statistical smoke test (at least 2 of {gold, poison, slow} appear in 200 spawns)". With 5%/5% spawn rates, the probability of one of {gold, poison, slow} being absent in 200 spawns is `0.90^200 ≈ 7.5e-10` for a single type, so 2 of 3 absent in 200 is astronomically unlikely. The test is safe in practice, but the constraint wording should clarify that this is the one allowed stochastic assertion.
-- **`Cell.tsx` prop signature change is not described as a backward-compatibility step.** Replacing `isFood: boolean` with `foodType?: FoodType` will change the call sites in `Board.tsx` (the plan covers this), but existing `Cell.test.tsx` (4 tests) all use the old `isFood={false}` prop. The plan does not call out updating those tests, only adding new ones. After the change, the existing 4 tests will continue to compile (optional prop) but they test a no-longer-relevant code path.
-- **SLOW badge position / styling in ScoreBoard is unspecified.** The plan says "show a 'SLOW' badge with the remaining tick count, positioned next to the score section" but the existing `ScoreBoard.module.css` has a fixed flexbox layout. An implementer would need to add a new CSS class and place it in a specific `.section`. The plan should either commit to a placement or list it as an open question.
-- **The plan does not address dev-level select entry to wrap / portal levels.** The dev select already supports `START_AT_LEVEL(N)` (M6). The plan correctly excludes "Wrap-around or portal configuration UI in dev level select" from scope, but does not confirm that the existing dev select can already be used to test levels 5 and 7. (It can, but a one-line note would be helpful.)
-- **No ADR is created for the new game-mechanic primitives.** Per `AGENTS.md`, "changing core gameplay architecture" should create an ADR. Adding a `Food` object with type/timer/effect is a non-trivial state-shape change. The previous milestones (M8 visual identity, M9 replayability) also did not create ADRs for additive changes, so this is consistent with project practice — but a lightweight ADR documenting the design rationale (one global probability table, single food at a time, decoupled timer fields) would benefit future contributors.
+- **Plan claims "255 existing tests" — the actual count is 259.** A small but factual inconsistency. This affects the final-test-count estimate (~57 new = 316, not 312). Minor, but should be corrected.
+- **Plan claims "17 test files" — verified at 17**, consistent with the plan.
+- **The Phase 1 portal-safety assertions overlap significantly with the Phase 3 level-validation suite.** Both check portal safety vs. obstacles and snake spawn. Phase 1 adds them to `levelData.test.ts`; Phase 3 re-checks them in `levelValidation.test.ts`. The plan notes this in the Review Checklist but dismisses it on implementation-grounds (zero deps vs. depends-on-reachability). A simpler organization is to put all portal/level-safety assertions in one place, but this is a low-severity style preference, not a defect.
+- **`getReachableCount` signature uses positional arguments with many optionals.** `getReachableCount(snakeHead, obstacles, portals?, wrapAround?, gridSize?)` is harder to read at call sites than a single options object. The function is small enough that this is forgivable, but worth noting.
+- **`getReachableCount` signature in the plan does not match the exported name.** The plan says the function is `getReachableCount` (count) in the code block, but the file spec says `getReachableCells` (cells). This is an internal contradiction that an implementer would have to resolve.
+- **Phase 4 plan section claims `lastUnlockedLevel` persistence tests are missing, but `Engine.test.ts` already has 3 of them** (lines 243–304: `persists lastUnlockedLevel on gameover`, `…on won`, `…on levelComplete`). The plan's claim "Add tests for lastUnlockedLevel persistence flow" is partially already done. Only the "persists across Engine destroy + recreate cycles" and "High score is saved on gameover and won, NOT saved during playing" tests are genuinely missing.
+- **Phase 4 plan section claims `saveAchievement` duplicate-prevention test is missing, but `achievements.test.ts:53-59` already covers it** ("does not re-award if already unlocked"). Only the "corrupt localStorage" edge case and the "checkAchievements does not re-detect" test (which is partially covered at line 91-97) are genuinely missing.
+- **Phase 4 plan section claims `loadStats` default-values test is missing, but `statistics.test.ts:9-17` already covers it** ("returns defaults when empty"). Only the round-trip test and the "updateBestLevel only increases" (already covered at line 41-50) are redundant.
+- **No "loadStats when localStorage data is corrupt" test** in the plan. `loadStats` reads from localStorage and presumably uses `parseInt` (or similar). There's no equivalent of `achievements.ts`'s try/catch in `statistics.ts` (I should verify). If the persistence is brittle, this is a real edge case worth covering. (Verified: `statistics.ts` does not have a try/catch; `loadStats` calls `parseInt` and `Number.isNaN` checks but the JSON parse step would throw. This IS a real risk worth a test.)
+- **The plan does not include a test for "Engine destroy + recreate + localStorage integrity" pattern.** If the Engine reads `lastUnlockedLevel` on construction but the constructor signature doesn't expose that, persistence across instances is an implicit contract worth testing.
+- **No Phase 4 test for `loadLastUnlockedLevel` / `saveLastUnlockedLevel` at the storage level.** These functions are tested in `src/utils/__tests__/storage.test.ts`, but a quick check would confirm the localStorage keys match what the Engine writes. The keys ARE consistent (`snakeLastUnlockedLevel`), so this is low priority.
 
 ## Major Risks
 
-1. **Cascading test failures from the `food: Food` shape change.** The single largest implementation risk. The plan correctly identifies it (Risk 10) but the mitigation ("Update `makeState` and any test constructing `food: Position` directly; do this in the same commit as the type change") understates the scope. `state.test.ts` alone has approximately 12+ inline `food: { x: ..., y: ... }` overrides (lines 100-300+) that will all need rewriting. The implementer must do a project-wide search and replace.
-2. **Wrap-around + portal interaction is undefined-by-design but undocumented in the test matrix.** The plan says "no level has both" (Cross-Phase Constraint #5; Risk 5) and the "explicit ordering in `MOVE_SNAKE`" (wrap first, then portal). This is fine, but a test that asserts "on a hypothetical level that has both, wrap is applied first" is missing. Without this, a future refactor could silently swap the order and only the level-up tests would fail.
-3. **Statistical smoke test is the only stochastic test.** A 200-spawn test with 5%/5% rare events is technically fine, but if a test runner has different entropy behavior (e.g., a CI worker) the test could be flaky. The plan should specify `vi.spyOn(Math, 'random')` to use a deterministic sequence instead, or accept the current approach and document the small failure probability.
-4. **Poison food shrinking at length 3 (the initial snake length) is a gameplay regression risk.** Players who lose food variants at start will see "snake doesn't shrink — bug?" If they happen to be at length 3, no visible change occurs. The plan handles this correctly (`floor at INITIAL_SNAKE.length`), but the ScoreBoard does not indicate why the snake did not shrink. A future UX improvement would be a brief flicker or sound, but that is explicitly out of scope (M11+).
-5. **Cell rendering is a memoization risk.** The current `Cell` is wrapped in `React.memo`. Adding `foodType?: FoodType` is a primitive prop, so memoization should continue to work. The plan assumes this in Assumption 9. However, the `Board` passes the same `food` object reference on each render (until the snake moves), so `foodType` is a string primitive — memoization holds. This is correct but worth a one-line note in the plan that an implementer can verify by reading `Cell.tsx:1` (`memo(...)`).
-6. **`Engine.ts` slow-effect multiplier interleaves with the accumulator.** The plan modifies line 167 in `Engine.ts` (the `tick()` callback) to multiply speed by 1.3. This is a small surface change, but the `accumulator` is reset to 0 after every `MOVE_SNAKE`. If the multiplier is applied after the accumulator check (which the plan correctly specifies), then a slow effect can cause the player to perceive irregular movement if the accumulator has overshot `speed * 1.3` but not `speed`. The plan does not address this minor feel issue (e.g., "the slow effect can cause one extra `MOVE_SNAKE` to fire on the first tick after the effect begins"). This is borderline acceptable; worth a one-line acknowledgment.
+1. **Phase 3 reachability assertions may fail on existing level layouts.** This is the most likely real outcome. Level 4 ("Crossroads") has 16 obstacles arranged in a cross pattern — the BFS may or may not find a path through them given snake starting at (10,10). Level 7 (Four Chambers) has 20 obstacles plus a portal pair; reachability requires the portal link. If the plan is executed and a level fails the `reachable >= foodRequired + initialSnakeLength` check, the plan correctly says "fix the layout, do not loosen the validation." This needs to be honored.
+2. **The reachability threshold (`foodRequired + INITIAL_SNAKE.length`) is too loose to catch all completability defects.** A level can pass this check but still be practically unplayable (e.g., narrow corridor the snake cannot navigate when grown). The plan acknowledges this in Risk #3 but does not propose a stronger criterion. Acceptable for M11; document explicitly that M12+ may need a stronger check.
+3. **`loadStats` lacks corruption protection, unlike `loadAchievements` which has try/catch.** A user with a corrupt `snakeStats*` key will get a crash instead of defaults. The plan should include either (a) a fix to `statistics.ts` to match `achievements.ts`'s pattern, or (b) a deliberate decision to leave this for a future milestone.
 
 ## Recommended Changes
 
-- Add a Phase 1.4 sub-task: "Update all inline `food:` overrides in `state.test.ts` (and any other test files) to use the new `Food` shape. A repository-wide search for `food: { x:` should yield zero results after the change."
-- Specify slow-effect stacking: "If the snake eats slow food while `speedEffectTicks > 0`, the effect is reset to 10 ticks (last-write-wins). Add a test for this."
-- Commit to a `spawnFood` signature: `spawnFood(snake: Position[], obstacles: Position[] = [], portals: Position[] = []): Food`. Make `portals` required-with-default for clarity, not optional.
-- Add a `portals?: Position[]` empty-array return for `getPortalPositions(1)` and friends, not `undefined`. This avoids downstream null checks.
-- In Cross-Phase Constraint #6, carve out an explicit exception: "The one allowed stochastic test is the food-type statistical smoke test in Phase 1.10. All other food-related tests must use `makeState` with an explicit `Food` object."
-- Add a note in Phase 1.8 saying that the 4 existing `Cell.test.tsx` tests will continue to pass after the change (`foodType` is optional) but should be migrated to use the new prop for clarity.
-- Specify SLOW badge placement: "Insert a new `.section` after the score section in `ScoreBoard.tsx`, with class `slowBadge` styled in `ScoreBoard.module.css`. The badge shows `SLOW (N ticks remaining)` when `speedEffectTicks > 0`."
-- Confirm (with one line) that the existing dev level select works for testing level 5 and 7 mechanics without changes.
-- Consider creating `docs/adr/ADR-004-m10-gameplay-mechanics.md` documenting the design rationale: one global spawn table, `Food` object as the single source of truth, decoupled timer fields, no simultaneous food. (Optional — would benefit future contributors but is not required by the milestone scope.)
+1. **Correct the test count baseline from 255 → 259 and update final estimate from 312 → 316.**
+2. **Resolve the `getReachableCount` vs `getReachableCells` naming inconsistency.** Pick one name, ideally `getReachableCount` (matches the "count" return type).
+3. **De-duplicate Phase 4 test additions against `Engine.test.ts`, `statistics.test.ts`, `achievements.test.ts` actually-existing tests.** Only the genuinely-missing tests should be added. The current Phase 4 list overlaps with at least 4 existing tests.
+4. **Add a `loadStats` corruption test and, if needed, a one-line try/catch fix in `statistics.ts` to match `achievements.ts`'s pattern.** This is a real edge case (localStorage can hold garbage from manual user edits, browser bugs, or migration from older versions).
+5. **Consider merging Phase 1 and Phase 3 portal-safety assertions into a single test file.** The plan's own Review Checklist acknowledges the overlap and gives a weak justification ("zero code dependencies"). A single `levelValidation.test.ts` from the start would be simpler — but Phase 1 cannot wait for Phase 2's reachability module, so the split may be acceptable.
+6. **Verify that level layouts pass the new reachability assertions BEFORE writing the new tests.** If a level layout is changed, both the level data and the test count need to be updated. The plan implies test-first, which is correct, but does not state the failure path explicitly.
+7. **The plan should explicitly note the test-count delta after each phase** (e.g., "After Phase 1: 259 + 12 = 271"). This helps reviewers track the milestone's progress against the DoD.
 
 ---
 
 # Detailed Findings
 
-## F1 — `Food` type change cascades through every test that constructs state
+## Finding 1 — Incorrect baseline test count
 
-- **Severity:** High
-- **Description:** Phase 1.1 changes `GameState.food: Position` to `GameState.food: Food`. The plan updates `makeState` (Phase 1.4) to the new shape but does not enumerate the inline `food:` overrides in `src/game/__tests__/state.test.ts`. I counted at least 12 inline `food: { x: 10, y: 10 }` overrides in the first 300 lines of that file (e.g., lines 100-108, 114-127, 130-141, 210-220, 234-249, 254-272, 274-289, 292-300). These all currently typecheck against `Position` and will fail to typecheck against `Food` after the change.
-- **Recommendation:** Add an explicit sub-task in Phase 1.4: "Search the repository for `food: { x:` and `food: {x:` and update every hit to the new `Food` shape. Run `npm run build` and confirm zero TypeScript errors before merging." A short test that greps the codebase for the old shape (or a `tsc` `--noEmit` step in the Phase 1 Definition of Done) would catch any missed site.
+- **Severity:** Low
+- **Description:** The plan states "255 unit tests across 17 test files" and projects a final count of "~312 total" (255 + 57). The actual current count is 259 tests (verified by running `npm test`). The discrepancy is 4 tests, almost certainly from a milestone that has progressed slightly since the plan was drafted.
+- **Recommendation:** Update the plan's Current State section to "259 unit tests" and update the DoD target to "~316 total" (259 + 57). This is a one-line correction.
 
-## F2 — Slow food re-eat behavior is unspecified
+## Finding 2 — `getReachableCount` vs `getReachableCells` naming inconsistency
 
 - **Severity:** Medium
-- **Description:** Phase 1.4 says `speedEffectTicks = 10` on eating slow food. If the snake eats another slow food while `speedEffectTicks > 0`, the current wording resets the effect. This is a sensible default (avoids stacking / runaway slow) but is not explicitly stated. The plan should commit to one of: (a) reset to 10 (last-write-wins), (b) extend by 10 (additive), or (c) ignore if already active.
-- **Recommendation:** Add to Phase 1.4: "If the snake eats slow food while `speedEffectTicks > 0`, reset to 10 ticks (last-write-wins). Add a test in `state.test.ts` that asserts this."
+- **Description:** In Phase 2, the file spec says "Exports `getReachableCells(...)` and `countFreeCells(...)`" but the function signature block defines `getReachableCount`. An implementer will have to choose, and either choice creates a mismatch with the documented intent.
+- **Recommendation:** Pick `getReachableCount` — it returns a `number` representing a count, not a `Set<Position>`. The plan should explicitly state this choice. Alternatively, the function could return a `Set<Position>` (more general, tests can derive the count), but this adds complexity for a milestone that values simplicity.
 
-## F3 — `spawnFood` optional `portals` argument wording is ambiguous
+## Finding 3 — Phase 4 overlaps with existing tests
 
-- **Severity:** Low
-- **Description:** Phase 3.5 says `spawnFood(snake, obstacles, portals: Position[] = [])` and later "Backward compatible: omit the third argument to get the previous behavior." This is a contradiction: `portals: Position[] = []` makes the argument optional, but "previous behavior" implies a different default. In practice both read the same way, but the wording should be unified.
-- **Recommendation:** Commit to `spawnFood(snake: Position[], obstacles: Position[] = [], portals: Position[] = []): Food`. The argument is required at the call site (so all callers must think about it), but the default is `[]` (empty array, no portal exclusion). Update the call sites in `state.ts` to pass `getLevelData(state.level).portals?.flat() ?? []`.
+- **Severity:** Medium
+- **Description:** Several "new" tests in Phase 4 duplicate existing test coverage:
+  - `Engine.test.ts:243-304` already covers `lastUnlockedLevel` persistence on gameover/won/levelComplete.
+  - `achievements.test.ts:53-59` already covers `saveAchievement` duplicate prevention.
+  - `achievements.test.ts:91-97` already covers `checkAchievements` not re-detecting already-unlocked achievements.
+  - `statistics.test.ts:9-17` already covers `loadStats` defaults.
+  - `statistics.test.ts:41-50` already covers `updateBestLevel` only increasing.
+  - Only the "Engine destroy + recreate cycle" test, the "High score not saved during playing" test, the round-trip test, and the "corrupt localStorage" test are genuinely missing.
+- **Recommendation:** Trim Phase 4 to ONLY the genuinely-missing tests. Estimated new test count for Phase 4: ~6, not ~15. Update the DoD math accordingly.
 
-## F4 — `getPortalPositions` empty-result return type is unspecified
+## Finding 4 — `loadStats` corruption risk (real defect)
 
-- **Severity:** Low
-- **Description:** Phase 3.8 says "Add a small helper `getPortalPositions(level: number): Position[]` in `src/game/levels.ts` that flattens `portals?.flat() ?? []`." The `??` implies returning `[]` for non-portal levels. This is good. But the helper could also be typed to return `undefined` (forcing callers to handle the absent case). The plan should pick one.
-- **Recommendation:** Return `Position[]` (always an array, possibly empty). Callers can do `if (portalSet.size > 0)` if they need to know whether portals exist, or pass the array unconditionally to `Board` (it already filters per-cell).
+- **Severity:** Medium
+- **Description:** `statistics.ts` lacks the try/catch pattern that `achievements.ts` uses. A user with a corrupt `snakeStatsGamesPlayed` value (e.g., `"{not a number}"`) will get a `JSON.parse` exception in `loadStats` and the game will crash on startup. The Engine's constructor calls `loadStats()` at line 28 of `Engine.ts`, so a corrupt value would prevent the game from loading.
+- **Recommendation:** Either:
+  - (a) Add a try/catch to `loadStats` mirroring `loadAchievements`, with a corruption test that writes bad data and asserts the game still loads.
+  - (b) Document the deliberate decision to leave this for a future milestone, with a corresponding known-limitation entry in `PROJECT_STATE.md`.
+  Option (a) is preferred — it's a 3-line code change and a 1-test addition, fully aligned with the "validation" spirit of M11.
 
-## F5 — Cross-Phase Constraint #6 partially contradicts Phase 1.10
-
-- **Severity:** Low
-- **Description:** Constraint #6 says tests "must construct `Food` objects directly via the `makeState` helper... not rely on `Math.random` rolls." Phase 1.10 lists a "statistical smoke test (at least 2 of {gold, poison, slow} appear in 200 spawns)" which is intrinsically stochastic. The two are in tension. The test is statistically safe (failure probability is astronomically low with 5%/5% rates) but the constraint should explicitly exempt this one case.
-- **Recommendation:** Add to Cross-Phase Constraint #6: "Exception: the food-type statistical smoke test in Phase 1.10 is the only allowed stochastic test. All other food-related tests must use `makeState` with an explicit `Food` object."
-
-## F6 — `Cell.test.tsx` migration is not in the plan
-
-- **Severity:** Low
-- **Description:** Phase 1.8 changes `CellProps` from `isFood: boolean` to `foodType?: FoodType`. The plan adds new tests for the new prop (lines 230-231 of the plan) but does not call out updating the existing 4 tests in `src/components/__tests__/Cell.test.tsx`, which currently pass `isFood={false}`. After the change, those tests will still compile (the new prop is optional) but they will not exercise the new prop's rendering. This is a low-risk issue but worth a one-line note.
-- **Recommendation:** Add a one-line note in Phase 1.10: "The existing 4 `Cell.test.tsx` tests will continue to pass after the prop change (the new prop is optional). Migrate them to the new `foodType` prop for clarity, but this is not blocking."
-
-## F7 — SLOW badge placement / styling in ScoreBoard is unspecified
+## Finding 5 — Phase 1 / Phase 3 portal-safety overlap
 
 - **Severity:** Low
-- **Description:** Phase 1.9 says "show a 'SLOW' badge with the remaining tick count, positioned next to the score section." The existing `ScoreBoard.module.css` has a strict flexbox layout with separators. Adding a new section requires (a) choosing a position relative to existing sections, (b) defining a new CSS class, (c) considering mobile wrapping (the existing CSS wraps at `@media (max-width: 600px)`). The plan gives no guidance.
-- **Recommendation:** Add to Phase 1.9: "Insert a new `.section` after the high-score section, with a `slowBadge` class. The badge is hidden when `speedEffectTicks === 0`. On mobile, it wraps below the score row. Color: `--color-food-slow` to disambiguate from warning colors."
+- **Description:** Both Phase 1 and Phase 3 check portal entry/exit safety vs. obstacles and snake spawn. The plan acknowledges this in the Review Checklist.
+- **Recommendation:** Acceptable as-is if the implementer is told explicitly. Alternatively, move all portal-safety assertions to Phase 3 (which already has level-specific tests) and reduce Phase 1 to food-spawn-capacity checks only. The current organization is defensible because Phase 1 is zero-dep and Phase 3 is parameterized, but a single source of truth for portal checks would be easier to maintain.
 
-## F8 — Dev-level select entry to wrap / portal levels not confirmed
+## Finding 6 — Missing verification step for level layouts
 
-- **Severity:** Low
-- **Description:** The plan excludes "Wrap-around or portal configuration UI in dev level select" from scope, but does not confirm that the existing dev select (M6) can already be used to test levels 5 and 7. Reading `Game.tsx:104-184` and `useGame` confirms that `startGameAtLevel(N)` works for any level and the new mechanics are derived from level metadata at the time of `MOVE_SNAKE`. So the dev select does work — but a one-line confirmation would be helpful.
-- **Recommendation:** Add a one-line note in Handoff Notes: "The existing dev level select (M6) can be used to jump to levels 5 and 7 for testing wrap and portal mechanics. No changes to the dev select are needed."
+- **Severity:** Medium
+- **Description:** Phase 3 will introduce reachability assertions for all 10 levels. If a level fails (which is plausible given the handcrafted nature of levels 4, 7, 8, 10), the plan does not specify the resolution path beyond "fix the layout." The plan should specify: (a) which level data file holds the layouts, (b) the expected iteration process, (c) whether the level names/descriptions need to change if the layout changes.
+- **Recommendation:** Add a sub-step in Phase 3: "If a level fails reachability, fix the layout in `src/game/levels.ts`, re-run tests, document any layout change in the PR description. Do NOT loosen the validation." This is already implied by the plan's Risk #1 but should be explicit.
 
-## F9 — No ADR for the new game-mechanic primitives
-
-- **Severity:** Low
-- **Description:** `AGENTS.md` lists "Changing core gameplay architecture" as an ADR trigger. Adding a `Food` object with type/timer/effect, plus `wrapAround` and `portals` flags on `Level`, is a non-trivial state-shape change. The previous milestones (M8 visual identity, M9 replayability) also did not create ADRs for additive changes, so this is consistent with project practice. However, the design decisions (one global probability table, single food at a time, decoupled timer fields) are exactly the kind of rationale that would benefit a future contributor.
-- **Recommendation:** Optional: create `docs/adr/ADR-004-m10-gameplay-mechanics.md` documenting the design rationale. This is a 30-minute task and would match the "Permanent record of major decisions" purpose of ADRs. Not required for milestone completion, but encouraged.
-
-## F10 — Wrap-around + portal ordering test is missing
+## Finding 7 — Manual validation phase lacks a PR/handoff template
 
 - **Severity:** Low
-- **Description:** Phase 3.4 says "in `MOVE_SNAKE`, after wrapping (if applicable) and before the collision check: look up portals". The plan correctly specifies the ordering but does not include a test for the combined case. Risk 5 acknowledges the "Portal + wrap interaction is undefined" but says "no level has both" — which is true, but the test for the ordering invariant is what locks it in.
-- **Recommendation:** Add a test in `state.test.ts` that synthesizes a hypothetical level with both `wrapAround: true` and a `portals` array, then asserts that on a single `MOVE_SNAKE`, the wrap is applied first, then the portal lookup, then collision. The level data can be constructed inline in the test (no level metadata change required).
+- **Description:** Phase 5 documents a manual validation checklist (6 categories, 20+ sub-checks) but does not specify what artifact is produced. "Document findings" is vague.
+- **Recommendation:** Specify that findings go in a `docs/M11_VALIDATION_NOTES.md` file (or a section in `PROJECT_STATE.md`) with each check marked PASS/FAIL/NOTE. The plan already implies this; making it explicit reduces ambiguity for the implementer.
 
-## F11 — `Engine.ts` accumulator behavior on slow-effect transition is undocumented
-
-- **Severity:** Low
-- **Description:** Phase 1.5 modifies the `tick()` callback to check against `effectiveSpeed = speed * SLOW_EFFECT_MULTIPLIER`. The accumulator is reset to 0 after each `MOVE_SNAKE`. If the slow effect begins mid-accumulation (e.g., accumulator has 110ms and speed is 100ms, multiplier kicks in making effective speed 130ms), the next `MOVE_SNAKE` will not fire until the accumulator reaches 130ms — which can feel like a long pause. This is borderline acceptable behavior but should be acknowledged.
-- **Recommendation:** Add a one-line note in Phase 1.5: "The slow effect applies to the current tick's effective speed, not retroactively. Players may notice a brief delay on the first tick after the effect begins if the accumulator has overshot `speed` but not `speed * 1.3`. This is acceptable for M10; tune in M11 if needed."
-
-## F12 — Weighted random selection algorithm is unspecified
+## Finding 8 — Plan does not call out the new test count per phase
 
 - **Severity:** Low
-- **Description:** Phase 1.3 says "roll a `FoodType` by weighted random selection". There are several valid algorithms (cumulative weights, table expansion, etc.). The plan should commit to one for consistency with the existing `spawnFood` code style.
-- **Recommendation:** Add a one-liner: "Use cumulative-weight selection: compute `total = sum(weights)`, generate `r = Math.random() * total`, find the first type whose cumulative weight exceeds `r`." This is the standard approach and matches the existing `spawnFood` style of using `Math.random()` directly.
+- **Description:** The plan gives per-phase test-count estimates but not cumulative counts. This makes it hard for a reviewer to verify progress mid-milestone.
+- **Recommendation:** Optional. Add a table:
+  - After Phase 1: 259 + 12 = 271
+  - After Phase 2: 271 + 7 = 278
+  - After Phase 3: 278 + 30 = 308
+  - After Phase 4: 308 + 6 = 314
+  - Target DoD: ~314 tests passing
 
-## F13 — `Engine.ts` "class-level constants" wording is imprecise
-
-- **Severity:** Low
-- **Description:** Phase 1.5 says "Add `const SLOW_EFFECT_MULTIPLIER = 1.3;` at the top of `Engine.ts` (next to the existing class-level constants)." There are no class-level constants in `Engine.ts` — module-level imports only. The instruction is clear in intent (top of file, before the class) but the wording is slightly off.
-- **Recommendation:** Rewrite: "Add `const SLOW_EFFECT_MULTIPLIER = 1.3;` at the top of `Engine.ts`, above the `Engine` class declaration."
-
-## F14 — `BoardProps` and `CellProps` type changes are not listed in the file table for the parent files
-
-- **Severity:** Low
-- **Description:** Phase 1.6 modifies `src/types/components.ts` (correctly listed in the file table). However, the plan does not call out that `src/components/__tests__/Cell.test.tsx` and `src/components/__tests__/Board.test.tsx` will need prop-type updates (existing tests pass `food: { x, y }`). Same as F6 but for `Board`.
-- **Recommendation:** Add to Phase 1.10: "The existing `Board.test.tsx` tests pass `food: { x, y }` and will need to be updated to `food: { position: { x, y }, type: 'normal', timer: -1 }` to satisfy the new `BoardProps` type."
-
-## F15 — `getPortalPositions` test for empty / non-portal levels
+## Finding 9 — No mention of the "saveStats when paused" path in Phase 4 tests
 
 - **Severity:** Low
-- **Description:** Phase 3.9 lists "`getPortalPositions(7)` returns exactly 2 positions" but does not list a test for non-portal levels (e.g., `getPortalPositions(1)` returns `[]`). This is implied by the helper's `portals?.flat() ?? []` logic but should be explicit.
-- **Recommendation:** Add to the `levelData.test.ts` list in Phase 3.9: "`getPortalPositions(1)` returns `[]`; `getPortalPositions(5)` returns `[]`; etc. for all non-portal levels."
+- **Description:** The plan mentions a "High score is saved on gameover and won, NOT saved during playing" test, but does not mention that `Engine.ts:72-75` saves stats on `paused` status as well. This is an existing behavior worth pinning down with a test.
+- **Recommendation:** Add a test: "stats are saved to localStorage on pause" to confirm and document the behavior.
 
-## F16 — `useGame` hook is not called out as unchanged
-
-- **Severity:** Low
-- **Description:** Assumption 6 says "The current `useGame` hook does not need changes — the engine is the source of truth and components receive new props reactively." This is correct, but the plan does not make the same claim about `useKeyboard` / `useTouch` (which is also true, since both consume `state.status` only). The previous M9 review flagged the same gap (F16) and recommended a one-line note.
-- **Recommendation:** Add a one-line note in Handoff Notes: "No changes to `useGame`, `useKeyboard`, or `useTouch` — all new mechanics are derived from `state.food` and `getLevelData(state.level)` at render time."
-
-## F17 — Test file convention cross-reference
+## Finding 10 — `useGame` hook integration with Engine persistence is not covered
 
 - **Severity:** Low
-- **Description:** Cross-Phase Constraint #7 specifies the test file convention (new `gameLogic` / `levelData` tests in `src/utils/__tests__/`, new `state` / `Engine` tests in `src/game/__tests__/`). This is correct and matches the current state. However, the plan does not mention `src/components/__tests__/` for the new Cell / Board tests — which is the obvious place. The convention is implicit from the existing `Cell.test.tsx` / `Board.test.tsx` location, but a one-line confirmation would help.
-- **Recommendation:** Add to Cross-Phase Constraint #7: "Component tests for `Cell` and `Board` go in `src/components/__tests__/` (existing convention)."
+- **Description:** The plan tests Engine-level persistence but not whether `useGame` (in `src/hooks/useGame.ts`) propagates the localStorage updates to the UI. If the hook caches stats/achievements, a manual reload test is needed.
+- **Recommendation:** Add a note in Phase 4 that one of the "Engine destroy + recreate" tests should also assert that the new Engine's `getStats()` reflects the persisted values. The hook is implicitly tested via `Game.test.tsx`, so this is low-priority.
 
-## F18 — Statistical test threshold (2 of 3) is good but unstated rationale
+## Finding 11 — Plan does not specify what happens if manual validation reveals a level defect
+
+- **Severity:** High
+- **Description:** The Risks section says "Manual validation reveals bugs in existing gameplay code (not just level data)" with mitigation "Fix bugs as they are found. Keep fixes minimal and within milestone scope." This is dangerously loose for a milestone whose goal is "guarantee all gameplay systems are correct, stable, completable." If manual validation finds 10 bugs, the scope could explode.
+- **Recommendation:** Add a sub-cap: "Manual validation may identify up to 3 minor defects. Any defect that requires >1 hour of investigation or introduces new game mechanics is filed as a separate issue and deferred to a future milestone. The plan's DoD may be relaxed to 'all CRITICAL defects resolved' if minor defects remain."
+
+## Finding 12 — No version bump or package.json update mentioned
 
 - **Severity:** Low
-- **Description:** The Phase 1.10 statistical test says "at least 2 of {gold, poison, slow} appear in 200 spawns". With spawn probabilities 10% / 5% / 5%, the probability that a single special type is absent in 200 spawns is `0.90^200 ≈ 7.5e-10` for gold, `0.95^200 ≈ 3.5e-24` for poison and slow. The probability that 2 of 3 are absent is bounded by the max of these squared, which is negligible. The threshold of "2 of 3" is therefore a near-100% reliable test. The plan should briefly note this.
-- **Recommendation:** Optional: add a one-line note in Phase 1.10: "The threshold '2 of 3 special types' is chosen so that the test passes with probability ≈ 1 - 7.5e-20 (negligible failure rate). If a CI environment shows flakiness, lower the threshold to '1 of 3' or replace with `vi.spyOn(Math, 'random')` to use a deterministic sequence."
+- **Description:** The DoD mentions "ROADMAP.md updated" and "PROJECT_STATE.md updated" but does not explicitly call out the `package.json` version bump from 0.10.0 → 0.11.0. The previous milestone plans did this; the new plan should preserve the convention.
+- **Recommendation:** Add to DoD: "`package.json` version bumped to 0.11.0."
 
 ---
 
@@ -171,80 +146,52 @@
 
 ## Phase structure
 
-**Verdict: Strong.**
+**Grade: Good.** Five phases, each with a clear goal, a "Files to change" table, a verification step, and a test-count estimate. The dependency diagram (Phases 1+2 → Phase 3, Phase 4 independent, Phase 5 last) is correct and parallelizable.
 
-- Four phases: 1 (Food Variants), 2 (Wrap-Around), 3 (Portals), 4 (Docs). Each is independently shippable.
-- Phase 1 introduces the `Food` object shape that the board/cell components will read in Phases 2 and 3 — the ordering is justified and necessary.
-- Phase 4 is a deliberate separation: docs are not bundled into feature phases, matching the pattern established in earlier milestones.
-- Each phase has its own Definition of Done with concrete verification steps.
+The split between Phase 1 and Phase 3 is the weakest part — the portal-safety and food-spawn checks could live in a single file. But the "zero code deps vs. depends-on-reachability" justification is defensible.
 
 ## Task decomposition
 
-**Verdict: Good, with a few small gaps.**
+**Grade: Good.** Each phase is broken into discrete, testable increments. File paths are exact. Function signatures are specified (with the naming inconsistency noted in Finding 2).
 
-- The file tables per phase (Phase 1: 18 files, Phase 2: 11 files, Phase 3: 14 files, Phase 4: 5 files) are comprehensive and concrete. An implementer can locate the exact insertion points.
-- Sub-tasks within each phase (e.g., Phase 1 has 10 sub-tasks 1.1-1.10) are well-scoped.
-- Gaps: F1 (inline test overrides not enumerated), F6/F14 (existing component test files not flagged for migration), F7 (SLOW badge placement unspecified). All are addressable in 5-10 minutes each.
+The `countFreeCells` function in Phase 2 takes primitive numeric arguments (`obstacleCount`, `portalCount`, `gridSize`) rather than arrays. This is unusual — the function will need to be called as `countFreeCells(layout.length, portalPositions?.length ?? 0)` at the call site, and the caller is responsible for counting. A small simplification would be to take the arrays directly: `countFreeCells(obstacles, portals)`. The current signature is fine but slightly more error-prone at the call site.
 
 ## Verification strategy
 
-**Verdict: Comprehensive.**
-
-- Each phase has `npm test`, `npm run build`, `npm run lint`, and a list of manual checks. The manual checks are behavior-driven (e.g., "snake exits right edge → appears on left").
-- The pre-flight verification (Phase 0) is a good practice — it catches a broken environment before the implementer starts.
-- The cross-cutting "Determinism for tests" constraint (F5 minor wording issue) and the statistical smoke test (F18) together cover the testability of stochastic behavior.
-- Gaps: no integration test that verifies `Game.tsx` correctly threads new props (e.g., that `wrapAround={true}` from level metadata reaches `Board`). Existing `Game.test.tsx` is minimal (4 tests) so a small extension is appropriate. (Consistent with the M9 review's F11 finding.)
+**Grade: Adequate, with one gap.** Each phase has a "Verification" subsection specifying `npm test` and per-phase acceptance. The gap is **no end-to-end "play the game" verification**: the milestone's whole point is "completable levels" but no test exercises actual gameplay past the BFS reachability check. The manual validation phase covers this, but a brief automated play-through test (e.g., "spawn snake, run 100 ticks, assert no crash") would be a cheap addition.
 
 ## Definition of Done
 
-**Verdict: Strong.**
-
-- Phase 1 / 2 / 3 / 4 DoDs all include: file changes applied, tests pass, manual checks confirmed, no accidental file changes.
-- The Milestone Definition of Done at the end consolidates the per-phase DoDs and adds: docs updated, version bumped to 0.10.0, git workflow followed. This matches the pattern from M9.
-- Missing detail: the `package.json` version bump is committed in Phase 4 (correctly), but the DoD for Phases 1-3 should explicitly say "no version bump in this phase" to prevent premature bumps. (F13 in the M9 review flagged a similar issue; the current plan is mostly fine on this point.)
+**Grade: Adequate.** The DoD is a 10-item checklist with all major workstreams covered. Missing: explicit `package.json` version bump, cumulative test-count table, and the cap on manual-validation defect fixes (see Finding 11).
 
 ## AI-agent execution readiness
 
-**Verdict: Good, with small clarifications needed.**
+**Grade: Good, with two known ambiguity points.**
 
-- A follow-on implementation agent could start on Phase 1 with the current plan. The pre-flight checks, file tables, and per-phase verification would give high confidence of unblocked execution.
-- The most likely blocker is F1 (the cascading test changes from the `Food` shape). Once that is acknowledged in the plan, execution should be smooth.
-- Smaller clarifications (F2, F3, F4, F7, F10, F12) are all single-decision items that an implementer could resolve without re-asking, but baking them into the plan saves a round trip.
-- The Simplification Review and "What Was Explicitly Rejected" sections are excellent handoff artifacts — they pre-empt scope creep questions.
+1. **The 255 → 259 test count discrepancy** will trip up an agent that naively trusts the plan. An agent that runs `npm test` first will catch it; one that does not will report "all 255 baseline tests pass" incorrectly. Minor.
+
+2. **The Phase 4 test-list overlap with existing tests** will cause an agent to write redundant tests if it does not first re-read the existing test files. The plan should explicitly say "before adding tests in Phase 4, re-read `Engine.test.ts`, `statistics.test.ts`, `achievements.test.ts` to confirm which tests are still needed." This is a process clarification, not a defect.
+
+Other than these two, an AI agent with the plan plus AGENTS.md plus ROADMAP.md and ARCHITECTURE.md should be able to execute the milestone without further human input.
 
 ---
 
 # Final Recommendation
 
-## Approve with Minor Changes
+**Approve with Minor Changes**
 
-The plan is exceptionally well-conceived. It is precisely aligned with `ROADMAP.md` §M10, `ARCHITECTURE.md`, and `SPEC.md`, respects the "ship the game" philosophy in `AGENTS.md`, and correctly defers complexity (moving obstacles, enemy snakes, boss levels, per-level food configuration). The Cross-Phase Constraints are strong guardrails, the per-phase file tables are concrete, and the documentation update list is the most thorough of any milestone so far.
+The plan is well-scoped, well-aligned with ROADMAP.md and AGENTS.md, and chooses the simplest correct approach (BFS on 400 cells). The new module is appropriately small. The Out-of-Scope list is exemplary. The Risks are honest and the mitigations are appropriate.
 
-The findings are mostly clarifications and small gaps. None of them are blockers, but addressing F1, F2, F3, F4, F5, F7, F10, and F12 before implementation begins will save iteration time and reduce the risk of mid-phase course corrections.
+The required changes before approval:
 
-**Conditions for approval:**
+1. **Fix the 255 → 259 test count** in the Current State and DoD sections.
+2. **Resolve the `getReachableCount` vs `getReachableCells` naming** to a single name.
+3. **Trim Phase 4 to only genuinely-missing tests** (or accept the redundant tests as belt-and-suspenders coverage, but be explicit).
+4. **Add a `loadStats` corruption test and a corresponding code fix** in `statistics.ts` to match `achievements.ts`'s try/catch pattern. This is a 3-line code change that closes a real crash bug.
+5. **Add a cap on manual-validation defect fixes** to prevent scope explosion (suggested: "max 3 minor defects; anything larger is deferred").
+6. **Add `package.json` version bump to DoD** (0.10.0 → 0.11.0).
+7. **Add an explicit "if a level fails reachability, fix the layout" sub-step to Phase 3** so the implementer knows the resolution path.
 
-1. Resolve F1 (cascade of inline `food:` overrides in tests) with an explicit sub-task in Phase 1.4.
-2. Resolve F2 (slow food re-eat behavior) with a one-line spec and a test.
-3. Resolve F3 (`spawnFood` third-arg wording) and F4 (`getPortalPositions` empty-result type) with a unified signature.
-4. Resolve F5 (constraint #6 vs Phase 1.10 contradiction) by adding an explicit exception.
-5. Resolve F7 (SLOW badge placement) with a one-line CSS placement note.
-6. Resolve F10 (wrap+portal ordering test) with a synthetic-level test in `state.test.ts`.
-7. Resolve F12 (weighted random algorithm) by committing to cumulative-weight selection.
+None of these changes require rewriting the plan. They can be applied in 15–30 minutes of editing.
 
-**Recommended but not required for approval** (acceptable as-is or for the implementation agent to decide):
-
-- F6 (existing `Cell.test.tsx` migration): tests will continue to pass; migration is a clarity improvement.
-- F8 (dev-level select confirmation): one-line note would be helpful but the current dev select does work.
-- F9 (ADR creation): optional, would benefit future contributors but is not required by milestone scope.
-- F11 (accumulator behavior on slow transition): one-line note would be helpful but is acceptable as-is.
-- F13 (`Engine.ts` "class-level constants" wording): minor rewording.
-- F14 (existing `Board.test.tsx` migration): same as F6, for `Board`.
-- F15 (`getPortalPositions` empty test): would be a nice-to-have test.
-- F16 (`useGame` / `useKeyboard` / `useTouch` no-op note): clarification, not blocker.
-- F17 (test file convention for components): clarification, not blocker.
-- F18 (statistical test threshold rationale): optional documentation.
-
-Once F1-F7, F10, and F12 are folded in (a 15-20 minute exercise), the plan can be handed to an implementation agent with high confidence of unblocked execution. The estimated implementation effort (3 feature phases + 1 docs phase) is consistent with the milestone's complexity and aligns with the project's prior velocity.
-
-**Implementation is approved to proceed once the conditions above are addressed.**
+Once these are applied, the plan is ready for implementation by another AI agent with minimal ambiguity.

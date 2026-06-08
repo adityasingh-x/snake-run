@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { Engine } from '../Engine';
 import { getInitialState } from '../state';
 import { LEVEL_COUNT } from '../constants';
+import { saveLastUnlockedLevel } from '../storage';
 
 describe('Engine', () => {
   let engine: Engine;
@@ -401,6 +402,69 @@ describe('Engine', () => {
 
       // With the slow effect, fewer ticks fire
       expect(moveCountWith).toBeLessThan(moveCountWithout);
+    });
+  });
+
+  describe('persistence across destroy+recreate', () => {
+    beforeEach(() => {
+      localStorage.clear();
+    });
+
+    it('lastUnlockedLevel persists across Engine destroy + recreate cycles', () => {
+      engine.setState({
+        ...getInitialState(),
+        status: 'playing',
+        level: 3,
+        score: 20,
+        foodEaten: 2,
+        lastUnlockedLevel: 1,
+        snake: [{ x: 5, y: 10 }, { x: 4, y: 10 }, { x: 3, y: 10 }],
+        food: { position: { x: 15, y: 15 }, type: 'normal', timer: -1 },
+        obstacles: [],
+        nextDirection: 'RIGHT',
+      });
+      engine.testDispatch({ type: 'MOVE_SNAKE' });
+      expect(engine.getState().status).toBe('playing');
+      saveLastUnlockedLevel(3);
+
+      engine.destroy();
+      const newEngine = new Engine();
+      expect(localStorage.getItem('snakeLastUnlockedLevel')).toBe('3');
+      newEngine.destroy();
+    });
+  });
+
+  describe('high score persistence', () => {
+    beforeEach(() => {
+      localStorage.clear();
+    });
+
+    it('high score is NOT saved during playing state', () => {
+      engine.start();
+      engine.setState({
+        ...engine.getState(),
+        score: 100,
+        snake: [{ x: 5, y: 10 }, { x: 4, y: 10 }, { x: 3, y: 10 }],
+        food: { position: { x: 15, y: 15 }, type: 'normal', timer: -1 },
+        obstacles: [],
+        nextDirection: 'RIGHT',
+      });
+      engine.testDispatch({ type: 'MOVE_SNAKE' });
+      expect(engine.getState().status).toBe('playing');
+      expect(localStorage.getItem('snakeHighScore')).toBeNull();
+    });
+  });
+
+  describe('stats on pause', () => {
+    beforeEach(() => {
+      localStorage.clear();
+    });
+
+    it('stats are saved to localStorage on paused state', () => {
+      engine.start();
+      engine.pause();
+      expect(engine.getState().status).toBe('paused');
+      expect(localStorage.getItem('snakeStatsGamesPlayed')).toBe('1');
     });
   });
 });

@@ -210,4 +210,72 @@ describe('portals', () => {
       expect(getPortalPositions(i)).toEqual([]);
     }
   });
+
+  it('Level 7 portal tiles are within grid bounds', () => {
+    const positions = getPortalPositions(7);
+    for (const pos of positions) {
+      expect(pos.x).toBeGreaterThanOrEqual(0);
+      expect(pos.x).toBeLessThan(GRID_SIZE);
+      expect(pos.y).toBeGreaterThanOrEqual(0);
+      expect(pos.y).toBeLessThan(GRID_SIZE);
+    }
+  });
+
+  it('Level 7 portal entry and exit tiles do not overlap obstacles', () => {
+    const obstacles = generateObstacles(7);
+    const obstacleKeys = new Set(obstacles.map(o => `${o.x},${o.y}`));
+    const portalPositions = getPortalPositions(7);
+    for (const pos of portalPositions) {
+      expect(obstacleKeys.has(`${pos.x},${pos.y}`)).toBe(false);
+    }
+  });
+
+  it('Level 7 portal tiles do not overlap INITIAL_SNAKE positions', () => {
+    const snakeKeys = new Set(INITIAL_SNAKE.map(p => `${p.x},${p.y}`));
+    const portalPositions = getPortalPositions(7);
+    for (const pos of portalPositions) {
+      expect(snakeKeys.has(`${pos.x},${pos.y}`)).toBe(false);
+    }
+  });
+
+  it('Level 7 portal entry and exit are distinct cells', () => {
+    const positions = getPortalPositions(7);
+    expect(positions[0].x === positions[1].x && positions[0].y === positions[1].y).toBe(false);
+  });
+});
+
+describe('food spawn capacity', () => {
+  it('each level has at least one free cell for food', () => {
+    for (let i = 1; i <= 10; i++) {
+      const data = getLevelData(i);
+      const obstacleCount = data.layout.length;
+      const snakeCount = INITIAL_SNAKE.length;
+      const portalCount = getPortalPositions(i).length;
+      const occupied = obstacleCount + snakeCount + portalCount;
+      expect(GRID_SIZE * GRID_SIZE - occupied).toBeGreaterThanOrEqual(1);
+    }
+  });
+
+  it('each level has enough free cells for all required food', () => {
+    for (let i = 1; i <= 10; i++) {
+      const data = getLevelData(i);
+      const obstacleCount = data.layout.length;
+      const snakeCount = INITIAL_SNAKE.length;
+      const portalCount = getPortalPositions(i).length;
+      const occupied = obstacleCount + snakeCount + portalCount;
+      const freeCells = GRID_SIZE * GRID_SIZE - occupied;
+      expect(freeCells).toBeGreaterThanOrEqual(data.foodRequired);
+    }
+  });
+});
+
+describe('spawn center safety', () => {
+  it('no layout tile at grid position (10, 10)', () => {
+    for (let i = 1; i <= 10; i++) {
+      const obstacles = generateObstacles(i);
+      for (const obs of obstacles) {
+        expect(obs.x === 10 && obs.y === 10).toBe(false);
+      }
+    }
+  });
 });

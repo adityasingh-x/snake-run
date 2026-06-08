@@ -37,3 +37,4 @@ export type { Stats } from './statistics';
 export { loadStats, saveStats, incrementGamesPlayed, incrementTotalFood, updateBestLevel } from './statistics';
 export type { Achievement } from './achievements';
 export { ACHIEVEMENTS, loadAchievements, saveAchievement } from './achievements';
+export { getReachableCount, countFreeCells } from './reachability';
