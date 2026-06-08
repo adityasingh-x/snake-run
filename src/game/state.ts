@@ -90,7 +90,8 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         if (newTimer === 0) {
           // Spawn replacement normal food
           const portals = getPortalPositions(state.level);
-          currentFood = spawnFood(state.snake, state.obstacles, portals);
+          const normalFood = spawnFood(state.snake, state.obstacles, portals);
+          currentFood = { ...normalFood, type: 'normal', timer: -1 };
         } else {
           currentFood = { ...currentFood, timer: newTimer };
         }
