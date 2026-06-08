@@ -1,10 +1,10 @@
 import type { GameState, GameAction } from './types';
-import { INITIAL_SNAKE, POINTS_PER_FOOD, DIRECTION_OPPOSITE, LEVEL_COUNT } from './constants';
+import { INITIAL_SNAKE, POINTS_PER_FOOD, DIRECTION_OPPOSITE, LEVEL_COUNT, GRID_SIZE } from './constants';
 import { positionsEqual, isCollision } from './collision';
 import { spawnFood } from './food';
 import { calculateNewHead } from './snake';
 import { loadHighScore, loadLastUnlockedLevel } from './storage';
-import { getLevelData, generateObstacles } from './levels';
+import { getLevelData, generateObstacles, getPortalPositions } from './levels';
 
 export function getInitialState(): GameState {
   const obstacles = generateObstacles(1);
@@ -22,6 +22,7 @@ export function getInitialState(): GameState {
     lastUnlockedLevel: loadLastUnlockedLevel(),
     foodEaten: 0,
     isEndless: false,
+    speedEffectTicks: 0,
   };
 }
 
@@ -57,18 +58,81 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
     case 'MOVE_SNAKE': {
       const head = state.snake[0];
-      const newHead = calculateNewHead(head, state.nextDirection);
+      let newHead = calculateNewHead(head, state.nextDirection);
 
-      if (isCollision(newHead, state.snake, state.obstacles)) {
+      // Wrap-around (Phase 2)
+      const levelData = getLevelData(state.level);
+      if (levelData.wrapAround) {
+        newHead = {
+          x: ((newHead.x % GRID_SIZE) + GRID_SIZE) % GRID_SIZE,
+          y: ((newHead.y % GRID_SIZE) + GRID_SIZE) % GRID_SIZE,
+        };
+      }
+
+      // Portal teleport (Phase 3)
+      if (levelData.portals) {
+        for (const [a, b] of levelData.portals) {
+          if (positionsEqual(newHead, a)) { newHead = { ...b }; break; }
+          if (positionsEqual(newHead, b)) { newHead = { ...a }; break; }
+        }
+      }
+
+      if (isCollision(newHead, state.snake, state.obstacles, levelData.wrapAround)) {
         return markGameOver(state);
       }
 
-      const ateFood = positionsEqual(newHead, state.food);
-      const newSnake = ateFood
+      const ateFood = positionsEqual(newHead, state.food.position);
+
+      // Decrement food timer
+      let currentFood = state.food;
+      if (currentFood.timer > 0) {
+        const newTimer = currentFood.timer - 1;
+        if (newTimer === 0) {
+          // Spawn replacement normal food
+          const portals = getPortalPositions(state.level);
+          currentFood = spawnFood(state.snake, state.obstacles, portals);
+        } else {
+          currentFood = { ...currentFood, timer: newTimer };
+        }
+      }
+
+      // Decrement speed effect ticks
+      const newSpeedEffectTicks = state.speedEffectTicks > 0 ? state.speedEffectTicks - 1 : 0;
+
+      let newSnake = ateFood
         ? [newHead, ...state.snake]
         : [newHead, ...state.snake.slice(0, -1)];
-      const newScore = ateFood ? state.score + POINTS_PER_FOOD : state.score;
-      const newFoodEaten = ateFood ? state.foodEaten + 1 : state.foodEaten;
+      let newScore = state.score;
+      let newFoodEaten = state.foodEaten;
+      let finalFood = currentFood;
+      let finalSpeedEffectTicks = newSpeedEffectTicks;
+
+      if (ateFood) {
+        newFoodEaten += 1;
+        const foodType = state.food.type;
+        switch (foodType) {
+          case 'normal':
+            newScore += POINTS_PER_FOOD;
+            break;
+          case 'gold':
+            newScore += 30;
+            break;
+          case 'poison': {
+            const minLength = INITIAL_SNAKE.length;
+            if (newSnake.length > minLength) {
+              newSnake = newSnake.slice(0, -1);
+            }
+            break;
+          }
+          case 'slow':
+            newScore += POINTS_PER_FOOD;
+            finalSpeedEffectTicks = 10;
+            break;
+        }
+
+        const portals = getPortalPositions(state.level);
+        finalFood = spawnFood(newSnake, state.obstacles, portals);
+      }
 
       const currentConfig = getLevelData(state.level);
       const shouldLevelUp = !state.isEndless && ateFood && newFoodEaten >= currentConfig.foodRequired;
@@ -84,28 +148,32 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
             highScore: Math.max(state.highScore, newScore),
             lastUnlockedLevel: Math.max(state.lastUnlockedLevel, state.level),
             foodEaten: newFoodEaten,
+            speedEffectTicks: finalSpeedEffectTicks,
+            food: finalFood,
           };
         }
 
         return {
           ...state,
           snake: newSnake,
-          food: spawnFood(newSnake, state.obstacles),
+          food: finalFood,
           score: newScore,
           direction: state.nextDirection,
           status: 'levelComplete',
           lastUnlockedLevel: Math.max(state.lastUnlockedLevel, state.level + 1),
           foodEaten: newFoodEaten,
+          speedEffectTicks: finalSpeedEffectTicks,
         };
       }
 
       return {
         ...state,
         snake: newSnake,
-        food: ateFood ? spawnFood(newSnake, state.obstacles) : state.food,
+        food: finalFood,
         score: newScore,
         direction: state.nextDirection,
         foodEaten: newFoodEaten,
+        speedEffectTicks: finalSpeedEffectTicks,
       };
     }
 
@@ -116,7 +184,8 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
       const nextLevel = state.level + 1;
       const nextObstacles = generateObstacles(nextLevel);
-      const nextFood = spawnFood(INITIAL_SNAKE, nextObstacles);
+      const nextPortals = getPortalPositions(nextLevel);
+      const nextFood = spawnFood(INITIAL_SNAKE, nextObstacles, nextPortals);
 
       return {
         ...state,
@@ -128,13 +197,15 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         status: 'playing',
         obstacles: nextObstacles,
         foodEaten: 0,
+        speedEffectTicks: 0,
       };
     }
 
     case 'START_AT_LEVEL': {
       const level = Math.min(Math.max(1, action.payload), LEVEL_COUNT);
       const obstacles = generateObstacles(level);
-      const food = spawnFood(INITIAL_SNAKE, obstacles);
+      const startPortals = getPortalPositions(level);
+      const food = spawnFood(INITIAL_SNAKE, obstacles, startPortals);
       return {
         ...state,
         snake: [...INITIAL_SNAKE],
@@ -146,6 +217,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         level,
         obstacles,
         foodEaten: 0,
+        speedEffectTicks: 0,
       };
     }
 
@@ -163,6 +235,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         obstacles: level10Obstacles,
         foodEaten: 0,
         isEndless: true,
+        speedEffectTicks: 0,
       };
     }
 

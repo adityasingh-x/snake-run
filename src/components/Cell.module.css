@@ -46,6 +46,54 @@
   animation: pulse 1s infinite;
 }
 
+.gold {
+  position: relative;
+  background: var(--color-warning);
+  animation: pulse 0.5s infinite;
+}
+
+.gold::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: inherit;
+  transform: rotate(45deg) scale(0.7);
+  border-radius: 2px;
+}
+
+.poison {
+  background: var(--color-food-poison);
+  border-radius: 0;
+}
+
+.slow {
+  background: var(--color-food-slow);
+  clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+  box-shadow: 0 0 8px var(--color-food-slow);
+}
+
+.portal {
+  position: relative;
+}
+
+.portal::before,
+.portal::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  border: 2px solid var(--color-portal);
+}
+
+.portal::before {
+  inset: 2px;
+  animation: spin 4s linear infinite;
+}
+
+.portal::after {
+  inset: 5px;
+  animation: spinReverse 1.5s linear infinite;
+}
+
 .obstacle {
   background: var(--color-obstacle);
   border: 2px solid var(--color-obstacle-edge);
@@ -56,4 +104,14 @@
 @keyframes pulse {
   0%, 100% { transform: scale(0.8); }
   50% { transform: scale(1); }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes spinReverse {
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
 }

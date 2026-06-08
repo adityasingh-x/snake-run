@@ -24,7 +24,7 @@ const mockUseGame = vi.mocked(useGame);
 
 const makePlayingState = () => ({
   snake: [{ x: 10, y: 10 }],
-  food: { x: 5, y: 5 },
+  food: { position: { x: 5, y: 5 }, type: 'normal' as const, timer: -1 },
   direction: 'RIGHT' as const,
   nextDirection: 'RIGHT' as const,
   status: 'playing' as const,
@@ -35,6 +35,7 @@ const makePlayingState = () => ({
   lastUnlockedLevel: 1,
   foodEaten: 0,
   isEndless: false,
+  speedEffectTicks: 0,
 });
 
 const makeIdleState = () => ({

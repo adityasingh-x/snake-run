@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getLevelData, generateObstacles } from '../levelData';
+import { getLevelData, generateObstacles, getPortalPositions } from '../levelData';
 import { GRID_SIZE } from '../constants';
 import { INITIAL_SNAKE } from '../../game/constants';
 
@@ -162,6 +162,52 @@ describe('level metadata', () => {
     for (let i = 1; i <= 10; i++) {
       const data = getLevelData(i);
       expect(data.id).toBe(i);
+    }
+  });
+});
+
+describe('wrap-around', () => {
+  it('Level 5 has wrapAround: true', () => {
+    const data = getLevelData(5);
+    expect(data.wrapAround).toBe(true);
+  });
+
+  it('all other levels have wrapAround false or undefined', () => {
+    for (let i = 1; i <= 10; i++) {
+      if (i === 5) continue;
+      const data = getLevelData(i);
+      expect(data.wrapAround).toBeFalsy();
+    }
+  });
+});
+
+describe('portals', () => {
+  it('Level 7 has exactly one portal pair', () => {
+    const data = getLevelData(7);
+    expect(data.portals).toBeDefined();
+    expect(data.portals).toHaveLength(1);
+    expect(data.portals![0]).toHaveLength(2);
+  });
+
+  it('all other levels have no portals', () => {
+    for (let i = 1; i <= 10; i++) {
+      if (i === 7) continue;
+      const data = getLevelData(i);
+      expect(data.portals).toBeUndefined();
+    }
+  });
+
+  it('getPortalPositions(7) returns exactly 2 positions', () => {
+    const positions = getPortalPositions(7);
+    expect(positions).toHaveLength(2);
+    expect(positions).toContainEqual({ x: 2, y: 4 });
+    expect(positions).toContainEqual({ x: 16, y: 15 });
+  });
+
+  it('getPortalPositions returns [] for all non-portal levels', () => {
+    for (let i = 1; i <= 10; i++) {
+      if (i === 7) continue;
+      expect(getPortalPositions(i)).toEqual([]);
     }
   });
 });

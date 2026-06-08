@@ -85,6 +85,16 @@
   text-shadow: var(--shadow-neon-gold);
 }
 
+.slowBadge .label {
+  color: var(--color-food-slow);
+}
+
+.slowTicks {
+  color: var(--color-food-slow);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+}
+
 @media (max-width: 600px) {
   .scoreboard {
     flex-wrap: wrap;

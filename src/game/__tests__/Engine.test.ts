@@ -273,7 +273,7 @@ describe('Engine', () => {
           { x: 8, y: 10 },
           { x: 7, y: 10 },
         ],
-        food: { x: 10, y: 10 },
+        food: { position: { x: 10, y: 10 }, type: 'normal', timer: -1 },
         nextDirection: 'RIGHT',
       });
       engine.testDispatch({ type: 'MOVE_SNAKE' });
@@ -294,7 +294,7 @@ describe('Engine', () => {
           { x: 8, y: 10 },
           { x: 7, y: 10 },
         ],
-        food: { x: 10, y: 10 },
+        food: { position: { x: 10, y: 10 }, type: 'normal', timer: -1 },
         nextDirection: 'RIGHT',
       });
       engine.testDispatch({ type: 'MOVE_SNAKE' });
@@ -328,7 +328,7 @@ describe('Engine', () => {
           { x: 8, y: 10 },
           { x: 7, y: 10 },
         ],
-        food: { x: 10, y: 10 },
+        food: { position: { x: 10, y: 10 }, type: 'normal', timer: -1 },
         nextDirection: 'RIGHT',
         obstacles: [],
       });
@@ -343,13 +343,64 @@ describe('Engine', () => {
         const foodX = 12 + i;
         engine.setState({
           ...engine.getState(),
-          food: { x: foodX, y: 10 },
+          food: { position: { x: foodX, y: 10 }, type: 'normal', timer: -1 },
           snake: [{ x: foodX - 1, y: 10 }, { x: foodX - 2, y: 10 }, { x: foodX - 3, y: 10 }, { x: foodX - 4, y: 10 }],
         });
         engine.testDispatch({ type: 'MOVE_SNAKE' });
         expect(engine.getState().status).toBe('playing');
         expect(engine.getState().isEndless).toBe(true);
       }
+    });
+  });
+
+  describe('speed effect', () => {
+    it('engine state has speedEffectTicks field', () => {
+      engine.setState({
+        ...getInitialState(),
+        speedEffectTicks: 5,
+      });
+      expect(engine.getState().speedEffectTicks).toBe(5);
+    });
+
+    it('slows the game loop when speedEffectTicks > 0', () => {
+      // Level 5 speed = 115ms; with multiplier = 115 * 1.3 = 149.5ms
+      // Count state changes (each MOVE_SNAKE triggers a state change)
+
+      // Without speed effect
+      engine.startAtLevel(5);
+      engine.setState({
+        ...engine.getState(),
+        snake: [{ x: 5, y: 10 }, { x: 4, y: 10 }, { x: 3, y: 10 }],
+        food: { position: { x: 15, y: 15 }, type: 'normal', timer: -1 },
+        obstacles: [],
+      });
+      let moveCountWithout = 0;
+      const unsubWithout = engine.subscribe(() => { moveCountWithout += 1; });
+      for (let i = 0; i < 30; i++) {
+        vi.advanceTimersByTime(50);
+      }
+      unsubWithout();
+
+      // Reset and test with speed effect
+      engine.destroy();
+      engine = new Engine();
+      engine.startAtLevel(5);
+      engine.setState({
+        ...engine.getState(),
+        speedEffectTicks: 100,
+        snake: [{ x: 5, y: 10 }, { x: 4, y: 10 }, { x: 3, y: 10 }],
+        food: { position: { x: 15, y: 15 }, type: 'normal', timer: -1 },
+        obstacles: [],
+      });
+      let moveCountWith = 0;
+      const unsubWith = engine.subscribe(() => { moveCountWith += 1; });
+      for (let i = 0; i < 30; i++) {
+        vi.advanceTimersByTime(50);
+      }
+      unsubWith();
+
+      // With the slow effect, fewer ticks fire
+      expect(moveCountWith).toBeLessThan(moveCountWithout);
     });
   });
 });

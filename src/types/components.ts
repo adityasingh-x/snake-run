@@ -1,12 +1,14 @@
-import type { Position, Direction } from './game';
+import type { Position, Direction, Food, FoodType } from './game';
 import type { Achievement } from '../game/achievements';
 import type { Stats } from '../game/statistics';
 
 export interface BoardProps {
   snake: Position[];
   direction: Direction;
-  food: Position;
+  food: Food;
   obstacles: Position[];
+  wrapAround?: boolean;
+  portals?: Position[];
 }
 
 export interface CellProps {
@@ -14,8 +16,9 @@ export interface CellProps {
   y: number;
   isSnakeHead: boolean;
   isSnakeBody: boolean;
-  isFood: boolean;
+  foodType?: FoodType;
   isObstacle: boolean;
+  isPortal?: boolean;
   direction?: Direction;
 }
 
@@ -27,6 +30,7 @@ export interface ScoreBoardProps {
   foodEaten: number;
   foodRequired: number;
   isEndless?: boolean;
+  speedEffectTicks?: number;
 }
 
 export interface GameOverProps {

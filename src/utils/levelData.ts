@@ -1,1 +1,1 @@
-export { LEVELS as default, getLevelData, generateObstacles } from '../game';
+export { LEVELS as default, getLevelData, generateObstacles, getPortalPositions } from '../game';

@@ -5,4 +5,6 @@ export type {
   Level,
   GameState,
   GameAction,
+  FoodType,
+  Food,
 } from '../game/types';

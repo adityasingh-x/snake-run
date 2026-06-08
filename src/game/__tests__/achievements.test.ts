@@ -5,7 +5,7 @@ import type { GameState } from '../types';
 function makeState(overrides: Partial<GameState> = {}): GameState {
   return {
     snake: [{ x: 10, y: 10 }],
-    food: { x: 5, y: 5 },
+    food: { position: { x: 5, y: 5 }, type: 'normal', timer: -1 },
     direction: 'RIGHT',
     nextDirection: 'RIGHT',
     status: 'idle',
@@ -16,6 +16,7 @@ function makeState(overrides: Partial<GameState> = {}): GameState {
     lastUnlockedLevel: 1,
     foodEaten: 0,
     isEndless: false,
+    speedEffectTicks: 0,
     ...overrides,
   };
 }

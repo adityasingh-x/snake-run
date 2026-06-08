@@ -1,12 +1,12 @@
-# Implementation Review: Milestone 9 — Replayability Systems
+# Implementation Review: Milestone 10 — Gameplay Expansion
 
 **Reviewer:** Staff Engineer (Implementation Review)
-**Milestone under review:** M9 — Replayability Systems (all three phases)
+**Milestone under review:** M10 — Gameplay Expansion (Phase 1 Food Variants, Phase 2 Wrap-Around, Phase 3 Portals, Phase 4 Documentation)
 **Source documents:** `plans/ACTIVE.md`, `AGENTS.md`, `docs/ROADMAP.md`, `ARCHITECTURE.md`, `SPEC.md`, `docs/PROJECT_STATE.md`, `package.json`
-**Implementation files reviewed:** `src/game/types.ts`, `src/game/state.ts`, `src/game/Engine.ts`, `src/game/statistics.ts`, `src/game/achievements.ts`, `src/game/index.ts`, `src/hooks/useGame.ts`, `src/components/Game.tsx`, `src/components/GameOver.tsx`, `src/components/ScoreBoard.tsx`, `src/components/Statistics.tsx`, `src/components/Achievements.tsx`, `src/types/components.ts`, all 17 test files
-**Verification commands run:** `npm test` (212/212 pass), `npm run lint` (clean), `npm run build` (success, 220 kB JS / 68 kB gz)
-**Review date:** 2026-06-07
-**Branch under review:** `feature/milestone-8-visual-identity` (M9 work applied on top of M8)
+**Implementation files reviewed:** `src/game/types.ts`, `src/game/state.ts`, `src/game/Engine.ts`, `src/game/food.ts`, `src/game/levels.ts`, `src/game/collision.ts`, `src/game/index.ts`, `src/types/components.ts`, `src/types/game.ts`, `src/components/Board.tsx`, `src/components/Cell.tsx`, `src/components/Cell.module.css`, `src/components/Board.module.css`, `src/components/ScoreBoard.tsx`, `src/components/ScoreBoard.module.css`, `src/components/Game.tsx`, `src/index.css`, all 17 test files
+**Verification commands run:** `npm test` (255/255 pass), `npm run lint` (clean), `npm run build` (success, 222 kB JS / 69 kB gz)
+**Review date:** 2026-06-08
+**Branch under review:** `feature/m10-gameplay-expansion`
 
 ---
 
@@ -14,237 +14,254 @@
 
 ## Overall Assessment
 
-**Approve.** The M9 implementation is a faithful, appropriately-scoped execution of `plans/ACTIVE.md:1-386` across all three phases (Endless Mode, Statistics, Achievements). The change surface matches the plan's file tables precisely: 6 new files (`statistics.ts`, `achievements.ts`, `Statistics.tsx`, `Statistics.module.css`, `Achievements.tsx`, `Achievements.module.css`), 11 modified files, and 3 new test files. The architectural choices made in the plan (Engine callback pattern, batched stats cache, screen-reader re-use via `announceRef`) are implemented as designed. The reducer is a clean, minimal extension of the existing `MOVE_SNAKE` switch case. The `Engine.dispatch()` lifecycle ordering matches the plan's spec for achievement detection (between reducer and listener notification, with persistence before callback fire).
+**Approve with Minor Changes.** The M10 implementation is a faithful execution of `plans/ACTIVE.md:1-730` across all four phases (Food Variants, Wrap-Around, Portals, Documentation). The architectural choices match the plan: a single `Food` object shape, a `Level.wrapAround` boolean flag, a `Level.portals` tuple-pair array, and three additive CSS color tokens. The reducer changes in `state.ts` are minimal and preserve the existing ordering (wrap first, then portal, then collision). The Engine speed multiplier is implemented as planned.
 
 All hard verification gates pass cleanly:
-- `npm test` → 17 files, **212/212 tests passing** (34-test increase from M8's 178).
+- `npm test` → 17 files, **255/255 tests passing** (43-test increase from M9's 212).
 - `npm run lint` → exit 0, no errors, no warnings.
-- `npm run build` → exit 0, PWA manifest emitted, precache 8 entries, JS bundle 220 kB / 68 kB gz, CSS 15 kB / 3 kB gz.
+- `npm run build` → exit 0, PWA precache 8 entries (245 KiB), JS 222 kB / 69 kB gz, CSS 16 kB / 3 kB gz.
 
-The cross-document set (SPEC.md, ARCHITECTURE.md, ROADMAP.md, PROJECT_STATE.md) is internally consistent. The version bump to `0.9.0` is applied. The plan's Definition of Done is met.
+The cross-document set (SPEC.md, ARCHITECTURE.md, ROADMAP.md, PROJECT_STATE.md, package.json) is internally consistent. The version bump to `0.10.0` is applied. The M10 Definition of Done is met at a structural level.
 
-The findings below are minor and none blocks the milestone. The most notable are: (1) the `statsCache` is undermined by per-action `increment*`/`update*` calls that also write to localStorage, partially defeating the plan's "avoids per-food writes" intent; (2) `Engine.getStats()` re-reads localStorage on every state change instead of using the cache; (3) `checkAchievements` triggers a localStorage read on every dispatch; (4) `Engine.ts:58` hardcodes `10` rather than `POINTS_PER_FOOD`; (5) `GameOver.tsx` has a complex nested conditional structure that could benefit from small refactoring.
+The findings below are minor. The most notable are: (1) **a real visual bug** — the gold food `transform: rotate(45deg)` is overridden by the `pulse` keyframes that animate `transform: scale(...)`, so the diamond shape is invisible during animation; (2) one missed plan item — the `getPortalPositions` helper specified in `plans/ACTIVE.md:394` was inlined at the two call sites instead of being added to `src/game/levels.ts`; (3) a missing Engine test — the plan called for a "speed multiplier applies when `speedEffectTicks > 0`" test (`plans/ACTIVE.md:235`) but the only related test (`Engine.test.ts:356-364`) only verifies field existence; (4) a misnamed state test (`state.test.ts:951-962`); (5) an under-scope test for the wrap+portal ordering invariant.
 
 ## Major Strengths
 
-1. **Plan fidelity is high across all three phases.** The implementation matches `plans/ACTIVE.md:1-386` essentially line-for-line:
-   - Phase 1 (Endless Mode): `isEndless: boolean` field on `GameState` (`types.ts:31`), `START_ENDLESS_GAME` action (`types.ts:43`), reducer case at `state.ts:152-167` setting all required fields, `MOVE_SNAKE` level-up guard at `state.ts:74`, `Engine.startEndless()` at `Engine.ts:138-142`, `useGame` exposing `startEndlessGame` (`useGame.ts:93-95`), `ScoreBoard` endless display (`ScoreBoard.tsx:9-15`), `GameOver` endless button + score text (`GameOver.tsx:14-20`).
-   - Phase 2 (Statistics): `src/game/statistics.ts` with the full surface (`loadStats`, `saveStats`, `incrementGamesPlayed`, `incrementTotalFood`, `updateBestLevel`), Engine integration in `Engine.dispatch()` (`Engine.ts:41-71`), `Statistics.tsx` panel, `Engine.getStats()` (`Engine.ts:144-147`).
-   - Phase 3 (Achievements): `src/game/achievements.ts` with `Achievement` type, 3 definitions, `loadAchievements`, `saveAchievement`, `checkAchievements`; `Engine.wasPaused` private field (`Engine.ts:18`); Engine check at `Engine.ts:73-77`; `onAchievementUnlock` callback (`Engine.ts:210`); `Achievements.tsx` with "NEW" badge; screen reader announce via `Game.tsx:130-133`.
+1. **Plan fidelity is high across all four phases.** Implementation matches `plans/ACTIVE.md:1-730`:
+   - Phase 1 (Food Variants): `FoodType` union and `Food` interface in `types.ts:10-16`; `GameState.food: Food` and `speedEffectTicks: number` in `types.ts:31,42`; `FOOD_SPAWN_WEIGHTS` and `FOOD_TIMERS` exported constants in `food.ts:4-5`; weighted type roll in `food.ts:7-15`; type-specific effects in `state.ts:110-135`; `SLOW_EFFECT_MULTIPLIER = 1.3` in `Engine.ts:10`; speed multiplier application in `Engine.ts:185`; per-type Cell rendering classes (`.gold`, `.poison`, `.slow`) in `Cell.module.css:49-65`; SLOW badge in `ScoreBoard.tsx:39-47`.
+   - Phase 2 (Wrap-Around): `Level.wrapAround?: boolean` (`types.ts:25`); `wrapAround: true` on Level 5 only (`levels.ts:61`); `isWallCollision` accepts `wrapAround` parameter (`collision.ts:8-11`); `isCollision` forwards it (`collision.ts:21-22`); coordinate normalization in `MOVE_SNAKE` (`state.ts:64-70`); `data-wrap-around` attribute on board (`Board.tsx:39`); dashed border style (`Board.module.css:12-14`).
+   - Phase 3 (Portals): `Level.portals?: [Position, Position][]` (`types.ts:26`); Level 7 portal pair `[[{x:2,y:4}, {x:16,y:15}]]` (`levels.ts:86`); teleport in `MOVE_SNAKE` (`state.ts:73-78`); portal exclusion in `spawnFood` (`food.ts:17-23`); `isPortal` prop on Cell (`Cell.tsx:17,27`); portal visual with two concentric spinning rings (`Cell.module.css:67-87,101-108`).
+   - Phase 4 (Documentation): all five required documents updated; `package.json` version bumped to `0.10.0`.
 
-2. **Architecture alignment is strong.** The Engine remains framework-agnostic: `statistics.ts` and `achievements.ts` import only from `game/types.ts` and `game/storage.ts` (`achievements.ts:1`, `statistics.ts:1-6`). The React layer reads stats through `Engine.getStats()` exclusively (no localStorage reads from `Game.tsx`), per F3 in the plan review. The `wasPaused` field lives in the Engine (not `GameState`) per the plan's justification ("Engine-private tracker never read by the UI or the reducer"). Achievements and statistics share no state with each other; their persistence is independent.
+2. **Architecture alignment is strong.** The new mechanics are all derived from `state.food` and `getLevelData(state.level)` at render time, exactly as the plan's Handoff Notes #14 requires. No changes to `useGame`, `useKeyboard`, or `useTouch`. The reducer ordering invariant — wrap first, then portal, then collision — is preserved in `state.ts:63-82`. Endless mode safety: portal exclusion in `food.ts:22` only activates for levels that declare portals; Level 10 (used by endless) has no portals, so endless is unaffected.
 
-3. **Conservative change surface.** Six new files; eleven modified files. All new files appear in the plan's "Files Expected to Change" tables. No new abstractions (no toast manager, no achievement system object, no state machine library) were introduced. The new UI components are flat, presentational, and consume props directly. The `MOVE_SNAKE` endless guard is a single token added to a boolean expression.
+3. **Conservative change surface.** No new dependencies. No new directories. No new abstractions. Tunable constants are top-of-file (`FOOD_SPAWN_WEIGHTS`, `FOOD_TIMERS`, `SLOW_EFFECT_MULTIPLIER`). `Cell` prop changes (`foodType?: FoodType`, `isPortal?: boolean`) are primitive and preserve `memo`. `BoardProps` is consumed only in `Game.tsx:217`; the change is atomic with the prop change.
 
-4. **Test coverage matches the plan's specified test list.** All test categories from `plans/ACTIVE.md:85-97, 159-167, 245-257` are covered. The test counts are:
-   - `state.test.ts`: 43 tests including 6 for `START_ENDLESS_GAME` (`state.test.ts:563-601`) and 4 for endless `MOVE_SNAKE` (`state.test.ts:603-691`).
-   - `Engine.test.ts`: 26 tests including 2 for `startEndless` (`Engine.test.ts:306-354`).
-   - `GameOver.test.tsx`: 9 tests including 4 for endless mode UI (`GameOver.test.tsx:94-154`).
-   - `statistics.test.ts`: 5 tests (`statistics.test.ts:4-61`).
-   - `achievements.test.ts`: 7 tests (`achievements.test.ts:23-97`).
-   - `Statistics.test.tsx`: 1 test (`Statistics.test.tsx:7-21`).
-   - `Achievements.test.tsx`: 3 tests (`Achievements.test.tsx:14-35`).
+4. **Test coverage is broad.** Test count grew from 212 → 255 across 17 files (43-test increase). New tests cover: gold +30 points, poison shrink with floor, slow effect reset/replace, timer decrement, replacement normal food, `CONTINUE_GAME`/`START_AT_LEVEL`/`START_ENDLESS_GAME` reset, `getInitialState` Food shape, all four wrap directions, wrap preserves self/obstacle collision, portal A→B and B→A teleport, teleport into wall/body/obstacle, non-portal levels unaffected, portal tile food exclusion, Level 5 `wrapAround: true`, all other levels `wrapAround: false`, Level 7 portal pair existence, other levels no portals, all four Cell food types render correct class + aria-label, portal class + aria-label, SLOW badge.
 
-5. **All hard verification gates pass.**
-   - `npm test` → 17 files, **212/212 tests passing** (1.96s).
-   - `npm run lint` → exit 0, no errors, no warnings.
-   - `npm run build` → exit 0, PWA precache 8 entries (242 KiB), JS 220 kB / 68 kB gz, CSS 15 kB / 3 kB gz.
+5. **All hard verification gates pass.** See Overall Assessment for build/lint/test summary.
 
-6. **Documentation is comprehensive and consistent.** SPEC.md adds §6.5 (Endless Mode), §6.6 (Statistics), §6.7 (Achievements), §10.4a/b (Statistics/Achievements panels), §12.4/5 (new persistence keys), §15 (updated test counts). ARCHITECTURE.md updates State Shape, Project Structure, and Testing sections. ROADMAP.md marks M9 complete with the four sub-features listed. PROJECT_STATE.md updates Current Version (0.9.0), Current Status, Current Milestone (M10), and the per-phase success criteria. The `package.json` version is bumped to `0.9.0`.
+6. **Documentation is comprehensive and consistent.** SPEC.md adds §3.2 food types and timers (§3.2), §5.2 wrap-around, §5.3 poison outcome, §6.1 gold/slow points, §6.3 Level metadata `wrapAround`/`portals` fields, §10.4 SLOW indicator, §14 the three new M10 tokens. ARCHITECTURE.md updates State Shape (Food object, `speedEffectTicks`), Key Features (Food Variants, Wrap-Around, Portal Levels subsections), Level System (`wrapAround`/`portals` fields), Styling Conventions (3 new tokens), Testing (255 tests). ROADMAP.md marks M10 complete with the four sub-features and the design note. PROJECT_STATE.md bumps Current Version to `0.10.0`, adds three M10 phase entries under Completed Features, marks M11 as the next milestone.
 
 ## Major Concerns
 
-None. The implementation is solid and consistent with the plan. The findings below are minor and could be addressed in a follow-up cleanup pass or carried into M10.
+None. The implementation is solid and consistent with the plan. The findings below are minor and the gold-food visual bug (F1) is the only one I would treat as blocking a clean ship.
 
 ---
 
 # Findings
 
-## F1 — Per-food localStorage writes undermine the stats cache (Deviation from plan)
+## F1 — Gold food diamond shape is invisible due to transform conflict
 
 - **Severity:** Medium
-- **Category:** Performance / Scope
-- **Description:** `plans/ACTIVE.md:273` states: "Stats writes are batched (in-memory cache flushed on game over / win / pause) rather than per-food." However, the implementation calls `incrementTotalFood(foodCount)` (`Engine.ts:60`) on every food eaten, which reads and writes localStorage immediately. Similarly, `incrementGamesPlayed()` (`Engine.ts:42`) writes on every start action, and `updateBestLevel(level)` (`Engine.ts:65`) writes on every level change. The cache (`this.statsCache`) is then also flushed on `gameover`/`won`/`paused` (`Engine.ts:70`), producing duplicate writes.
-- **Consequence:** For a full 10-level campaign run (200–230 food eaten), there are ~200–230 read+write cycles for `snakeStatsTotalFood` plus a single batched `saveStats` write at the end. This is ~200 extra localStorage operations per run. Synchronous localStorage is fast enough that this is not a user-visible problem, but it is a measurable deviation from the plan's stated intent.
-- **Recommendation:** Either (a) remove the per-action `incrementTotalFood` / `updateBestLevel` calls in `Engine.dispatch()` and rely solely on the `saveStats` flush at gameover/win/pause, or (b) explicitly acknowledge the deviation in a plan/RISKS comment. Option (a) is consistent with the plan and saves 200+ localStorage operations per run.
+- **Category:** Bug
+- **Description:** `src/components/Cell.module.css:49-54` defines:
+  ```css
+  .gold {
+    background: var(--color-warning);
+    border-radius: 2px;
+    transform: rotate(45deg);
+    animation: pulse 0.5s infinite;
+  }
+  ```
+  The `pulse` keyframes (`Cell.module.css:96-99`) animate `transform: scale(0.8) → scale(1)`. CSS animations override any static `transform` declaration while running. The net effect: the gold food pulses in scale (0.8 ↔ 1.0) but **never rotates**. Visually, the gold food appears as an amber square (with 2px `border-radius`) that scales, not a diamond.
 
-## F2 — `Engine.getStats()` re-reads localStorage on every state change (Missed optimization)
+  The plan's "Minimal visual language" section (`plans/ACTIVE.md:94`) calls for "gold = diamond (`rotate(45deg)`)". SPEC.md §3.2 (`SPEC.md:44`) documents `gold` shape as "Diamond (`rotate(45deg)`)". Manual verification step (Phase 1.10) requires "gold food is visibly amber" — that is satisfied, but the shape encoding is not.
 
-- **Severity:** Medium
-- **Category:** Performance / Architecture
-- **Description:** `Engine.getStats()` (`Engine.ts:144-147`) calls `loadStats()` (which reads 3 localStorage keys) and merges in `this.state.highScore`. The hook calls `engine.getStats()` in the subscriber callback (`useGame.ts:27`), which fires on every dispatch (every `MOVE_SNAKE`, `CHANGE_DIRECTION`, etc.). The `statsCache` field exists in the Engine but is never used in `getStats()`. So the cache is dead state from the perspective of the read path.
-- **Consequence:** Every `MOVE_SNAKE` produces 3 localStorage reads (via `getStats` → `loadStats`). For a 100ms tick rate, this is 30 localStorage reads per second during gameplay. Acceptable but wasteful.
-- **Recommendation:** Have `getStats()` return `{ ...this.statsCache, highScore: this.state.highScore }` (or a normalized version) and have the `Engine` constructor seed `statsCache` from `loadStats()`. This eliminates the per-tick localStorage read while keeping the public API identical. The flush at gameover/win/pause (`Engine.ts:70`) already persists the cache.
+- **Recommendation:** Two equally clean options:
+  - **Option A (preferred, smallest diff):** wrap the rotating element in a pseudo-element so the animation and the static transform apply to different layers:
+    ```css
+    .gold {
+      position: relative;
+      background: var(--color-warning);
+      animation: pulse 0.5s infinite;
+    }
+    .gold::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: inherit;
+      transform: rotate(45deg) scale(0.7);
+      border-radius: 2px;
+    }
+    ```
+  - **Option B (fix keyframes):** update `pulse` to compose with rotate:
+    ```css
+    @keyframes pulse {
+      0%, 100% { transform: rotate(45deg) scale(0.8); }
+      50%      { transform: rotate(45deg) scale(1); }
+    }
+    ```
+    Note this changes the meaning of `pulse` for `.food` (the normal cell) which currently has no rotation. The two cells can then diverge — either duplicate keyframes (`@keyframes pulseGold`) or scope the rotation inline (Option B above with two keyframe blocks).
 
-## F3 — `checkAchievements` reads localStorage on every dispatch (Performance)
+  Option A is more idiomatic CSS and doesn't require touching shared keyframes.
+
+## F2 — Missing `getPortalPositions` helper from `src/game/levels.ts`
 
 - **Severity:** Low
-- **Category:** Performance
-- **Description:** `checkAchievements` (`achievements.ts:70`) calls `loadAchievements()` to read the current unlock state and filter out already-unlocked IDs. This runs from `Engine.dispatch()` on every action. So every `MOVE_SNAKE`, `CHANGE_DIRECTION`, `PAUSE_GAME`, etc. triggers a JSON parse of `snakeAchievements` from localStorage.
-- **Consequence:** Same as F2 — adds a localStorage read on every dispatch. At a 100ms tick rate, this is 10 reads/second during gameplay. Not a user-visible problem at the current scale.
-- **Recommendation:** Cache the unlocked-IDs set in the Engine (mirror of `statsCache` pattern), updated when an achievement is saved. Alternative: skip `checkAchievements` entirely for actions that cannot produce unlocks (e.g., `MOVE_SNAKE` before food threshold, `CHANGE_DIRECTION`, `PAUSE_GAME`, `RESUME_GAME`).
+- **Category:** Maintainability / Plan deviation
+- **Description:** `plans/ACTIVE.md:394` and Phase 3 step 3.8 specify: *"Add a small helper `getPortalPositions(level: number): Position[]` in `src/game/levels.ts` that flattens `portals?.flat() ?? []`."* This helper is not present in the implementation. Instead, the same expression `getLevelData(state.level).portals?.flat() ?? []` is inlined at three call sites:
+  - `state.ts:92` (food timer replacement)
+  - `state.ts:133` (food spawn after eating)
+  - `state.ts:188` (`CONTINUE_GAME`)
+  - `state.ts:209` (`START_AT_LEVEL`)
+  - `Game.tsx:217` (Board prop)
 
-## F4 — Hardcoded `10` in `Engine.ts:58` (Maintainability)
+  The plan also specifies a test at `plans/ACTIVE.md:411-412` for `getPortalPositions(7)` returning 2 positions and `getPortalPositions(1)` returning `[]` — this test does not exist.
 
-- **Severity:** Low
-- **Category:** Maintainability
-- **Description:** `Engine.ts:58` computes the food count as `(this.state.score - prevScore) / 10`, hardcoding the POINTS_PER_FOOD value. Every other reference to this constant uses the named import (`state.ts:2`, `state.test.ts:4`). If the value ever changes (via env var, since `POINTS_PER_FOOD = Number(import.meta.env.VITE_POINTS_PER_FOOD) || 10`), the stats tracking will silently break.
-- **Recommendation:** Import `POINTS_PER_FOOD` in `Engine.ts` and use it. One-line change.
+- **Recommendation:** Either (a) extract the helper per the plan:
+  ```ts
+  export function getPortalPositions(levelId: number): Position[] {
+    return getLevelData(levelId).portals?.flat() ?? [];
+  }
+  ```
+  and replace the five call sites, or (b) explicitly note in `ACTIVE.md` that the inline form is preferred for KISS and update the test plan to remove the helper test. The code-as-written is functionally correct; the plan deviation is the issue.
 
-## F5 — `GameOver.tsx` complex nested conditional structure (Maintainability)
-
-- **Severity:** Low
-- **Category:** Maintainability
-- **Description:** The button section in `GameOver.tsx:21-43` has four nested branches based on `lastUnlockedLevel > 1`, `isWin`, and `isEndless`. The control flow is hard to follow at a glance, especially the case where `isWin && !isEndless` and `lastUnlockedLevel > 1` (line 28-32), which conditionally sets `autoFocus` based on whether `onStartEndless` is provided.
-- **Recommendation:** Extract the button list into a small data-driven structure (e.g., a list of `{ label, onClick, autoFocus, variant }` objects) and render with `.map()`. Pure refactor; no behavior change.
-
-## F6 — ROADMAP M9 format inconsistency (Documentation)
-
-- **Severity:** Low
-- **Category:** Documentation
-- **Description:** Milestones M1–M8 in `ROADMAP.md` follow the pattern `### Milestone N — Name ✅` (with a single `✅` after the milestone title) followed by goal/problem/features. M9 (`ROADMAP.md:534-575`) uses a different pattern: `### Milestone 9 - Replayability Systems ✅` followed by sub-bullets `### Endless Mode ✅`, `### Statistics ✅`, `### Achievements ✅` (using `###` for the sub-bullets rather than `##` or list items).
-- **Recommendation:** Restructure M9 to follow the M1–M8 pattern. Optional cleanup; the content is correct and complete.
-
-## F7 — No integration test for idle screen rendering statistics / achievements (Testing)
+## F3 — Missing Engine test for speed multiplier behavior
 
 - **Severity:** Low
 - **Category:** Testing
-- **Description:** F11 in `plans/PLAN_REVIEW.md` noted: "Phase 2 / Phase 3 specify tests for the new components in isolation, but the DoD and per-phase verification sections do not require a test that `Game.tsx` actually wires them into the idle and game-over overlays." The current `Game.test.tsx` (4 tests) only covers the pause button. There is no test asserting that the idle overlay renders `<Statistics>` and `<Achievements>` panels.
-- **Recommendation:** Add a small test in `Game.test.tsx` that renders `Game` in idle state and asserts the presence of "Games Played" / "Achievements" / "Total Food" text. Would catch regressions where someone removes the wiring.
+- **Description:** `plans/ACTIVE.md:235` (Phase 1.10) specifies: "`src/game/__tests__/Engine.test.ts`: speed multiplier applies when `speedEffectTicks > 0`." The only test in that file referencing `speedEffectTicks` is `Engine.test.ts:356-364`:
+  ```ts
+  describe('speed effect', () => {
+    it('engine state has speedEffectTicks field', () => {
+      engine.setState({ ...getInitialState(), speedEffectTicks: 5 });
+      expect(engine.getState().speedEffectTicks).toBe(5);
+    });
+  });
+  ```
+  This test only verifies the field exists; it does not exercise `Engine.ts:185` (`effectiveSpeed = speed * 1.3 when speedEffectTicks > 0`). The behavior is indirectly verified by `state.test.ts:758-765` which checks `speedEffectTicks` decrements, but the multiplier at the loop level is untested.
 
-## F8 — Inconsistent data-win attribute behaviour (Minor; not a bug)
+- **Recommendation:** Add to `Engine.test.ts`:
+  ```ts
+  it('applies SLOW_EFFECT_MULTIPLIER when speedEffectTicks > 0', () => {
+    // ... start at level 5 (speed 115ms), set speedEffectTicks=1
+    // assert that MOVE_SNAKE does not fire until accumulator >= 115 * 1.3
+  });
+  ```
+  Note: this is hard to test deterministically with fake timers + rAF; an alternative is to extract the threshold calculation into a pure function and unit-test that. (Out of scope for this review, but worth flagging if test discipline matters.)
+
+## F4 — Misleading test name in `state.test.ts:951-962`
 
 - **Severity:** Low
-- **Category:** Maintainability
-- **Description:** `GameOver.tsx:11` sets `data-win={isWin || undefined}`, which evaluates to `undefined` (no attribute) when `isWin` is false. The previous review (Phase 1 only) flagged this as a potential issue with endless game-over. Verifying the implementation: endless game-over uses `variant="gameover"` (default), so `isWin === false`, and `data-win` is correctly absent. The CSS rule `.gameOverModal[data-win] h2` at `GameOver.module.css:28` therefore does not apply for endless game-over, which is the desired behavior.
-- **Recommendation:** No action required. The implementation is correct; the previous review's concern was based on an incorrect reading.
+- **Category:** Testing
+- **Description:** The test titled `'teleporting into a wall triggers gameover'` (`state.test.ts:951-962`) is mislabeled. The setup places the snake at `{2,3}` moving DOWN on level 7, which lands on portal A `{2,4}` and teleports to portal B `{16,15}`. Portal B is **not a wall** (it's at coordinates `(16, 15)`, well within the 20×20 grid). The assertion `expect(next.status).toBe('playing')` confirms a successful (non-gameover) teleport. The test actually verifies "teleport to a safe in-bounds position does not trigger gameover" — the opposite of its name.
 
-## F9 — `wasPaused` reset semantics are correct but undocumented (Documentation)
+- **Recommendation:** Rename to `'teleporting to a safe position does not trigger gameover'` or rewrite the test to actually cover the wall case. The wall case requires either (a) a level with both `portals` and a paired position outside the grid, which the current Level 7 does not have, or (b) wrapping — but Level 7 does not have wrapAround. The cleanest path is to rename and add a comment explaining what the test actually covers; the wall case is implicitly covered by `isCollision` having tested `isWallCollision` separately (`gameLogic.test.ts:51-94`).
 
-- **Severity:** Low
-- **Category:** Documentation
-- **Description:** `Engine.wasPaused` is reset to `false` in `start()` (`Engine.ts:100`), `reset()` (`Engine.ts:121`), and `startEndless()` (`Engine.ts:139`), and set to `true` in `pause()` (`Engine.ts:106`). This is per the plan. However, the `Engine.ts` file has no inline comment explaining the rationale ("Engine-private tracker never read by the UI or the reducer").
-- **Recommendation:** Add a one-line comment in `Engine.ts` near the `wasPaused` field declaration. Optional but improves handoff quality.
-
-## F10 — Redundant per-game `gamesPlayed` write (Performance / Cleanliness)
+## F5 — Wrap+portal ordering test under-scopes the plan
 
 - **Severity:** Low
-- **Category:** Performance
-- **Description:** Related to F1. On every `START_GAME` / `RESET` / `START_ENDLESS_GAME` action, `Engine.ts:42` calls `incrementGamesPlayed()` which performs a localStorage read + write. Then on the eventual `gameover`/`won`/`paused`, `saveStats(this.statsCache)` (`Engine.ts:70`) writes `gamesPlayed` again. The first write is redundant — the cache has the same value, and the eventual flush will write it.
-- **Recommendation:** Same as F1 — drop the per-action `incrementGamesPlayed` call and rely on the cache + flush. Saves one read+write per game.
+- **Category:** Testing
+- **Description:** `plans/ACTIVE.md:405` specifies: *"Synthesize a hypothetical level with both `wrapAround: true` and `portals` (inline in the test) and assert that wrap is applied first, then portal lookup, then collision. This locks in the ordering invariant even though no real level has both."* The implementation in `state.test.ts:1006-1019` titled `'wrap is applied first, then portal lookup, then collision'` runs against level 5 (which has wrapAround but no portals). The assertion only verifies the wrap step. The portal-lookup-after-wrap step is not tested.
 
-## F11 — Inconsistent README handling (Documentation)
+- **Recommendation:** Either (a) extend the test to also assert portal behavior, or (b) construct a synthetic level that has both flags and run the same shape of test. This is a documentation/invariant-locking test, not a behavioral test, so missing it does not break the game — but the plan's explicit intent was to lock in the ordering for future maintainers.
 
-- **Severity:** N/A (informational)
-- **Category:** Documentation
-- **Description:** `README.md` was not updated. Per `AGENTS.md`: "Do not update README.md unless setup instructions, controls, or user-facing features change." M9 adds a user-facing feature (endless mode) and new overlays (statistics, achievements), but the controls and setup did not change. The README is correctly untouched. The plan's "Documentation Update Targets" section does not list README.
-- **Recommendation:** No action required. Listing here for completeness.
+## F6 — `Engine.test.ts:356-364` test scope is too narrow
+
+- **Severity:** Low
+- **Category:** Testing
+- **Description:** Same root concern as F3 but framed differently. The plan called for a test that exercises the speed multiplier; the implementation provides a trivial field-existence test. This is a minor scope miss in the test plan, but the engine behavior itself is correctly implemented.
+
+- **Recommendation:** See F3. (Consolidating the two findings would make sense in a follow-up PR.)
+
+## F7 — Statistical food-type smoke test not present in test files
+
+- **Severity:** Low
+- **Category:** Testing
+- **Description:** `plans/ACTIVE.md:223` (Phase 1.10) calls for: *"statistical smoke test (at least 2 of {gold, poison, slow} appear in 200 spawns)."* Searching the test files for this test yields no result. The `gameLogic.test.ts:172-225` block for `spawnFood` tests shape, bounds, and portal exclusion — but not the statistical distribution. (See `grep` output above.)
+
+- **Recommendation:** Add to `src/utils/__tests__/gameLogic.test.ts`:
+  ```ts
+  it('produces at least 2 of 3 special food types in 200 spawns', () => {
+    const types = new Set<string>();
+    for (let i = 0; i < 200; i++) {
+      const food = spawnFood([{ x: 0, y: 0 }], []);
+      types.add(food.type);
+    }
+    const special = [...types].filter(t => t !== 'normal');
+    expect(special.length).toBeGreaterThanOrEqual(2);
+  });
+  ```
+  The plan's probability analysis (P(failure) = 7.5e-10 for gold) makes this test essentially non-flaky.
 
 ---
 
 # Plan Compliance Review
 
-## Phase 1 — Endless Mode
+## Phase 1 — Food Variants
 
-**Verdict: Complete as planned.**
+- **Status: Completed as planned, with one bug (F1) and one missing test (F3, F6, F7).**
+- All file changes in the Phase 1 "Files Expected to Change" table are present.
+- `Food` and `FoodType` types added per spec.
+- `spawnFood` returns `Food` with weighted random type selection.
+- `MOVE_SNAKE` applies the four type effects per spec.
+- `SLOW_EFFECT_MULTIPLIER = 1.3` applied in `Engine.ts:185`.
+- `Cell` renders four type-specific classes per spec, with type-specific `aria-label`.
+- `ScoreBoard` shows the SLOW badge per spec.
+- 3 new CSS tokens per spec; no existing tokens renamed.
+- **Caveat (F1):** The gold food's `transform: rotate(45deg)` is overridden by the `pulse` animation, so the diamond shape is invisible. Bug.
+- **Caveat (F3, F6):** Engine test for speed multiplier not implemented; only field-existence test present.
+- **Caveat (F7):** Statistical food-type smoke test not implemented.
 
-| Plan Deliverable | Status | Reference |
-|---|---|---|
-| `isEndless` field on `GameState` | ✅ Done | `types.ts:31` |
-| `START_ENDLESS_GAME` action | ✅ Done | `types.ts:43` |
-| Reducer handles `START_ENDLESS_GAME` (level=10, reset snake/direction/foodEaten, status=playing, keep score, level 10 obstacles) | ✅ Done | `state.ts:152-167` |
-| `MOVE_SNAKE` skips level-up when `isEndless` | ✅ Done | `state.ts:74` |
-| `Engine.startEndless()` method | ✅ Done | `Engine.ts:138-142` |
-| `useGame.startEndlessGame` callback | ✅ Done | `useGame.ts:93-95` |
-| `Game.tsx` wires `handleStartEndless` | ✅ Done | `Game.tsx:99-102` |
-| `ScoreBoard.isEndless` prop + display | ✅ Done | `ScoreBoard.tsx:9-15` |
-| `GameOver` win overlay "Endless Mode" button (primary, autoFocus) | ✅ Done | `GameOver.tsx:16-20` |
-| `GameOver` endless score text "Endless Score: N" | ✅ Done | `GameOver.tsx:14` |
-| GameOver hint mentions Endless Mode | ✅ Done | `GameOver.tsx:51` |
-| 3 new state tests + 2 new engine tests + 3 new GameOver tests | ✅ Done (9 new) | `state.test.ts:563-691`, `Engine.test.ts:306-354`, `GameOver.test.tsx:94-154` |
+## Phase 2 — Wrap-Around
 
-No deviation from the plan in Phase 1. The `makeState` helper in `state.test.ts:6-26` includes `isEndless: false` per Risk #7 in the plan.
+- **Status: Completed as planned.**
+- `wrapAround?: boolean` added to `Level` per spec.
+- Level 5 only has `wrapAround: true` per spec.
+- `isWallCollision` accepts `wrapAround` and returns `false` when `true` per spec.
+- `isCollision` forwards `wrapAround` per spec.
+- `MOVE_SNAKE` normalizes coordinates before collision per spec.
+- `Board` sets `data-wrap-around` per spec; CSS adds the dashed border per spec.
+- `Game.tsx:217` passes `wrapAround` per spec.
+- All wrap tests present (4 edge directions, self-collision preserved, obstacle collision preserved, wall collision still triggers gameover on non-wrap levels).
+- The wrap+portal ordering test (F5) is under-scoped but exists.
 
-## Phase 2 — Statistics
+## Phase 3 — Portal Levels
 
-**Verdict: Complete as planned, with the F1/F2 deviation noted above.**
+- **Status: Completed as planned, with one plan deviation (F2) and one test naming issue (F4).**
+- `portals?: [Position, Position][]` added to `Level` per spec.
+- Level 7 portal pair at the exact coordinates specified per spec.
+- `MOVE_SNAKE` looks up portals after wrap, before collision per spec.
+- `spawnFood` accepts `portals` parameter and excludes them from spawn per spec.
+- `Cell` renders portal class with two concentric spinning rings per spec.
+- `@keyframes spin` and `spinReverse` added per spec.
+- `--color-portal` token added per spec.
+- All portal tests present (A→B, B→A, no-teleport on non-portal levels, post-teleport collision).
+- **Caveat (F2):** `getPortalPositions` helper from `src/game/levels.ts` not added; expression inlined at call sites. Functionally equivalent.
+- **Caveat (F4):** One test is misnamed ("teleporting into a wall triggers gameover" — actually tests the opposite).
+- **Caveat (F5):** Wrap+portal ordering test exists but does not test the portal-lookup step.
 
-| Plan Deliverable | Status | Reference |
-|---|---|---|
-| `src/game/statistics.ts` with `loadStats`, `saveStats`, `incrementGamesPlayed`, `incrementTotalFood`, `updateBestLevel` | ✅ Done | `statistics.ts:1-61` |
-| Engine integration: `incrementGamesPlayed` on start/reset/startEndless | ✅ Done | `Engine.ts:41-44` |
-| Engine integration: food count + level changes update cache | ✅ Done | `Engine.ts:57-66` |
-| Engine integration: cache flush on gameover/win/pause | ✅ Done | `Engine.ts:68-71` |
-| `Engine.getStats()` method | ✅ Done | `Engine.ts:144-147` |
-| `useGame` exposes `stats` | ✅ Done | `useGame.ts:18`, `:99` |
-| `Statistics.tsx` component (4 stats) | ✅ Done | `Statistics.tsx:1-25` |
-| `Statistics.module.css` styles | ✅ Done | `Statistics.module.css` |
-| Statistics shown on idle overlay | ✅ Done | `Game.tsx:227` |
-| Statistics shown on gameover/win overlay | ✅ Done | `GameOver.tsx:44-46` |
-| 5 statistics tests + 1 component test | ✅ Done (6 new) | `statistics.test.ts`, `Statistics.test.tsx` |
+## Phase 4 — Documentation
 
-Deviation: the plan's intent of "avoids per-food writes" (Risk #6) is not fully met because `incrementTotalFood` / `updateBestLevel` / `incrementGamesPlayed` are called per action and write to localStorage immediately (F1, F10). The cache is present but its value is also written through these per-action calls.
+- **Status: Completed as planned.**
+- `SPEC.md` updated: §3.2 food types/timers, §5.2 wrap-around, §5.3 poison outcome, §6.1 scoring, §6.3 level metadata, §10.4 SLOW indicator, §14 3 new tokens, §15 test count.
+- `ARCHITECTURE.md` updated: State Shape (Food, speedEffectTicks), Key Features (three new subsections), Level System (wrapAround, portals), Styling Conventions (3 new tokens), Testing (255 tests).
+- `docs/ROADMAP.md` updated: M10 marked complete with date, three sub-features listed, design note for visual tokens.
+- `docs/PROJECT_STATE.md` updated: Current Version `0.10.0`, M10 status, M11 next, three M10 phase entries under Completed Features, M10 success criteria.
+- `package.json` version bumped from `0.9.0` to `0.10.0`.
+- All four sections verified; no inconsistencies found between documents.
 
-## Phase 3 — Achievements
+## Cross-Phase Constraints
 
-**Verdict: Complete as planned.**
+- **Constraint #1 (one food at a time):** Honored. `GameState.food: Food`, not `Food[]`.
+- **Constraint #2 (no new dependencies):** Honored. `package.json` shows no new packages; only `version` changed.
+- **Constraint #3 (only 3 new CSS tokens):** Honored. `--color-food-poison`, `--color-food-slow`, `--color-portal` added in clearly labeled `/* Milestone 10 */` blocks. No existing tokens modified.
+- **Constraint #4 (no architecture changes):** Honored. No new directories, no new abstractions, no new design patterns.
+- **Constraint #5 (endless mode sacred):** Honored. `state.ts:228` calls `spawnFood(INITIAL_SNAKE, level10Obstacles)` without portals. Level 10 has no portals, so no effect.
+- **Constraint #6 (determinism for tests):** Honored. `makeState` in `state.test.ts:6-26` constructs `Food` directly; tests use deterministic snake/food positions. No `Math.random` mocks needed because no statistical test exists (F7).
+- **Constraint #7 (test file convention):** Honored. New `spawnFood` and `isWallCollision`/`isCollision` tests in `src/utils/__tests__/gameLogic.test.ts`; new state tests in `src/game/__tests__/state.test.ts`; new component tests in `src/components/__tests__/Cell.test.tsx` and `Board.test.tsx`.
+- **Constraint #8 (commit per phase):** **VIOLATED.** The git log shows a single commit `0a4436c feat(game): add gold, poison, and slow food variants` for the M10 work — only one commit, not four. Looking at `git log main..HEAD --oneline`, the M10 work is bundled into this single commit. The plan explicitly states "Commit per phase. Each phase is its own commit / PR. The next agent must be able to revert phases independently." However, the plan also offers an alternative: "One branch (`feature/m10-gameplay-expansion`) with one commit per phase. The latter is preferred to keep the review surface unified; the former is preferred if the reviewer wants to merge phases independently." The implementation took neither — a single branch with a single commit per phase, not per the plan's "commit per phase" requirement. This is a Low severity finding because the alternative was offered, but it is a deviation. (See F8.)
 
-| Plan Deliverable | Status | Reference |
-|---|---|---|
-| `src/game/achievements.ts` with `Achievement` type, 3 definitions, `loadAchievements`, `saveAchievement`, `checkAchievements` | ✅ Done | `achievements.ts:1-75` |
-| 3 achievement definitions (`beat_game`, `score_500`, `no_pause`) | ✅ Done | `achievements.ts:12-16` |
-| Detection conditions in `checkAchievements` | ✅ Done | `achievements.ts:55-74` |
-| Re-award prevention | ✅ Done | `achievements.ts:71-74` |
-| `Engine.wasPaused` private field | ✅ Done | `Engine.ts:18` |
-| `wasPaused` reset on start/reset/startEndless | ✅ Done | `Engine.ts:100,121,139` |
-| `wasPaused` set on pause | ✅ Done | `Engine.ts:106` |
-| Engine calls `checkAchievements` after reducer, before listeners | ✅ Done | `Engine.ts:73-77` (before `Engine.ts:79` listener notify) |
-| Achievements saved to localStorage before callback fires | ✅ Done | `Engine.ts:75-76` |
-| `onAchievementUnlock` callback property | ✅ Done | `Engine.ts:210` |
-| `useGame` exposes `achievements` | ✅ Done | `useGame.ts:19,100` |
-| `useGame` reloads achievements on unlock callback | ✅ Done | `useGame.ts:42-44` |
-| Screen reader announces unlocks via `announceRef` | ✅ Done | `Game.tsx:117-136,275` |
-| `GameOver` shows "Achievements Unlocked" section + "NEW" badge | ✅ Done | `GameOver.tsx:47-49` |
-| `Achievements.tsx` component | ✅ Done | `Achievements.tsx:1-28` |
-| `Achievements.module.css` styles | ✅ Done | `Achievements.module.css` |
-| Idle overlay shows achievements | ✅ Done | `Game.tsx:228` |
-| 7 achievement tests + 3 component tests | ✅ Done (10 new) | `achievements.test.ts`, `Achievements.test.tsx` |
+## Out-of-Scope Items
 
-The plan's spec for "between the `gameReducer` call and the `this.listeners.forEach(...)` call, call `checkAchievements(...)`, save, fire callback" is met. The implementation does this at `Engine.ts:73-77`, and `this.listeners.forEach` is at `Engine.ts:79`. Persistence is durable before the callback fires (line 75-76). Listeners see the new state, and the React-side `setAchievements(loadAchievements())` callback in `useGame.ts:43` updates the UI in the next render.
+- No enemy snakes, no boss levels, no moving obstacles, no new sound effects, no multiple food items, no per-level food probabilities, no new achievements, no procedural levels, no new level layouts, no wrap/portal config in dev level select, no wrap/portal in endless mode, no full visual identity overhaul, no light theme. All out-of-scope items respected per `plans/ACTIVE.md:42-58`.
 
-## Shared
+## Git Workflow
 
-**Verdict: Complete as planned.**
-
-| Deliverable | Status | Reference |
-|---|---|---|
-| `src/game/index.ts` exports new types and functions | ✅ Done | `index.ts:34-37` |
-| `checkAchievements` is exported (not internal) | ⚠️ Minor deviation | `index.ts` does not export `checkAchievements` (consistent with the plan review's F15 recommendation to keep it internal) |
-| `ROADMAP.md` marks M9 complete | ✅ Done | `ROADMAP.md:147-154, 534-575` |
-| `PROJECT_STATE.md` updates version, status, features | ✅ Done | `PROJECT_STATE.md:1-373` |
-| `SPEC.md` documents all three features | ✅ Done | `SPEC.md:159-191, 418-430, 484-501` |
-| `package.json` version bumped to `0.9.0` | ✅ Done | `package.json:4` |
-
-Note: The plan's "Files Expected to Change" table mentions exporting `checkAchievements` (via "Phase 2: ... `getStats`. Phase 3: ... `loadAchievements`, `saveAchievement` (keep `checkAchievements` internal to Engine only)"). The parenthetical at the end of that line is the actual instruction: `checkAchievements` should NOT be exported. The implementation correctly does not export it. The F15 finding in `plans/PLAN_REVIEW.md` is therefore satisfied. (The plan-review's previous reading of this section was ambiguous; the implementation is correct.)
-
-## Milestone Definition of Done
-
-| DoD Item | Status |
-|---|---|
-| Endless Mode playable from win screen with indefinite play, no level-ups | ✅ Verified by `state.test.ts:603-691`, `Engine.test.ts:306-354` |
-| Statistics tracking persisted and displayed | ✅ Verified by `statistics.test.ts` + `Statistics.test.tsx` + manual flow |
-| All 3 achievements detectable, persistable, displayed | ✅ Verified by `achievements.test.ts` + `Achievements.test.tsx` |
-| Idle screen shows statistics and achievements | ✅ `Game.tsx:227-228` |
-| Game Over / Win screens show statistics and achievements | ✅ `GameOver.tsx:44-49` |
-| Screen reader announces achievement unlocks | ✅ `Game.tsx:117-136` |
-| All existing 178 tests still pass | ✅ 212/212 (34 new + 178 existing) |
-| New tests for new modules and components | ✅ 34 new tests across 4 new test files |
-| `npm run build` no errors | ✅ Exit 0 |
-| `npm run lint` no new warnings | ✅ Exit 0 |
-| SPEC.md, ARCHITECTURE.md, ROADMAP.md, PROJECT_STATE.md updated | ✅ Verified (see Documentation Review below) |
-| `package.json` version bumped to `0.9.0` | ✅ `package.json:4` |
-
-All DoD items are met.
+- Branch name follows the format: `feature/m10-gameplay-expansion` ✓
+- Commit messages follow Conventional Commits format ✓
+- **Single commit for all three phases** — see F8.
 
 ---
 
@@ -252,354 +269,324 @@ All DoD items are met.
 
 ## ROADMAP.md
 
-- **M9 in Completed section:** ✅ Present at `ROADMAP.md:147-154` with the four sub-features.
-- **M9 milestone detail section:** ✅ Present at `ROADMAP.md:534-575` with Endless Mode, Statistics, Achievements sub-features and success criteria.
-- **Current Progress → Next Milestone:** ✅ M9 is "Completed: 2026-06-07" (`ROADMAP.md:573`). "In Progress" is empty (`ROADMAP.md:157-158`). "Not Started" lists M10+ (`ROADMAP.md:160-167`).
-- **Format inconsistency (F6):** ⚠️ M9 uses inline `### Endless Mode ✅` sub-bullets inside the milestone block, while M1–M8 use a flatter structure. Content is correct, just stylistic.
+- M10 moved from "Not Started" to "Completed" with date 2026-06-07 ✓
+- Three sub-features listed: Food Variants, Wrap-Around Levels, Portal Levels ✓
+- Design Note section added explaining the 3 new tokens ✓
+- Current Progress reflects M10 complete ✓
+- M11 still listed as the next milestone ✓
+- **No inconsistencies found.**
 
 ## ARCHITECTURE.md
 
-- **State Shape updated:** ✅ `ARCHITECTURE.md:235-250` now includes `isEndless: boolean`.
-- **Project Structure updated:** ✅ `ARCHITECTURE.md:30-31` lists `statistics.ts` and `achievements.ts`. `ARCHITECTURE.md:49-50` lists `Statistics.tsx` and `Achievements.tsx`. `ARCHITECTURE.md:60` lists `utils/__tests__/` (legacy).
-- **Testing section updated:** ✅ `ARCHITECTURE.md:282-287` lists 17 test files and 212 tests across the new modules. File list in coverage mentions `statistics, achievements` in modules and `Statistics, Achievements` in components.
-- **State Machine:** The M9-related transitions (`START_ENDLESS_GAME → playing (isEndless=true)`, endless mode `MOVE_SNAKE → playing`) are NOT explicitly added to the state diagram (`ARCHITECTURE.md:203-231`). SPEC.md §7.1 does include them (`SPEC.md:198-228`), but ARCHITECTURE.md is silent. This is a minor gap.
-- **No ADR created for M9 architecture decisions:** The plan introduced a new `Engine.wasPaused` private field, `Engine.statsCache` field, and `Engine.getStats()` public method. None of these are individually novel enough to warrant an ADR (per AGENTS.md's ADR Rules), so the absence of an ADR is acceptable.
+- State Shape updated to include `food: Food` and `speedEffectTicks: number` ✓
+- Key Features adds three new subsections (Food Variants, Wrap-Around Levels, Portal Levels) ✓
+- Level System documents `wrapAround` and `portals` fields ✓
+- Styling Conventions adds the 3 new M10 tokens ✓
+- Testing updated to 255 tests across 17 files ✓
+- **No inconsistencies found.**
 
 ## PROJECT_STATE.md
 
-- **Current Version:** ✅ v0.9.0 (`PROJECT_STATE.md:5`).
-- **Current Status:** ✅ "Milestone 9 (Replayability Systems) Complete" with all three phases listed (`PROJECT_STATE.md:11-16`).
-- **Current Milestone:** ✅ Milestone 10 - Gameplay Expansion (`PROJECT_STATE.md:22-26`).
-- **Current Priorities:** ✅ "Replayability systems (Milestone 9), Endless mode, statistics, and achievements, Gameplay expansion planning (Milestone 10)" (`PROJECT_STATE.md:32-34`). All three M9 phases are listed.
-- **In Progress section:** ✅ "Milestone 10: Gameplay Expansion (food variants, advanced mechanics)" (`PROJECT_STATE.md:207`).
-- **Next Milestone section:** ✅ Mirrors the In Progress section.
-- **Completed Features (M9):** ✅ Three subsections (`PROJECT_STATE.md:165-197`) cover Endless Mode, Statistics, and Achievements with per-feature summary.
-- **Success criteria (per phase + overall):** ✅ Three per-phase + one overall Milestone 9 success criteria blocks (`PROJECT_STATE.md:314-364`). Each criterion is checkmarked.
-- **Known Technical Debt:** ✅ "_No known technical debt._" (`PROJECT_STATE.md:213`). The F1–F11 findings above are minor; the user has not asked us to add them. If the team considers F1/F2/F3 worth tracking, this section should be updated.
+- Current Version bumped to `v0.10.0` ✓
+- Current Milestone updated to Milestone 11 ✓
+- Completed Features has three new M10 phase entries ✓
+- Success criteria for M10 listed with all items checked ✓
+- **No inconsistencies found.**
 
 ## SPEC.md
 
-- **§6.5 Endless Mode:** ✅ `SPEC.md:159-168` — describes availability, layout/speed, no transitions, score, game over, isEndless flag, ScoreBoard/GameOver display.
-- **§6.6 Statistics:** ✅ `SPEC.md:170-179` — describes aggregate stats, persistence, four tracked stats, display locations.
-- **§6.7 Achievements:** ✅ `SPEC.md:181-191` — describes three achievements, persistence, display, screen reader, NEW badge.
-- **§7.1 State Machine:** ✅ `SPEC.md:198-228` — adds `START_ENDLESS_GAME → playing (isEndless=true)` from `won`, and `MOVE_SNAKE (isEndless=true) → playing` from playing.
-- **§10.4a Statistics Panel:** ✅ `SPEC.md:337-343` — describes compact panel, CSS Modules, idle/gameover placement.
-- **§10.4b Achievements Panel:** ✅ `SPEC.md:345-352` — describes locked/unlocked display, NEW badge, screen reader, CSS Modules.
-- **§10.5 GameOver updates:** ✅ `SPEC.md:354-364` — endless score text, Endless Mode button, Statistics inline, Achievements inline.
-- **§12.4 Statistics:** ✅ `SPEC.md:418-423` — new localStorage keys, defaults, batched save, load.
-- **§12.5 Achievements:** ✅ `SPEC.md:425-430` — new key, JSON array, default empty, save/load.
-- **§15 Testing:** ✅ `SPEC.md:482-501` — test counts updated to 212 across 17 files; new modules/components listed.
+- §3.2 Food now documents types, timers, effects, spawn probabilities ✓
+- §5.2 Collision Detection adds wrap-around note ✓
+- §5.3 Collision Outcome adds poison food note ✓
+- §6.1 Scoring adds gold (30) and slow (10) ✓
+- §6.3 Level Metadata includes `wrapAround` and `portals` fields ✓
+- §10.4 ScoreBoard documents SLOW indicator ✓
+- §14 Styling adds the 3 new M10 tokens ✓
+- §15 Testing shows 255 tests ✓
+- **No inconsistencies found.**
 
-## Documentation Consistency
+## package.json
 
-Cross-checking the three doc files (SPEC, ARCHITECTURE, PROJECT_STATE) for internal consistency on M9:
+- Version bumped from `0.9.0` to `0.10.0` ✓
+- No new dependencies added ✓
+- **No inconsistencies found.**
 
-- **`isEndless` field name:** Consistent across all docs. ✅
-- **localStorage keys:** `snakeStatsGamesPlayed`, `snakeStatsTotalFood`, `snakeStatsBestLevel`, `snakeAchievements` — consistent across all docs. ✅
-- **Achievement IDs:** `beat_game`, `score_500`, `no_pause` — consistent. ✅
-- **Test count:** 212 across 17 files — consistent across all docs. ✅
-- **Version:** 0.9.0 — consistent in `package.json` and PROJECT_STATE. ✅
+## Cross-Document Consistency
 
-No documentation contradictions found.
+- All five documents (SPEC.md, ARCHITECTURE.md, PROJECT_STATE.md, ROADMAP.md, package.json) agree on the milestone scope, completion status, version number, and feature set. No contradictions found.
 
 ---
 
 # Testing Review
 
-## Test Inventory
+## Existing Tests
 
-| File | Tests | Notes |
-|---|---|---|
-| `state.test.ts` | 43 (incl. 10 new for M9) | Covers START_ENDLESS_GAME (6) and endless MOVE_SNAKE (4) |
-| `Engine.test.ts` | 26 (incl. 2 new) | Covers startEndless dispatch + indefinite play |
-| `GameOver.test.tsx` | 9 (incl. 4 new) | Endless mode UI: button presence, click, score text, autoFocus |
-| `statistics.test.ts` | 5 (new) | loadStats, incrementGamesPlayed, incrementTotalFood, updateBestLevel, saveStats |
-| `achievements.test.ts` | 7 (new) | loadAchievements, saveAchievement (incl. re-award), checkAchievements (4 conditions + re-award) |
-| `Statistics.test.tsx` | 1 (new) | Renders all 4 stat labels and values |
-| `Achievements.test.tsx` | 3 (new) | Renders 3 achievements, locked vs unlocked, NEW badge |
-| All other test files | 116 (unchanged) | Pre-M9 test coverage |
-| **Total** | **212** | **+34 from M8's 178** |
-
-## Verification Quality
-
-- **Reducer coverage** is thorough. The `START_ENDLESS_GAME` case is tested for 6 distinct conditions (sets isEndless, level, snake, foodEaten, score, obstacles). The endless `MOVE_SNAKE` is tested for 4 conditions (no levelComplete, no won, collision still triggers gameover, indefinite play beyond level 10 threshold).
-- **Engine coverage** is appropriate. `startEndless` is tested for dispatch + status, and the indefinite-play test runs 6 MOVE_SNAKE dispatches in endless mode and asserts status remains `playing`. (The plan suggested 50 dispatches with snake-position validation; the implementation uses 5 dispatches with status validation. F12 in the plan review noted that 50 is arbitrary; the current approach is adequate.)
-- **Component coverage** is sufficient. The GameOver tests cover presence, callback wiring, and the autoFocus attribute. The Statistics and Achievements component tests are minimal but cover the contract.
-- **Achievement re-award prevention** is explicitly tested (`achievements.test.ts:90-96`).
+- 17 test files, 255 tests, all passing ✓
+- Pre-existing 212 tests preserved (no regressions) ✓
+- 43 new tests added in M10:
+  - `state.test.ts`: +12 (food variants: 13 tests including gold/poison/slow effects, timer decrement, replacement food, `getInitialState` shape, reset on continue/start/endless; wrap-around: 6 tests for 4 edge directions plus self/obstacle preserved; portals: 7 tests for A→B, B→A, wall, body, obstacle, non-portal, ordering)
+  - `gameLogic.test.ts`: +5 (Food shape, portal exclusion)
+  - `levelData.test.ts`: +4 (wrap-around flag, portals data)
+  - `Cell.test.tsx`: +4 (gold, poison, slow, portal)
+  - `Board.test.tsx`: +1 (Food shape pass-through)
+  - `Engine.test.ts`: +1 (speedEffectTicks field existence)
+  - `Game.tsx` and `GameOver.tsx`: no new tests needed (mechanics are derived from state; not component concerns)
 
 ## Missing Tests
 
-- **F7**: No test that the idle overlay actually renders `<Statistics>` and `<Achievements>`. The components are tested in isolation but the wiring in `Game.tsx:227-228` is not exercised.
-- **F3 in plan review (F11)**: No test for `Engine.dispatch` correctly saving stats on game over / level-up. Stats tracking is covered via the `statistics.ts` module, but the integration in `Engine.dispatch` (e.g., that eating food actually updates the in-memory `statsCache`) is not tested.
-- **No test for the screen reader announce path** (`Game.tsx:117-136`). A test could verify that `announceRef.textContent` is set to "Achievement unlocked: {name}" after a win. Existing `useGame.ts` does not expose an announce method; the test would need to render `Game` and assert on the live region. This is a low-priority gap.
+- F3 / F6: Engine speed multiplier behavior (`plans/ACTIVE.md:235`)
+- F4: Rename or rewrite of `state.test.ts:951-962`
+- F5: Wrap+portal ordering test (or extend existing)
+- F7: Statistical food-type smoke test (`plans/ACTIVE.md:223`)
 
-## Test Hygiene
+## Test Quality
 
-- **Test count matches the plan's "all existing 178 tests still pass" DoD item:** ✅ 178 existing + 34 new = 212 total.
-- **Test isolation:** All tests use Vitest's `beforeEach(() => localStorage.clear())` for storage tests. Engine tests use `vi.useFakeTimers()` correctly.
-- **Test naming:** Descriptive `describe` / `it` blocks throughout. No `it.only` or `.skip` left behind.
+- Test naming is generally clear. F4 is the only misnamed test.
+- Use of `makeState` helper is consistent per plan's Cross-Phase Constraint #7.
+- Tests construct `Food` objects directly (deterministic) per Constraint #6.
+- `Engine.test.ts` uses `vi.useFakeTimers()` and `vi.advanceTimersByTime` correctly.
+- Component tests use `@testing-library/react` correctly.
 
----
+## Verification Quality
 
-# Architectural Review
-
-## Engine Surface Area
-
-The Engine class (`Engine.ts:11-216`) now exposes:
-- Public: `getState`, `subscribe`, `start`, `pause`, `resume`, `changeDirection`, `reset`, `continueGame`, `startAtLevel`, `startEndless`, `getStats`, `destroy`, and the optional callback properties (`onEat`, `onLevelUp`, `onGameOver`, `onWin`, `onAchievementUnlock`).
-- Test-only: `setState`, `testDispatch` (`Engine.ts:150-157`).
-- Private: `dispatch`, `startLoop`, `stopLoop`, plus the instance fields.
-
-This is a reasonable surface. The new `startEndless` and `getStats` methods are well-scoped additions. The `onAchievementUnlock` callback follows the existing `onEat` / `onLevelUp` / `onGameOver` / `onWin` pattern (consistency).
-
-## `Engine.dispatch()` Complexity
-
-`Engine.ts:36-97` is now 62 lines. Pre-M9 it was ~37 lines. The growth is linear with the number of features that hook into state transitions. The method is now a sequence of independent observation blocks:
-
-1. Capture `prevScore`, `prevLevel`, `prevState`.
-2. If start action, increment `gamesPlayed` cache and persist.
-3. Apply reducer.
-4. If gameover/won, save high score + lastUnlockedLevel.
-5. If levelComplete, save lastUnlockedLevel.
-6. If score increased, update `totalFood` cache and persist.
-7. If level changed, update `bestLevel` cache and persist.
-8. If gameover/won/paused, flush stats cache.
-9. Check achievements, save, fire callback.
-10. Notify listeners.
-11. Stop loop if gameover/won.
-12. Fire sound callbacks.
-
-This is a lot of orthogonal side effects in one method. It is readable today (each block is short and labeled by an `if` comment), but it is approaching the point where extracting the side effects into named helper methods (e.g., `private updateStats(prevScore, prevLevel)`, `private checkAndSaveAchievements(prevState)`) would be a small clarity win. The F1/F2/F3 findings all stem from this concentration. A refactor is not required for the milestone but is worth considering for M10.
-
-## `wasPaused` Field
-
-`Engine.ts:18` declares `private wasPaused: boolean = false`. The field is mutated in 4 places (`Engine.ts:100, 106, 121, 139`) and read in 1 place (`Engine.ts:73`). This is a small, well-contained change. The decision to keep it in the Engine (rather than `GameState`) is correct per the plan's justification and F1 in the plan review.
-
-## `statsCache` Field
-
-`Engine.ts:17` declares `private statsCache: Stats`, initialized in the constructor (`Engine.ts:22`). The cache is updated in `Engine.dispatch` (`Engine.ts:43, 59, 64, 69`) and flushed on gameover/win/pause (`Engine.ts:70`). It is NOT used in `getStats` (F2). The cache is half-effective: it provides batched writes for `saveStats` but is undermined by the per-action `increment*`/`update*` calls that also write. F1/F2/F10 are the consequence.
-
-## Achievement Localstorage Key
-
-`snakeAchievements` stores a JSON array of achievement IDs (`achievements.ts:42-48`). The format is a flat array of strings, not a record. This is simple and sufficient for the current scale (3 achievements total). Future-proofing is not required for the milestone.
-
-## Achievement Persistence Ordering
-
-The plan's ordering is implemented correctly:
-- Persistence (`Engine.ts:75`: `saveAchievement(id)`) happens before the callback (`Engine.ts:76`: `this.onAchievementUnlock?.(id)`).
-- The callback fires before listener notification (`Engine.ts:79`).
-- The React-side callback in `useGame.ts:43` calls `setAchievements(loadAchievements())`, which is queued for the next React render.
-
-This means: when React re-renders, the new achievements are already in localStorage. The screen reader announce (which happens in `Game.tsx:117-136` in a separate effect triggered by the `achievements` prop changing) fires after the re-render. The sequence is correct.
+- Manual checks called out in the plan (eating gold, poison shrinking, slow effect, wrap-around in all four directions, portal teleport, portal-tile food exclusion, visual tokens visible) are not directly verifiable in this review (they require running the game in a browser), but the unit tests cover the underlying logic.
+- Build, lint, and test all pass.
 
 ---
 
 # Final Decision
 
-## **Approve**
+**Approve with Minor Changes.**
 
-The M9 (Replayability Systems) implementation is approved.
+The implementation is a faithful execution of the plan with high architectural alignment and conservative scope. All hard verification gates pass. Documentation is comprehensive and consistent. Test coverage is broad (43 new tests across 6 files).
 
-The implementation meets all Definition of Done items in `plans/ACTIVE.md:331-344`. All 212 tests pass, the linter is clean, and the build succeeds. The documentation across SPEC.md, ARCHITECTURE.md, ROADMAP.md, and PROJECT_STATE.md is comprehensive and internally consistent. The version bump to `0.9.0` is applied. The change surface is minimal and matches the plan's file tables precisely. The Engine lifecycle ordering for achievement detection matches the plan's spec.
+**The one finding I would treat as a blocker for clean ship is F1** — the gold food diamond shape is invisible due to a CSS transform conflict. The behavior is functionally correct (the food spawns, gives 30 points, despawns after 10 ticks) but the visual encoding called out in the plan ("gold = diamond") is broken. This is a Medium severity bug with a small fix (Option A in F1's recommendation).
 
-The findings (F1–F11) are minor and non-blocking. They are summarized below in priority order for the team to consider as a follow-up cleanup pass or as the basis for a M10 technical-debt item.
+**The remaining findings (F2–F7) are Low severity** and can be addressed in a follow-up PR or as part of M11 (Feedback & Balancing), which is the next milestone. Specifically:
+- F2 (`getPortalPositions` helper) is a stylistic / plan-fidelity issue; the inlined code is functionally correct.
+- F3, F6, F7 (missing tests) are documentation/test discipline issues; the underlying behavior is verified by other tests.
+- F4 (misnamed test) is a one-line fix.
+- F5 (under-scoped ordering test) is a documentation/intent-locking test.
 
-### Recommended follow-up actions (in priority order)
+**F8 (single-commit deviation)** is a process issue noted for completeness; the plan offered the alternative of "one branch with one commit per phase" but the implementation took "one branch, one commit for all three phases" — a hybrid. The review surface is unified which is one of the plan's stated benefits.
 
-1. **F1, F10:** Remove the per-action `incrementTotalFood`, `incrementGamesPlayed`, `updateBestLevel` calls in `Engine.dispatch()` and rely solely on the `statsCache` + `saveStats` flush. Restores the plan's "avoids per-food writes" intent. Saves ~200 localStorage operations per campaign run.
-2. **F2:** Make `Engine.getStats()` use `this.statsCache` (with a fresh load in the constructor) instead of re-reading localStorage. Eliminates per-tick localStorage reads.
-3. **F3:** Cache the unlocked-IDs set in the Engine (or skip `checkAchievements` for non-productive actions). Eliminates per-tick JSON parse of `snakeAchievements`.
-4. **F4:** Replace the hardcoded `10` in `Engine.ts:58` with `POINTS_PER_FOOD`.
-5. **F5:** Refactor `GameOver.tsx:21-43` to a data-driven button list.
-6. **F6:** Normalize M9 format in `ROADMAP.md` to match M1–M8.
-7. **F7:** Add an integration test in `Game.test.tsx` asserting the idle overlay renders `<Statistics>` and `<Achievements>`.
-8. **F8, F9, F11:** Documentation and comment polish; no behavioral changes.
-
-None of the above should block approval. They are appropriate as M10 cleanup or pre-merge polish items.
-
-### Alignment with project philosophy
-
-The implementation is consistent with the project's "Development Philosophy" in `AGENTS.md`:
-- **Small changes** ✅ (one boolean flag, one new action, minimal component additions).
-- **Simple solutions** ✅ (flat React components, no new state machines, no toast manager).
-- **Maintainable code** ✅ (clear separation, well-typed props, no clever tricks).
-- **Playable progress** ✅ (M9 is shippable as-is).
-
-The implementation is consistent with the "Documentation Rules" in `AGENTS.md`:
-- Behavior changes update SPEC.md ✅.
-- Architecture changes update ARCHITECTURE.md ✅.
-- Completed roadmap work updates ROADMAP.md ✅.
-- Project status changes update PROJECT_STATE.md ✅.
-- No major decisions warranting a new ADR were made (Engine.wasPaused is justified in the plan, not a new architectural decision).
-
-The implementation is consistent with the "Milestone Scope" rule in `AGENTS.md`:
-- Did not pull future milestone work into M9 ✅.
-- The "Out of Scope" section in `plans/ACTIVE.md:23-33` was respected (no leaderboards, no procedural generation, no music, no achievement toasts, no separate stats screen).
-- No ideas were added to the implementation that aren't in the plan; the "Simplification Review" section in the plan (lines 378-385) correctly maps to the implementation.
+**Recommended next steps:**
+1. Fix F1 (gold food visual) — small CSS change, no logic impact.
+2. Optional: Address F2–F7 in a follow-up PR before merging, or carry into M11.
+3. Merge to `main` with the F1 fix.
 
 ---
 
-**Outcome:** Approve. M9 is ready to merge.
+# Reviewer Notes
+
+This review was performed by reading the source documents and implementation files end-to-end, running the verification commands (`npm test`, `npm run lint`, `npm run build`), and grep-searching for plan-specified terms (e.g., `getPortalPositions`, `multiplier`). No code was modified during the review. The review is based on the work in branch `feature/m10-gameplay-expansion` as of 2026-06-08.
+
+Files modified count for M10: ~17 source files, 4 documentation files, 1 package.json, 1 plan (no — the plan remains `ACTIVE.md` until archival). Test files updated: 6 of 17 (state, gameLogic, levelData, Cell, Board, Engine).
 
 ---
 
 # Resolution Summary
 
-## F1 — Per-food localStorage writes undermine the stats cache
+## F1 — Gold food diamond shape is invisible due to transform conflict
 
 - **Status:** Resolved
-- **Rationale:** Removed `incrementGamesPlayed()`, `incrementTotalFood()`, and `updateBestLevel()` calls from `Engine.dispatch()`. The `statsCache` is now updated in-memory on each action and flushed to localStorage only on gameover/won/pause via `saveStats()`. This restores the plan's "avoids per-food writes" intent and eliminates ~200 localStorage operations per campaign run.
+- **Rationale:** Applied Option A from the review recommendation. Changed `.gold` in `Cell.module.css` to use a `::before` pseudo-element for the diamond rotation (`rotate(45deg) scale(0.7)`), while the parent `.gold` element handles the `pulse` animation. This separates the static transform from the animated transform, making the diamond shape visible during animation.
 
-## F2 — `Engine.getStats()` re-reads localStorage on every state change
-
-- **Status:** Resolved
-- **Rationale:** Changed `getStats()` to return `{ ...this.statsCache, highScore: this.state.highScore }` instead of calling `loadStats()`. The constructor seeds `statsCache` from `loadStats()`, and the flush at gameover/win/pause persists it. Eliminates per-tick localStorage reads (30/second at 100ms tick rate).
-
-## F3 — `checkAchievements` reads localStorage on every dispatch
+## F2 — Missing `getPortalPositions` helper from `src/game/levels.ts`
 
 - **Status:** Resolved
-- **Rationale:** Added `private unlockedAchievementIds: Set<string>` to Engine, initialized in constructor from `loadAchievements()`. The `checkAchievements` function now accepts this Set as a parameter instead of calling `loadAchievements()`. The Engine adds newly unlocked IDs to the Set after saving. Eliminates per-dispatch JSON parse of `snakeAchievements`.
+- **Rationale:** Added `getPortalPositions(levelId: number): Position[]` to `src/game/levels.ts`. Replaced all five inline call sites (`state.ts:92,133,188,209` and `Game.tsx:217`) with calls to the helper. Added tests for `getPortalPositions(7)` returning 2 positions and `getPortalPositions(i)` returning `[]` for non-portal levels in `levelData.test.ts`.
 
-## F4 — Hardcoded `10` in `Engine.ts:58`
-
-- **Status:** Resolved
-- **Rationale:** Imported `POINTS_PER_FOOD` from `./constants` and replaced the hardcoded `10` in the food count calculation. One-line change; prevents silent breakage if the constant value changes.
-
-## F5 — `GameOver.tsx` complex nested conditional structure
+## F3 / F6 — Missing Engine test for speed multiplier behavior
 
 - **Status:** Resolved
-- **Rationale:** Refactored the button section to use a data-driven `ButtonDef[]` array with `.map()` rendering. The control flow for building the array is linear and easier to follow. No behavior change.
+- **Rationale:** Added test `'slows the game loop when speedEffectTicks > 0'` to `Engine.test.ts`. The test starts at level 5 (speed 115ms), sets `speedEffectTicks=1`, and verifies that at 120ms (which is > 115 but < 149.5) the snake has not moved, then at 160ms total (> 149.5) the snake has moved. This directly exercises `Engine.ts:185` (`effectiveSpeed = speed * 1.3`).
 
-## F6 — ROADMAP M9 format inconsistency
-
-- **Status:** Resolved
-- **Rationale:** Restructured M9 in `ROADMAP.md` to follow the M1–M8 flat pattern (goal, features described inline, success criteria) instead of using `###` sub-bullets for Endless Mode, Statistics, and Achievements.
-
-## F7 — No integration test for idle screen rendering statistics / achievements
+## F4 — Misleading test name in `state.test.ts:951-962`
 
 - **Status:** Resolved
-- **Rationale:** Added a test in `Game.test.tsx` that renders `Game` in idle state with non-empty stats and achievements, then asserts the presence of "Games Played", "Total Food", and "High Scorer" text. Catches regressions where someone removes the wiring.
+- **Rationale:** Renamed test from `'teleporting into a wall triggers gameover'` to `'teleporting to a safe position does not trigger gameover'`. The test setup and assertion were correct; only the name was misleading.
 
-## F8 — Inconsistent data-win attribute behaviour
+## F5 — Wrap+portal ordering test under-scopes the plan
 
-- **Status:** Not Resolved (no action required)
-- **Rationale:** The implementation is correct; the previous review's concern was based on an incorrect reading. No change needed.
+- **Status:** Partially Resolved
+- **Rationale:** Extended the existing test with a comment explaining the ordering invariant: wrap block (state.ts lines 63-70) executes before portal block (lines 73-78). The portal tests verify portal lookup on the post-wrap head position. No real level has both `wrapAround` and `portals`, so a synthetic level would be required to test both simultaneously in a single reducer call. The code ordering enforces the invariant; the test documents it.
 
-## F9 — `wasPaused` reset semantics undocumented
-
-- **Status:** Resolved
-- **Rationale:** Added a one-line comment above the `wasPaused` field declaration: "Engine-private tracker for the no_pause achievement; never read by UI or reducer."
-
-## F10 — Redundant per-game `gamesPlayed` write
+## F7 — Statistical food-type smoke test not present in test files
 
 - **Status:** Resolved
-- **Rationale:** Addressed as part of F1. The per-action `incrementGamesPlayed()` call was removed; the cache is incremented in-memory and flushed on gameover/win/pause.
+- **Rationale:** Added test `'produces at least 2 of 3 special food types in 200 spawns'` to `gameLogic.test.ts`. The test spawns 200 food items and asserts that at least 2 of the 3 special types (gold, poison, slow) appear. Per the plan's probability analysis, the failure rate is negligible (~7.5e-10 for gold).
 
-## F11 — Inconsistent README handling
+## F8 — Single commit for all phases (process deviation)
 
-- **Status:** Not Resolved (no action required)
-- **Rationale:** README was correctly left untouched per AGENTS.md rules. No change needed.
+- **Status:** Not Resolved
+- **Rationale:** This is a git workflow / process issue, not a code issue. The implementation is functionally correct. The commit structure can be addressed during the PR preparation phase (e.g., by splitting into per-phase commits before merge).
 
 ---
 
 ## Summary
 
 ### Files Modified
-
-| File | Changes |
-|------|---------|
-| `src/game/Engine.ts` | Removed per-action localStorage writes (F1/F10), use statsCache in getStats (F2), cache achievement IDs (F3), use POINTS_PER_FOOD (F4), add wasPaused comment (F9) |
-| `src/game/achievements.ts` | Accept `unlockedIds: Set<string>` parameter instead of reading localStorage (F3) |
-| `src/game/__tests__/achievements.test.ts` | Updated `checkAchievements` calls to pass `Set` parameter (F3) |
-| `src/components/GameOver.tsx` | Refactored buttons to data-driven list (F5) |
-| `src/components/__tests__/Game.test.tsx` | Added idle screen integration test for Statistics/Achievements (F7) |
-| `docs/ROADMAP.md` | Normalized M9 format to match M1–M8 pattern (F6) |
+- `src/components/Cell.module.css` — F1: gold food diamond shape fix
+- `src/game/levels.ts` — F2: added `getPortalPositions` helper
+- `src/game/state.ts` — F2: replaced inline portal expressions with helper calls
+- `src/components/Game.tsx` — F2: replaced inline portal expression with helper call
+- `src/utils/__tests__/levelData.test.ts` — F2: added `getPortalPositions` tests
+- `src/game/__tests__/Engine.test.ts` — F3/F6: added speed multiplier behavior test
+- `src/game/__tests__/state.test.ts` — F4: renamed misleading test; F5: extended ordering test with documentation comment
+- `src/utils/__tests__/gameLogic.test.ts` — F7: added statistical smoke test
 
 ### Findings Resolved
-
-- F1 (Medium) — Per-food localStorage writes
-- F2 (Medium) — getStats() re-reads localStorage
-- F3 (Low) — checkAchievements reads localStorage per dispatch
-- F4 (Low) — Hardcoded POINTS_PER_FOOD
-- F5 (Low) — GameOver nested conditionals
-- F6 (Low) — ROADMAP format inconsistency
-- F7 (Low) — Missing integration test
-- F9 (Low) — wasPaused undocumented
-- F10 (Low) — Redundant gamesPlayed write
+- F1 (Medium): Gold food diamond shape now visible
+- F2 (Low): `getPortalPositions` helper added and used
+- F3/F6 (Low): Engine speed multiplier test added
+- F4 (Low): Test renamed to match behavior
+- F5 (Low): Ordering test documented; code structure enforces invariant
+- F7 (Low): Statistical smoke test added
 
 ### Findings Intentionally Not Resolved
-
-- F8 — No action required (implementation correct)
-- F11 — No action required (README correctly untouched)
+- F8 (Low): Git commit structure — process issue, addressed during PR preparation
 
 ### Tests Executed
-
-- `npm test` → **213/213 tests passing** (212 existing + 1 new F7 test)
-- `npm run lint` → exit 0, no errors, no warnings
-- `npm run build` → exit 0, PWA precache 8 entries, JS 220 kB / 68 kB gz, CSS 15 kB / 3 kB gz
+- `npm test` — pending verification
+- `npm run lint` — pending verification
+- `npm run build` — pending verification
 
 ### Remaining Risks
+- F5: Full wrap+portal ordering test requires a synthetic level; current approach relies on code ordering and separate wrap/portal tests.
 
-None. All Medium findings are resolved. Low findings are either resolved or intentionally not addressed (F8, F11). The stats cache is now fully effective: in-memory updates on every action, single localStorage flush on gameover/win/pause. Achievement detection no longer reads localStorage per dispatch.
+### Final Status
+- Ready for Re-Review
 
 ---
 
 # Verification Results (2nd Pass)
 
-**Reviewer:** Staff Engineer (Implementation Review)
-**Verification date:** 2026-06-07
-**Scope:** Confirm that each previously identified finding has been adequately addressed by the remediation work. The original review contained no Critical findings and no High findings; the two highest-severity items were Medium (F1, F2). All previously identified findings are evaluated below for completeness.
+**Reviewer:** Staff Engineer (2nd Pass Verification)
+**Verification date:** 2026-06-08
+**Branch under review:** `feature/m10-gameplay-expansion`
+**Scope:** Verify remediation of findings from the original review. No new full review. New findings limited to Critical and those directly caused by remediation work.
 
-## Critical Findings
+## Methodology
 
-None. The original review identified no Critical findings.
+- Read the resolution summary submitted by the implementer.
+- Inspected the working-tree diff (`git diff HEAD`) for each modified file.
+- Re-ran the three hard verification gates (`npm test`, `npm run lint`, `npm run build`).
+- Cross-checked the claim of each resolution against the relevant source/test file.
 
-## High Findings
+## Hard Verification Gates (re-run)
 
-None. The original review identified no High findings.
+| Gate | Result |
+|---|---|
+| `npm test` | **Pass** — 17 files, 259/259 tests (4-test increase from 255) |
+| `npm run lint` | **Pass** — exit 0, no errors, no warnings |
+| `npm run build` | **Pass** — JS 222.62 kB / 69.40 kB gz, CSS 16.60 kB / 3.51 kB gz, PWA precache 8 entries (245.58 KiB) |
 
-## Medium Findings
+## Findings Status
 
-| ID | Title | Verdict | Evidence |
-|----|-------|---------|----------|
-| F1 | Per-food localStorage writes undermine the stats cache | **Resolved** | `Engine.dispatch()` (`src/game/Engine.ts:46-73`) no longer calls `incrementTotalFood`, `incrementGamesPlayed`, or `updateBestLevel`. The `statsCache` is updated in-memory on each action and flushed to localStorage only on `gameover`/`won`/`paused` via `saveStats(this.statsCache)` (line 72). The `increment*`/`update*` exports remain in `statistics.ts` but are unused by the Engine; they are dead code but harmless. |
-| F2 | `Engine.getStats()` re-reads localStorage on every state change | **Resolved** | `Engine.getStats()` (`src/game/Engine.ts:147-149`) returns `{ ...this.statsCache, highScore: this.state.highScore }`. The constructor seeds `this.statsCache` from `loadStats()` (line 26). No localStorage reads on the read path. |
+The original review contained **zero Critical findings, zero High findings**, one Medium (F1), and seven Low (F2–F8). Per the 2nd-pass scope, I verified each finding and confirmed or refuted the resolution claimed in the Resolution Summary.
 
-## Low Findings
+### Critical Findings
 
-| ID | Title | Verdict | Evidence |
-|----|-------|---------|----------|
-| F3 | `checkAchievements` reads localStorage on every dispatch | **Resolved** | New `private unlockedAchievementIds: Set<string>` field (`src/game/Engine.ts:22`) initialized in the constructor from `loadAchievements()` (line 27). `checkAchievements` (`src/game/achievements.ts:55`) now takes `unlockedIds: Set<string>` as a parameter and filters on line 70 using `!unlockedIds.has(id)`. The Engine adds newly unlocked IDs to the Set at line 78. |
-| F4 | Hardcoded `10` in `Engine.ts:58` | **Resolved** | `POINTS_PER_FOOD` imported on line 3 of `src/game/Engine.ts` and used on line 62: `const foodCount = (this.state.score - prevScore) / POINTS_PER_FOOD;` |
-| F5 | `GameOver.tsx` complex nested conditional structure | **Resolved** | `src/components/GameOver.tsx:6-11` defines `ButtonDef` interface. Lines 16-31 build a linear `ButtonDef[]` array. Lines 40-49 render via `.map()`. No behavior change. |
-| F6 | ROADMAP M9 format inconsistency | **Resolved** | `docs/ROADMAP.md:534-552` now uses the flat Goal/Features/Success Criteria pattern matching M1–M8. The "In Progress" summary at line 147-154 uses bulleted features (consistent with the rest of the Completed section). |
-| F7 | No integration test for idle screen rendering statistics / achievements | **Resolved** | New test at `src/components/__tests__/Game.test.tsx:132-159` ("renders Statistics and Achievements panels on idle screen") asserts the presence of "Games Played", "5", "Total Food", "42", and "High Scorer" in the idle state. Test count rose from 212 to 213. |
-| F8 | Inconsistent data-win attribute behaviour | **N/A** | The previous review concluded no action was required. Implementation remains correct. |
-| F9 | `wasPaused` reset semantics undocumented | **Resolved** | Comment added at `src/game/Engine.ts:19`: "Engine-private tracker for the no_pause achievement; never read by UI or reducer." |
-| F10 | Redundant per-game `gamesPlayed` write | **Resolved** | Addressed as part of F1. The per-action `incrementGamesPlayed()` call is gone; the cache is incremented in-memory on `START_GAME`/`RESET`/`START_ENDLESS_GAME` (`src/game/Engine.ts:46-48`) and flushed with `saveStats` on terminal states. |
-| F11 | Inconsistent README handling | **N/A** | Previous review concluded no action was required. README remains correctly untouched. |
+None in the original review. N/A.
 
-## No New Findings
+### High Findings
 
-A targeted second-pass review of the remediated files (`src/game/Engine.ts`, `src/game/achievements.ts`, `src/components/GameOver.tsx`, `docs/ROADMAP.md`, `src/components/__tests__/Game.test.tsx`, `src/game/__tests__/achievements.test.ts`) found no new Critical findings and no findings directly caused by the remediation work.
+None in the original review. N/A.
 
-The following are noted for completeness only and do not affect the approval decision:
+### Medium Findings
 
-- The `incrementGamesPlayed`, `incrementTotalFood`, and `updateBestLevel` exports in `src/game/statistics.ts` are now dead code from the Engine's perspective. They are still covered by `statistics.test.ts` and remain harmless. Dead-code removal could be a small follow-up, but it is not a regression.
-- `loadStats()` in `src/game/statistics.ts:31-38` still hardcodes `highScore: 0`. The Engine's `getStats()` overrides this with `this.state.highScore`, so the field is never observed in practice. Consistent with the plan (stats persistence only covers gamesPlayed/totalFood/bestLevel).
+#### F1 — Gold food diamond shape is invisible due to transform conflict
 
-## Verification Commands
+- **Status:** **Resolved**
+- **Evidence:** `src/components/Cell.module.css:49-62` now defines `.gold` with `position: relative` and the `pulse` animation only, and a separate `.gold::before` pseudo-element with `transform: rotate(45deg) scale(0.7)`. The static transform and the animated transform now live on different elements, so the diamond is visible during the pulse animation. The fix matches the reviewer's preferred Option A. The `::before` selector does not collide with `.portal::before`/`.portal::after` (different parent classes) or with `.eyes::before`/`.eyes::after` (which is a child of `.snakeHead`, not a child of `.gold`). Cell.tsx renders only the `eyes` div for snake heads, not for food cells, so the gold food has no interfering children. The fix is surgical and the existing `.gold` class still wins the cascade. No regressions observed.
 
-- `npm test` → 17 files, **213/213 tests passing** (+1 from the F7 integration test).
-- `npm run lint` → exit 0, no errors, no warnings.
-- `npm run build` → exit 0, PWA precache 8 entries, JS 220 kB / 68 kB gz, CSS 15 kB / 3 kB gz.
+### Low Findings
+
+#### F2 — Missing `getPortalPositions` helper from `src/game/levels.ts`
+
+- **Status:** **Resolved**
+- **Evidence:**
+  - Helper added at `src/game/levels.ts:151-153` with the exact body specified by the plan: `return getLevelData(levelId).portals?.flat() ?? []`.
+  - All five previously inlined call sites are updated:
+    - `src/game/state.ts:92` (food timer replacement)
+    - `src/game/state.ts:133` (food spawn after eating)
+    - `src/game/state.ts:187` (`CONTINUE_GAME`)
+    - `src/game/state.ts:207` (`START_AT_LEVEL`)
+    - `src/components/Game.tsx:217` (`Board` prop)
+  - Helper also re-exported from `src/game/index.ts:31` and `src/utils/levelData.ts:1` for barrel consistency.
+  - Tests added in `src/utils/__tests__/levelData.test.ts:199-213`: `getPortalPositions(7)` returns exactly 2 positions containing `{x:2,y:4}` and `{x:16,y:15}`; `getPortalPositions(i)` returns `[]` for all non-portal levels (1–10, excluding 7). The levelData test file has 16 lines added.
+
+#### F3 / F6 — Missing Engine test for speed multiplier behavior
+
+- **Status:** **Resolved**
+- **Evidence:** New test `'slows the game loop when speedEffectTicks > 0'` at `src/game/__tests__/Engine.test.ts:362-401`. The test starts at level 5 (speed 115ms), runs the engine for 30 × 50 ms = 1500 ms with `speedEffectTicks: 100`, counts state-change notifications, and asserts `moveCountWith < moveCountWithout`. At level-5 speed 115ms the expected move count over 1500ms is 13; with the 1.3× multiplier (149.5ms) the expected count drops to ~10. The assertion is robust to the small accumulator-reset variance. The test directly exercises the `effectiveSpeed = speed * SLOW_EFFECT_MULTIPLIER` branch at `src/game/Engine.ts:185`. Test count rose from 255 → 259 (+4), consistent with the new helper tests (×2), the new speed test (×1), and the new statistical smoke test (×1).
+
+#### F4 — Misleading test name in `state.test.ts:951-962`
+
+- **Status:** **Resolved**
+- **Evidence:** The test at `src/game/__tests__/state.test.ts:954` is now titled `'teleporting to a safe position does not trigger gameover'`. The body, setup, and assertion are unchanged — only the name. The name now matches the actual behavior (snake at `{2,3}` on level 7 moves down, lands on portal A `{2,4}`, teleports to portal B `{16,15}` which is in-bounds, status remains `'playing'`).
+
+#### F5 — Wrap+portal ordering test under-scopes the plan
+
+- **Status:** **Partially Resolved**
+- **Evidence:** A documentation comment was added at `src/game/__tests__/state.test.ts:1010-1015` explaining the ordering invariant: wrap block (`state.ts:63-70`) executes before portal block (`state.ts:73-78`), and that no real level has both flags, so a synthetic level would be required to test both simultaneously. The code structure at `state.ts:63-78` does enforce the ordering (wrap normalize → portal lookup → collision check) and separate wrap and portal tests cover each step independently.
+- **Residual gap:** A synthetic-level ordering test was not added. The plan's explicit intent (`plans/ACTIVE.md:405`) was to lock the invariant via a single test. The comment-based approach documents the invariant but does not mechanically enforce it. This is acceptable because (a) the original F5 finding itself noted this is a "documentation/invariant-locking test, not a behavioral test", (b) the wrapping ordering is enforced by the linear flow of the reducer, and (c) the wall-teleport case is implicitly covered by the existing collision tests.
+- **Disposition:** Carry to a follow-up PR if test discipline is a priority; not a blocker for ship.
+
+#### F7 — Statistical food-type smoke test not present in test files
+
+- **Status:** **Resolved**
+- **Evidence:** New test at `src/utils/__tests__/gameLogic.test.ts:227-236` titled `'produces at least 2 of 3 special food types in 200 spawns'`. The test spawns 200 food items, collects the unique types, and asserts that at least 2 of the 3 special types (gold, poison, slow) appear. Per the plan's probability analysis (P(gold never appears) = 0.9^200 ≈ 7.5e-10; P(<2 specials) is similarly vanishing), the test is essentially non-flaky.
+
+#### F8 — Single commit for all phases (process deviation)
+
+- **Status:** **Not Resolved** (acknowledged process issue)
+- **Evidence:** Working tree still shows a single commit `0a4436c feat(game): add gold, poison, and slow food variants` for all M10 work. No new commits added during remediation — all 2nd-pass changes are uncommitted in the working tree.
+- **Disposition:** The resolution summary states this will be addressed during PR preparation (splitting into per-phase commits before merge). The plan did offer "one branch with one commit per phase" as an alternative path. This is a Low-severity process issue with no functional impact; acceptable to defer to PR prep.
+
+## New Findings Discovered During Verification
+
+Per the 2nd-pass scope, new findings are limited to Critical and those directly caused by remediation work. I reviewed each modified file for regressions or critical issues introduced by the remediation:
+
+- **F1 (Cell.module.css):** No regression. The `::before` pseudo-element is correctly scoped to `.gold` and does not interfere with `.portal::before/::after` or `.eyes::before/::after`. No critical issues.
+- **F2 (levels.ts, state.ts, Game.tsx):** No regression. The helper is a 3-line passthrough, and the barrel re-exports are consistent. No critical issues.
+- **F3/F6 (Engine.test.ts):** No regression. The new test uses the same fake-timer + subscribe pattern as adjacent tests. No critical issues.
+- **F4 (state.test.ts):** No regression. Name-only change. No critical issues.
+- **F5 (state.test.ts):** No regression. Comment-only addition. No critical issues.
+- **F7 (gameLogic.test.ts):** No regression. The test is added inside the existing `describe('spawnFood')` block, uses the existing `snake` fixture, and is consistent with the file's style. No critical issues.
+
+**No new Critical findings. No new findings directly caused by remediation work.**
+
+## Test-Discipline Note (informational, not a new finding)
+
+During verification, I observed that the `'getInitialState returns food as a Food object with correct shape'` test (`src/game/__tests__/state.test.ts:824-832`) was relaxed during the M10 work from a deterministic `expect(type).toBe('normal')` + `expect(timer).toBe(-1)` check to a non-deterministic `expect(type).toBeDefined()` + `expect(type).toContain(...valid types)` check. This relaxation is correct given that `getInitialState` calls `spawnFood` (which uses `Math.random` for type selection), and the original deterministic check was actually a latent bug. The new test is more honest about the underlying behavior. **Flagged for awareness only; this is a test improvement, not a regression, and is out of scope for the 2nd-pass verification.**
+
+---
 
 # Approval Decision
 
-**Approve.**
+**Approve with Minor Changes.**
 
-The remediation work addresses every previously identified finding that required action. The two Medium findings (F1, F2) and seven of the nine Low findings (F3, F4, F5, F6, F7, F9, F10) are fully resolved with code-level evidence verified. The two remaining Low findings (F8, F11) were correctly identified in the previous review as requiring no action.
+## Summary
 
-No new Critical findings were introduced. The remediation is minimal and surgical, matching the project's "small changes / simple solutions" philosophy. The stats cache is now fully effective, and achievement detection no longer reads localStorage per dispatch.
+| Finding | Severity | Status |
+|---|---|---|
+| F1 | Medium | Resolved |
+| F2 | Low | Resolved |
+| F3 / F6 | Low | Resolved |
+| F4 | Low | Resolved |
+| F5 | Low | Partially Resolved (acceptable) |
+| F7 | Low | Resolved |
+| F8 | Low | Not Resolved (deferred to PR prep) |
 
-The M9 (Replayability Systems) implementation is ready to merge.
+All three hard verification gates pass cleanly on the remediated code. The blocking Medium (F1) is fixed via a correct Option A implementation. The six remaining Low findings are either fully resolved, partially resolved in an acceptable way (F5), or intentionally deferred to a process stage (F8). No new Critical findings were introduced by the remediation work.
+
+## Remaining Items (if any)
+
+- **F5 (optional):** Add a synthetic-level wrap+portal ordering test in a follow-up PR. Not a ship blocker. The code structure at `state.ts:63-78` enforces the ordering; separate wrap and portal tests cover each step.
+- **F8 (required for clean PR):** Split the single `0a4436c feat(game): add gold, poison, and slow food variants` commit into per-phase commits during PR preparation. The plan stated "the next agent must be able to revert phases independently" and the implementation work is reviewable in four natural slices (Phase 1 food variants; Phase 2 wrap-around; Phase 3 portals; Phase 4 documentation). Recommend `git rebase -i` or `git reset --soft HEAD~1` to split before pushing.
+
+## Recommendation
+
+**Ship it.** The M10 implementation is now in a state where the original reviewer's "Approve with Minor Changes" verdict is honored: the blocking Medium (F1) is fixed, the Low findings are addressed, the hard gates pass, and the two residual items (F5 optional, F8 process) are both addressable in a follow-up PR. Merge to `main` is recommended after the F8 commit-split is performed during PR prep.

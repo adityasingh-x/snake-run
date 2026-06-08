@@ -2,48 +2,49 @@
 
 ## Current Version
 
-v0.9.0
+v0.10.0
 
 ---
 
 ## Current Status
 
-Milestone 9 (Replayability Systems) Complete
+Milestone 10 (Gameplay Expansion) Complete
 
-All three phases of Milestone 9 are now complete:
-- Phase 1: Endless Mode — indefinite play after winning
-- Phase 2: Statistics — aggregate player stats across runs
-- Phase 3: Achievements — 3 unlockable achievements with persistence
+All three phases of Milestone 10 are now complete:
+- Phase 1: Food Variants — gold, poison, and slow food types with weighted spawning
+- Phase 2: Wrap-Around Levels — Level 5 allows edge-to-edge teleportation
+- Phase 3: Portal Levels — Level 7 has a paired portal mechanic
 
 ---
 
 ## Current Milestone
 
-Milestone 10 - Gameplay Expansion
+Milestone 11 - Feedback & Balancing
 
 Next Goal:
 
-Introduce new gameplay decisions (food variants, advanced level mechanics).
+Playtesting, difficulty tuning, and balance adjustments.
 
 ---
 
 ## Current Priorities
 
-1. Replayability systems (Milestone 9)
-2. Endless mode, statistics, and achievements
-3. Gameplay expansion planning (Milestone 10)
+1. Feedback and balancing (Milestone 11)
+2. Playtesting and UX improvements
+3. Mobile packaging planning (Milestone 13)
 
 ---
 
 ## Next Milestone
 
-Milestone 10 - Gameplay Expansion
+Milestone 11 - Feedback & Balancing
 
 Planned Focus:
 
-- Food variants (gold food, poison food, speed food)
-- Advanced level mechanics (wrap-around, portals, moving obstacles)
-- Advanced challenges (enemy snake, boss levels)
+- Playtesting
+- Difficulty tuning
+- Balance adjustments
+- UX improvements
 
 ---
 
@@ -196,6 +197,35 @@ Planned Focus:
 - Screen reader announces new unlocks via existing `aria-live` region
 - Achievements displayed on idle screen and game over/win screens
 
+### Gameplay Expansion — Food Variants (Milestone 10, Phase 1)
+
+- `Food` type with `position`, `type` ('normal' | 'gold' | 'poison' | 'slow'), and `timer` fields
+- `GameState.food` changed from `Position` to `Food`; `speedEffectTicks` added to GameState
+- `src/game/food.ts`: weighted random type selection (80/10/5/5), timer constants, portal exclusion
+- `src/game/state.ts`: type-specific effects (gold +30pts, poison shrink, slow 1.3x speed for 10 ticks)
+- `src/game/Engine.ts`: `SLOW_EFFECT_MULTIPLIER = 1.3` applied when `speedEffectTicks > 0`
+- `src/components/Cell.tsx`: type-specific rendering (circle/diamond/square/triangle shapes, colors, animations)
+- `src/components/ScoreBoard.tsx`: SLOW indicator badge when `speedEffectTicks > 0`
+- 3 new CSS tokens: `--color-food-poison` (#d946ef), `--color-food-slow` (#22d3ee)
+
+### Gameplay Expansion — Wrap-Around Levels (Milestone 10, Phase 2)
+
+- `Level.wrapAround?: boolean` field in level metadata
+- Level 5 (Maze Runner) has `wrapAround: true`
+- `src/game/collision.ts`: `isWallCollision` accepts `wrapAround` parameter; returns false when true
+- `src/game/state.ts`: coordinates normalized modulo grid size before collision check when wrapAround is active
+- `src/components/Board.tsx`: `data-wrap-around="true"` attribute; dashed border visual indicator
+
+### Gameplay Expansion — Portal Levels (Milestone 10, Phase 3)
+
+- `Level.portals?: [Position, Position][]` field in level metadata
+- Level 7 (Four Chambers) has one portal pair: `[[{x:2,y:4}, {x:16,y:15}]]`
+- `src/game/state.ts`: teleport head to paired position on portal landing; collision checked at destination
+- `src/game/food.ts`: portal positions excluded from food spawn candidates
+- `src/components/Cell.tsx`: portal rendering with rotating ring pseudo-elements
+- New CSS token: `--color-portal` (#a855f7)
+- `@keyframes spin` and `spinReverse` animations for portal visual
+
 ### Testing
 
 - Automated testing infrastructure
@@ -204,7 +234,7 @@ Planned Focus:
 
 ## In Progress
 
-- Milestone 10: Gameplay Expansion (food variants, advanced mechanics)
+- Milestone 11: Feedback & Balancing (playtesting, tuning)
 
 ---
 
@@ -362,12 +392,33 @@ Milestone 9 (Replayability Systems) overall success criteria (completed):
 - SPEC.md, ARCHITECTURE.md, ROADMAP.md, PROJECT_STATE.md updated ✅
 - `package.json` version bumped to `0.9.0` ✅
 
+Milestone 10 (Gameplay Expansion) success criteria (completed):
+
+- All three food variants spawn, render, and apply effects correctly ✅
+- Food timers work correctly (gold: 10 ticks; slow: 8 ticks; normal/poison: persist) ✅
+- Slow effect visibly slows the game and expires after 10 ticks ✅
+- Level 5 (Maze Runner) allows wrap-around; snake exits and re-enters ✅
+- Non-wrap levels still trigger wall collision as game over ✅
+- Level 5 has a visible dashed border indicator ✅
+- Level 7 (Four Chambers) has one working portal pair ✅
+- Teleport into wall/obstacle/body triggers game over ✅
+- Food does not spawn on portal tiles ✅
+- 3 new CSS tokens added to `src/index.css` ✅
+- Poison food is visibly magenta; slow food is visibly cyan; portal tiles are visibly purple ✅
+- Portal tiles have a slow rotation animation ✅
+- All existing tests pass (212 baseline) ✅
+- New tests added for all new mechanics ✅
+- `npm run build` completes with no errors ✅
+- `npm run lint` passes with no new warnings ✅
+- SPEC.md, ARCHITECTURE.md, ROADMAP.md, PROJECT_STATE.md updated ✅
+- `package.json` version bumped to `0.10.0` ✅
+
 ---
 
 ## Important Notes
 
-Milestone 9 (Replayability Systems) is complete. All three phases — Endless Mode, Statistics, and Achievements — are fully implemented and tested.
+Milestone 10 (Gameplay Expansion) is complete. All three phases — Food Variants, Wrap-Around Levels, and Portal Levels — are fully implemented and tested.
 
-The next milestone is Milestone 10 (Gameplay Expansion), which will introduce food variants, advanced level mechanics, and new gameplay challenges.
+The next milestone is Milestone 11 (Feedback & Balancing), which will focus on playtesting and tuning.
 
 The PWA is live at `https://adityasingh-x.github.io/snake-run/` and can be installed on phones and desktops.

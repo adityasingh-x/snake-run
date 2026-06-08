@@ -3,7 +3,7 @@ import { useGame } from '../hooks/useGame';
 import { useKeyboard } from '../hooks/useKeyboard';
 import { useTouch } from '../hooks/useTouch';
 import { sharedSoundManager } from '../platform/sound';
-import { getLevelData } from '../game/levels';
+import { getLevelData, getPortalPositions } from '../game/levels';
 import { LEVEL_COUNT } from '../game/constants';
 import { Board } from './Board';
 import { ScoreBoard } from './ScoreBoard';
@@ -182,7 +182,7 @@ export const Game = () => {
           </button>
         </div>
       )}
-      <ScoreBoard score={state.score} highScore={state.highScore} level={state.level} levelName={getLevelData(state.level).name} foodEaten={state.foodEaten} foodRequired={getLevelData(state.level).foodRequired} isEndless={state.isEndless} />
+      <ScoreBoard score={state.score} highScore={state.highScore} level={state.level} levelName={getLevelData(state.level).name} foodEaten={state.foodEaten} foodRequired={getLevelData(state.level).foodRequired} isEndless={state.isEndless} speedEffectTicks={state.speedEffectTicks} />
       <div className={styles.controlsRow}>
         <button
           className={styles.toolbarBtn}
@@ -214,7 +214,7 @@ export const Game = () => {
         )}
       </div>
       <div className={styles.boardWrapper} ref={boardRef}>
-        <Board snake={state.snake} direction={state.direction} food={state.food} obstacles={state.obstacles} />
+        <Board snake={state.snake} direction={state.direction} food={state.food} obstacles={state.obstacles} wrapAround={getLevelData(state.level).wrapAround} portals={getPortalPositions(state.level)} />
         {state.status === 'idle' && (
           <div className={styles.overlay}>
             <div className={styles.overlayContent}>

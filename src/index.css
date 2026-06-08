@@ -27,6 +27,13 @@
   --color-board-border: #334155;
   --color-cell-border: #1e293b;
 
+  /* Milestone 10 — Food Variants */
+  --color-food-poison: #d946ef;
+  --color-food-slow:   #22d3ee;
+
+  /* Milestone 10 — Portals */
+  --color-portal: #a855f7;
+
   /* Typography */
   --font-display: "Press Start 2P", system-ui, sans-serif;
   --font-body: system-ui, -apple-system, sans-serif;
