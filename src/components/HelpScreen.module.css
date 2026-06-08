@@ -1,0 +1,63 @@
+.sections {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  width: 100%;
+  max-width: 400px;
+  text-align: left;
+  margin-bottom: var(--space-lg);
+}
+
+.section {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+}
+
+.sectionTitle {
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  color: var(--color-accent-soft);
+  margin-bottom: var(--space-sm);
+}
+
+.list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  color: var(--color-text-body);
+  font-size: 0.9rem;
+}
+
+.list li::before {
+  content: '› ';
+  color: var(--color-accent);
+}
+
+.foodNormal {
+  color: var(--color-danger);
+  font-weight: 600;
+}
+
+.foodGold {
+  color: var(--color-warning);
+  font-weight: 600;
+}
+
+.foodPoison {
+  color: var(--color-food-poison);
+  font-weight: 600;
+}
+
+.foodSlow {
+  color: var(--color-food-slow);
+  font-weight: 600;
+}
+
+.backButton {
+  margin-top: var(--space-lg);
+}

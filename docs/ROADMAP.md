@@ -164,6 +164,21 @@ Planned packaging technology:
 - Engine persistence validation (destroy+recreate, pause stats, playing high score)
 - Manual validation documentation
 
+### Milestone 12 - User Experience & Navigation
+
+- Main Menu with Continue, New Game, Statistics, Achievements, Settings, Help
+- Continue experience showing last unlocked level and high score
+- Statistics Screen (dedicated full-screen view)
+- Achievements Screen (dedicated full-screen view)
+- Help / How To Play Screen
+- Settings Screen with sound toggle, theme selection, and reset options
+- 4-theme system (Neon Arcade, Classic, Terminal, High Contrast)
+- ReadyOverlay showing level metadata before gameplay starts
+- Improved PauseMenu with Resume, Restart Level, and Return to Menu
+- Centralized persistence service (`loadGameProfile()`)
+- State-based screen navigation (no routing library)
+- 392 tests across 26 test files
+
 ---
 
 ## In Progress
@@ -174,7 +189,6 @@ None
 
 ## Not Started
 
-- UX and navigation
 - Onboarding
 - Polish
 - Accessibility pass
@@ -198,12 +212,15 @@ The project already contains:
 - PWA deployment
 - Accessibility foundations
 - Endless mode
+- Main menu and screen navigation
+- Settings and theme system
+- Improved pause experience
 
 The next phase should focus on:
 
-1. Validation
-2. User experience
-3. Polish
+1. Onboarding
+2. Polish
+3. Accessibility pass
 4. Packaging
 
 Large gameplay feature additions are intentionally paused until validation is complete.
@@ -353,7 +370,6 @@ Options:
 - Statistics
 - Achievements
 - Settings
-- Credits
 
 ---
 
@@ -479,16 +495,6 @@ Theme Success Criteria:
 - Theme selection persists across sessions
 - All game screens render correctly in every theme
 - New themes can be added with minimal engineering effort
-
----
-
-## Feature: Credits Screen
-
-Display:
-
-- Project name
-- Author
-- Technology stack
 
 ---
 

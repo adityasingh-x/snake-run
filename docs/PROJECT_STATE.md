@@ -2,52 +2,52 @@
 
 ## Current Version
 
-v0.11.0
+v0.12.0
 
 ---
 
 ## Current Status
 
-Milestone 11 (Gameplay Validation & Stability) Complete
+Milestone 12 (User Experience & Navigation) Complete
 
-All five phases of Milestone 11 are now complete:
-- Phase 1: Portal & Layout Safety Validation — portal exit safety, food spawn capacity, spawn center safety
-- Phase 2: Reachability Analysis Module — BFS-based reachability utility with portal and wrap-around support
-- Phase 3: Systematic Level-by-Level Validation Suite — 75 tests validating all 10 levels
-- Phase 4: Persistence & Integration Validation — corruption-resilient loadStats, Engine persistence tests
-- Phase 5: Manual Validation Documentation — structural validation complete, manual playthrough deferred to human
+All phases of Milestone 12 are now complete:
+- Phase 1: Navigation Infrastructure — state-based screen router, MainMenu shell, shared screen styles
+- Phase 2: Screens & Persistence — MainMenu, StatisticsScreen, AchievementsScreen, HelpScreen, ReadyOverlay, centralized `loadGameProfile()` service
+- Phase 3: Settings & Themes — SettingsScreen with sound toggle, theme selector (4 themes), reset confirmations
+- Phase 4: Improved Pause — PauseMenu with Resume, Restart Level, Return to Menu; Engine `restartLevel()`
+- Phase 5: Tests & Documentation — 392 tests across 26 test files, all documentation updated
 
 ---
 
 ## Current Milestone
 
-Milestone 12 - User Experience & Navigation
+Milestone 13 - Onboarding & Discoverability
 
 Next Goal:
 
-Build main menu, statistics and achievements screens, settings and credits screens, and improved pause and navigation experience.
+Teach players the game's mechanics without requiring external documentation.
 
 ---
 
 ## Current Priorities
 
-1. Main menu implementation (Milestone 12)
-2. Statistics and achievements screens (Milestone 12)
-3. Settings and credits screens (Milestone 12)
-4. Improved pause and navigation experience (Milestone 12)
+1. First-time player onboarding (Milestone 13)
+2. In-game gameplay guide (Milestone 13)
+3. Mechanics guide for food variants, portals, wrap-around (Milestone 13)
+4. Endless mode explanation (Milestone 13)
 
 ---
 
 ## Next Milestone
 
-Milestone 12 - User Experience & Navigation
+Milestone 13 - Onboarding & Discoverability
 
 Planned Focus:
 
-- Main menu
-- Statistics and achievements screens
-- Settings and credits screens
-- Improved pause and navigation experience
+- First-time player experience
+- Gameplay guide
+- Mechanics guide
+- Endless mode explanation
 
 ---
 
@@ -69,14 +69,22 @@ Planned Focus:
 - Accessibility support
 - Sound effects
 - High score persistence
+- Main menu with Continue, New Game, Statistics, Achievements, Settings, Help
+- Screen-based navigation (no router)
+- Ready overlay with level metadata
+- Pause menu with Resume, Restart Level, Return to Menu
+- Settings screen with sound toggle, theme selection, reset options
+- Confirmation dialogs for destructive actions
+- Help / How To Play screen
 
 ### Visuals
 
 - Directional snake eyes
 - CSS variable token system (18 color tokens, font tokens, spacing, shadows, radius, transitions)
+- 4-theme system (Neon Arcade, Classic Snake, Terminal, High Contrast)
 - Self-hosted "Press Start 2P" display font
 - Arcade-style ScoreBoard HUD with food progress meter
-- Redesigned overlays (idle, pause, game over, win, level transition) with neon aesthetic
+- Redesigned overlays with neon aesthetic
 - Polished board border with glow, refined cell styling
 - D-pad and toolbar buttons with arcade styling
 
@@ -243,15 +251,27 @@ Planned Focus:
 - 356 tests passing across 19 test files
 - All 10 levels validated: no broken levels, no impossible starts, no progression blockers
 
-### Testing
+### User Experience & Navigation (Milestone 12)
 
-- Automated testing infrastructure
+- Main menu with Continue, New Game, Statistics, Achievements, Settings, Help
+- Continue shows last unlocked level and high score
+- Statistics and Achievements dedicated full-screen screens
+- Help / How To Play screen with controls, food types, mechanics, progression, achievements
+- Settings screen with sound toggle, theme selector, and reset confirmations
+- 4-theme system: Neon Arcade (default), Classic Snake, Terminal, High Contrast
+- ReadyOverlay showing level name, description, and objective before gameplay
+- Improved PauseMenu with Resume, Restart Level, Return to Menu
+- Centralized persistence service (`src/game/profile.ts` with `loadGameProfile()`)
+- State-based screen navigation in `App.tsx` (no routing library)
+- 392 tests passing across 26 test files
+- `npm run build` completes with no errors
+- `npm run lint` passes with no new warnings
 
 ---
 
 ## In Progress
 
-Milestone 12 — User Experience & Navigation (planning phase).
+Milestone 13 — Onboarding & Discoverability (planning phase).
 
 ---
 
@@ -299,168 +319,29 @@ Gameplay Principles:
 
 ## Success Definition For Current Milestone
 
-### Milestone 11 — Gameplay Validation & Stability
+### Milestone 12 — User Experience & Navigation
 
 Target:
 
-- No broken levels
-- No impossible starts
-- No progression blockers
-- No known gameplay defects
-- All validation tests passing
+- Players always know what to do next
+- Navigation feels intentional
+- Settings feel complete
+- Theme selection works across the entire application
+- Game feels complete
 
-Milestone 4 success criteria (completed):
+Milestone 12 success criteria (completed):
 
-- Levels have names and descriptions ✅
-- Level transitions are visible and intentional ✅
-- Level complete overlay shows completed and next level info ✅
-- Level name displayed in HUD ✅
-- Snake does not reset abruptly on level-up ✅
-- Continue button and Space key advance to next level ✅
+- Main menu implementation ✅
+- Statistics and achievements screens ✅
+- Settings and credits screens ✅
+- Improved pause and navigation experience ✅
 - `npm run build` completes with no errors ✅
-- All 140 tests pass ✅
-- SPEC.md, ROADMAP.md, PROJECT_STATE.md, and ARCHITECTURE.md updated ✅
-
-Milestone 5 success criteria (completed):
-
-- Handcrafted obstacle layouts for all 10 levels ✅
-- Each level feels distinct ✅
-- Obstacles influence player decisions ✅
-- Levels become memorable ✅
-
-Milestone 6 success criteria (completed):
-
-- Players can quickly resume progress after failure ✅
-- Players can choose to restart from Level 1 ✅
-- Developers can instantly test any level ✅
-- Testing and balancing workflows become faster ✅
-
-Milestone 7 success criteria (completed):
-
-- Levels last longer (10–30 food per level vs previous 5) ✅
-- Mobile remains playable at all speeds (minimum 100ms, not 60ms) ✅
-- Difficulty feels fair — challenge from obstacle layouts, not reaction-time limits ✅
-- `npm run build` completes with no errors ✅
-- All 178 tests pass ✅
-- SPEC.md, ROADMAP.md, PROJECT_STATE.md, and ARCHITECTURE.md updated ✅
-
-Milestone 8 success criteria (completed):
-
-- Screenshots appear distinctive ✅
-- Visual style feels intentional ✅
-- UI no longer resembles a starter template ✅
-- `npm run build` completes with no errors ✅
-- All 178 tests pass ✅
-- `npm run lint` passes ✅
-- CSS variables defined and used consistently ✅
-- Self-hosted "Press Start 2P" font loads via `@font-face` ✅
-- ScoreBoard reads as cohesive arcade-style HUD panel ✅
-- All overlays share consistent visual language ✅
-- Board has polished border and background treatment ✅
-- Responsive layout verified on mobile and desktop ✅
+- `npm run lint` passes with no new warnings ✅
+- All existing 356 tests still pass (zero regressions) ✅
+- New tests added for all new components and engine changes ✅
+- SPEC.md updated with new screens, themes, and navigation behavior ✅
+- ARCHITECTURE.md updated with new components and theme system ✅
+- ROADMAP.md updated — Milestone 12 moved to Completed ✅
+- PROJECT_STATE.md updated — version bumped to 0.12.0, priorities updated ✅
+- `package.json` version bumped to `0.12.0` ✅
 - No hardcoded color values remain in component CSS ✅
-- Keyboard and touch controls function identically ✅
-- Accessibility preserved ✅
-- PWA manifest colors match tokens ✅
-- `package.json` version bumped to 0.8.0 ✅
-- ARCHITECTURE.md Styling Conventions updated ✅
-- SPEC.md Section 14 revised ✅
-- ROADMAP.md updated — M8 marked complete ✅
-- PROJECT_STATE.md updated ✅
-
-Milestone 9 Phase 1 (Endless Mode) success criteria (completed):
-
-- Complete level 10 → win overlay shows "Endless Mode" button ✅
-- Click "Endless Mode" → game plays indefinitely, no level-ups ✅
-- Speed stays at 100ms, obstacles are level 10 layout ✅
-- ScoreBoard shows "Endless" and score only (no food meter) ✅
-- Game over in endless mode → shows "Endless Score" in overlay ✅
-- `npm run build` succeeds ✅
-- `npm test` all pass (194 tests) ✅
-- `npm run lint` passes ✅
-- SPEC.md, ARCHITECTURE.md, ROADMAP.md, PROJECT_STATE.md updated ✅
-
-Milestone 9 Phase 2 (Statistics) success criteria (completed):
-
-- Start a game, eat food, game over → games played +1, total food updated ✅
-- Complete multiple runs → games played accumulates correctly ✅
-- Reach level 5, then die → best level recorded as 5 ✅
-- Idle screen shows statistics panel ✅
-- Game over screen shows statistics summary ✅
-- `npm run build` succeeds ✅
-- `npm test` all pass ✅
-- `npm run lint` passes ✅
-
-Milestone 9 Phase 3 (Achievements) success criteria (completed):
-
-- Win the game → "Snake Master" achievement unlocks and persists ✅
-- Score 500 → "High Scorer" unlocks during gameplay ✅
-- Win without pausing → "Marathon Run" unlocks ✅
-- Achievements persist across page reloads ✅
-- Idle screen shows unlock status ✅
-- Game over/win screens show newly unlocked achievements ✅
-- Screen reader announces unlock ✅
-- `npm run build` succeeds ✅
-- `npm test` all pass ✅
-- `npm run lint` passes ✅
-
-Milestone 9 (Replayability Systems) overall success criteria (completed):
-
-- Endless Mode playable from win screen with indefinite play, no level-ups ✅
-- Statistics tracking (games played, total food, best level) persisted and displayed ✅
-- All 3 achievements detectable, persistable, and displayed ✅
-- Idle screen shows statistics and achievements ✅
-- Game Over / Win screens show statistics and newly unlocked achievements ✅
-- Screen reader announces achievement unlocks ✅
-- All existing tests still pass ✅
-- New tests added for all new modules and components ✅
-- `npm run build` completes with no errors ✅
-- `npm run lint` passes with no new warnings ✅
-- SPEC.md, ARCHITECTURE.md, ROADMAP.md, PROJECT_STATE.md updated ✅
-- `package.json` version bumped to `0.9.0` ✅
-
-Milestone 10 (Gameplay Expansion) success criteria (completed):
-
-- All three food variants spawn, render, and apply effects correctly ✅
-- Food timers work correctly (gold: 10 ticks; slow: 8 ticks; normal/poison: persist) ✅
-- Slow effect visibly slows the game and expires after 10 ticks ✅
-- Level 5 (Maze Runner) allows wrap-around; snake exits and re-enters ✅
-- Non-wrap levels still trigger wall collision as game over ✅
-- Level 5 has a visible dashed border indicator ✅
-- Level 7 (Four Chambers) has one working portal pair ✅
-- Teleport into wall/obstacle/body triggers game over ✅
-- Food does not spawn on portal tiles ✅
-- 3 new CSS tokens added to `src/index.css` ✅
-- Poison food is visibly magenta; slow food is visibly cyan; portal tiles are visibly purple ✅
-- Portal tiles have a slow rotation animation ✅
-- All existing tests pass (212 baseline) ✅
-- New tests added for all new mechanics ✅
-- `npm run build` completes with no errors ✅
-- `npm run lint` passes with no new warnings ✅
-- SPEC.md, ARCHITECTURE.md, ROADMAP.md, PROJECT_STATE.md updated ✅
-- `package.json` version bumped to `0.10.0` ✅
-
-Milestone 11 (Gameplay Validation & Stability) success criteria (completed):
-
-- No broken levels ✅
-- No impossible starts ✅
-- No progression blockers ✅
-- All validation tests passing (356 tests) ✅
-- `npm run build` completes with no errors ✅
-- `npm run lint` passes with no new warnings ✅
-- `npm test` passes with zero failures (356/356 on clean re-run) ✅
-- `package.json` version bumped to `0.11.0` ✅
-- ROADMAP.md updated — Milestone 11 moved to "Completed" ✅
-- PROJECT_STATE.md updated — version bumped to 0.11.0, milestone status updated ✅
-- Automated structural validation complete for all 10 levels ✅
-- Manual playthrough validation deferred to human (documented in M11_VALIDATION_NOTES.md) ✅
-
----
-
-## Important Notes
-
-Milestone 11 (Gameplay Validation & Stability) is complete. All five phases — Portal & Layout Safety, Reachability Module, Level Validation Suite, Persistence & Integration, and Manual Validation Documentation — are fully implemented and tested. 356 tests pass across 19 test files. No broken levels, impossible starts, or progression blockers were found.
-
-The next milestone is Milestone 12 (User Experience & Navigation), which will focus on main menu, statistics/achievements screens, settings, and improved navigation.
-
-The PWA is live at `https://adityasingh-x.github.io/snake-run/` and can be installed on phones and desktops.

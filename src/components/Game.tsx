@@ -9,8 +9,8 @@ import { Board } from './Board';
 import { ScoreBoard } from './ScoreBoard';
 import { GameOver } from './GameOver';
 import { LevelTransition } from './LevelTransition';
-import { Statistics } from './Statistics';
-import { Achievements } from './Achievements';
+import { ReadyOverlay } from './ReadyOverlay';
+import { PauseMenu } from './PauseMenu';
 import styles from './Game.module.css';
 
 const DPAD_STORAGE_KEY = 'snakeDpadEnabled';
@@ -24,7 +24,12 @@ const STATUS_ANNOUNCEMENTS: Record<string, string> = {
   won: 'You won! Press Space for new game or click Continue.',
 };
 
-export const Game = () => {
+interface GameProps {
+  startLevel: number;
+  onNavigateToMenu?: () => void;
+}
+
+export const Game = ({ startLevel, onNavigateToMenu }: GameProps) => {
   const {
     state,
     stats,
@@ -32,11 +37,11 @@ export const Game = () => {
     initAudio,
     startGame,
     startGameAtLevel,
+    restartLevel,
     startEndlessGame,
     pauseGame,
     resumeGame,
     changeDirection,
-    resetGame,
     continueGame,
   } = useGame();
 
@@ -49,6 +54,9 @@ export const Game = () => {
       return true;
     }
   });
+
+  // Ready overlay state: when set, shows the ready overlay for the given level
+  const [readyLevel, setReadyLevel] = useState<number | null>(startLevel);
 
   const handleToggleSound = useCallback(() => {
     const next = sharedSoundManager.toggleSound();
@@ -67,20 +75,20 @@ export const Game = () => {
     });
   }, []);
 
-  const handleStart = useCallback(() => {
+  const handleReadyStart = useCallback(() => {
     initAudio();
-    startGame();
-  }, [initAudio, startGame]);
+    if (readyLevel !== null) {
+      startGameAtLevel(readyLevel);
+      setReadyLevel(null);
+    } else {
+      startGame();
+    }
+  }, [initAudio, readyLevel, startGameAtLevel, startGame]);
 
   const handleResume = useCallback(() => {
     initAudio();
     resumeGame();
   }, [initAudio, resumeGame]);
-
-  const handleRestart = useCallback(() => {
-    initAudio();
-    resetGame();
-  }, [initAudio, resetGame]);
 
   const handlePause = useCallback(() => {
     pauseGame();
@@ -91,15 +99,23 @@ export const Game = () => {
     continueGame();
   }, [initAudio, continueGame]);
 
-  const handleStartAtLevel = useCallback((level: number) => {
-    initAudio();
-    startGameAtLevel(level);
-  }, [initAudio, startGameAtLevel]);
-
   const handleStartEndless = useCallback(() => {
     initAudio();
     startEndlessGame();
   }, [initAudio, startEndlessGame]);
+
+  const handleRestartLevel = useCallback(() => {
+    initAudio();
+    restartLevel();
+  }, [initAudio, restartLevel]);
+
+  const handleSetReadyLevel = useCallback((level: number) => {
+    setReadyLevel(level);
+  }, []);
+
+  const handleReturnToMenu = useCallback(() => {
+    onNavigateToMenu?.();
+  }, [onNavigateToMenu]);
 
   const [devLevel, setDevLevel] = useState(1);
 
@@ -135,13 +151,18 @@ export const Game = () => {
     prevUnlockedRef.current = currentUnlocked;
   }, [achievements]);
 
+  // When ready overlay is active, present 'idle' to the keyboard layer so Space
+  // routes to handleReadyStart (which knows whether to start a new game or
+  // resume from the ready overlay via the readyLevel state check).
+  const keyboardStatus = readyLevel !== null ? 'idle' : state.status;
+
   useKeyboard({
-    status: state.status,
+    status: keyboardStatus,
     currentDirection: state.direction,
-    onStart: handleStart,
+    onStart: handleReadyStart,
     onPause: pauseGame,
     onResume: handleResume,
-    onRestart: handleRestart,
+    onRestart: handleReadyStart,
     onContinue: handleContinue,
     onChangeDirection: changeDirection,
   });
@@ -175,7 +196,11 @@ export const Game = () => {
           </select>
           <button
             className={styles.devSelectBtn}
-            onClick={() => handleStartAtLevel(devLevel)}
+            onClick={() => {
+              initAudio();
+              startGameAtLevel(devLevel);
+              setReadyLevel(null);
+            }}
             type="button"
           >
             Go
@@ -215,30 +240,21 @@ export const Game = () => {
       </div>
       <div className={styles.boardWrapper} ref={boardRef}>
         <Board snake={state.snake} direction={state.direction} food={state.food} obstacles={state.obstacles} wrapAround={getLevelData(state.level).wrapAround} portals={getPortalPositions(state.level)} />
-        {state.status === 'idle' && (
-          <div className={styles.overlay}>
-            <div className={styles.overlayContent}>
-              <h2>Snake Run</h2>
-              <p>Use arrow keys or WASD to move</p>
-              <button className={styles.startButton} onClick={handleStart} autoFocus>
-                Start Game
-              </button>
-              <p className={styles.hint}>Or press Space</p>
-              <Statistics gamesPlayed={stats.gamesPlayed} totalFood={stats.totalFood} bestLevel={stats.bestLevel} highScore={stats.highScore} />
-              <Achievements achievements={achievements} />
-            </div>
-          </div>
+        {readyLevel !== null && (
+          <ReadyOverlay
+            startLevel={readyLevel}
+            levelName={getLevelData(readyLevel).name}
+            levelDescription={getLevelData(readyLevel).description}
+            levelObjective={`Eat ${getLevelData(readyLevel).foodRequired} food to complete this level.`}
+            onStart={handleReadyStart}
+          />
         )}
-        {state.status === 'paused' && (
-          <div className={styles.overlay}>
-            <div className={styles.overlayContent}>
-              <h2>Paused</h2>
-              <button className={styles.startButton} onClick={handleResume} autoFocus>
-                Resume
-              </button>
-              <p className={styles.hint}>Or press Space</p>
-            </div>
-          </div>
+        {state.status === 'paused' && readyLevel === null && (
+          <PauseMenu
+            onResume={handleResume}
+            onRestartLevel={handleRestartLevel}
+            onReturnToMenu={handleReturnToMenu}
+          />
         )}
         {state.status === 'levelComplete' && (
           <LevelTransition
@@ -250,11 +266,20 @@ export const Game = () => {
             onContinue={handleContinue}
           />
         )}
-        {state.status === 'gameover' && (
-          <GameOver score={state.score} onRestart={handleRestart} onContinueFromLevel={handleStartAtLevel} lastUnlockedLevel={state.lastUnlockedLevel} stats={stats} achievements={achievements} newAchievementIds={newAchievementIds} />
-        )}
-        {state.status === 'won' && (
-          <GameOver score={state.score} onRestart={handleRestart} onContinueFromLevel={handleStartAtLevel} lastUnlockedLevel={state.lastUnlockedLevel} variant="win" onStartEndless={handleStartEndless} stats={stats} achievements={achievements} newAchievementIds={newAchievementIds} />
+        {(state.status === 'gameover' || state.status === 'won') && readyLevel === null && (
+          <GameOver
+            score={state.score}
+            onRestart={() => handleSetReadyLevel(1)}
+            onContinueFromLevel={(level) => handleSetReadyLevel(level)}
+            lastUnlockedLevel={state.lastUnlockedLevel}
+            variant={state.status === 'won' ? 'win' : 'gameover'}
+            isEndless={state.isEndless}
+            onStartEndless={handleStartEndless}
+            onReturnToMenu={handleReturnToMenu}
+            stats={stats}
+            achievements={achievements}
+            newAchievementIds={newAchievementIds}
+          />
         )}
       </div>
       <div className={`${styles.dpad} ${(state.status === 'playing' || state.status === 'paused') && dpadOn ? '' : styles.dpadHidden}`}>
