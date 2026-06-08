@@ -140,6 +140,30 @@ export class Engine {
     this.startLoop();
   }
 
+  /**
+   * Restart the current level without resetting accumulated run state.
+   * Preserves score, direction, and nextDirection while resetting level
+   * metadata (obstacles, food, snake length, foodEaten). START_AT_LEVEL
+   * always resets these fields by design, so the explicit restore after
+   * dispatch is the additive behavior that makes this a "retry" rather
+   * than a "fresh start."
+   */
+  restartLevel(): void {
+    const savedScore = this.state.score;
+    const savedDirection = this.state.direction;
+    const savedNextDirection = this.state.nextDirection;
+    this.dispatch({ type: 'START_AT_LEVEL', payload: this.state.level });
+    // Restore accumulated run state; level metadata (obstacles, food) is already reset
+    this.state = {
+      ...this.state,
+      score: savedScore,
+      direction: savedDirection,
+      nextDirection: savedNextDirection,
+    };
+    this.listeners.forEach(listener => listener(this.state));
+    this.startLoop();
+  }
+
   startEndless(): void {
     this.wasPaused = false;
     this.dispatch({ type: 'START_ENDLESS_GAME' });

@@ -87,6 +87,24 @@
   color: var(--color-text-primary);
 }
 
+.mutedButton {
+  background: transparent;
+  color: var(--color-text-hint);
+  border: 2px solid var(--color-border-default);
+  padding: 10px 24px;
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  margin-top: var(--space-sm);
+}
+
+.mutedButton:hover {
+  color: var(--color-text-label);
+  border-color: var(--color-text-label);
+}
+
 .hint {
   color: var(--color-text-hint);
   font-size: 0.85rem;

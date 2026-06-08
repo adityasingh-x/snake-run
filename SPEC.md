@@ -246,12 +246,12 @@ won
 ### 7.2 State Descriptions
 | Status | Description | Board | Overlay |
 |--------|-------------|-------|---------|
-| `idle` | Initial state, game not started | Shows snake + food + obstacles | "Snake Run" with Start button |
+| `idle` | Initial state, game not started | Shows snake + food + obstacles | ReadyOverlay with level name, description, objective, and Start button |
 | `playing` | Active gameplay, snake moving | Full board visible | None |
-| `paused` | Game paused by user | Board visible (frozen) | "Paused" with Resume button |
+| `paused` | Game paused by user | Board visible (frozen) | PauseMenu with Resume, Restart Level, and Return to Menu |
 | `levelComplete` | Level completed, waiting for player to continue | Board visible (frozen) | LevelTransition with completed/next level info |
-| `gameover` | Player lost | Board visible (frozen) | "Game Over!" with score + "Continue from Level N" (if unlocked) + "New Game" |
-| `won` | Player completed level 10 | Board visible (frozen) | "You Win!" with score + "Continue from Level N" (if unlocked) + "New Game" |
+| `gameover` | Player lost | Board visible (frozen) | "Game Over!" with score + "Continue from Level N" (if unlocked) + "New Game" + "Return to Menu" |
+| `won` | Player completed level 10 | Board visible (frozen) | "You Win!" with score + "Continue from Level N" (if unlocked) + "New Game" + "Endless Mode" + "Return to Menu" |
 
 ---
 
@@ -393,6 +393,72 @@ won
 - Uses same overlay pattern as idle/paused overlays (`rgba(15, 23, 42, 0.95)` backdrop)
 - Button uses same styling as Start/Resume buttons
 
+### 10.7 ReadyOverlay
+
+- Shown when Game mounts with a `startLevel` prop before gameplay begins
+- Displays:
+  - Level number
+  - Level name
+  - Level description
+  - Level objective (food required)
+  - Start button (`autoFocus`)
+  - "Press Space to start" hint
+- On Start click, calls `startGameAtLevel(startLevel)` and the overlay disappears
+
+### 10.8 PauseMenu
+
+- Replaces the inline pause overlay
+- Shows:
+  - "Paused" heading
+  - "Resume" button (primary, `autoFocus`)
+  - "Restart Level" button (secondary)
+  - "Return to Menu" button (muted)
+  - "Press Space to resume" hint
+- Resume continues gameplay
+- Restart Level retries the current level without resetting accumulated run score
+- Return to Menu calls `onNavigateToMenu` prop
+
+### 10.9 MainMenu
+
+- Entry screen displayed on app load
+- Shows:
+  - Game title "Snake Run"
+  - Continue hint (last unlocked level + high score) when progress exists
+  - Continue button (when `lastUnlockedLevel > 1` or `highScore > 0`)
+  - New Game button
+  - Statistics, Achievements, Settings, Help buttons
+- Continue navigates to Game with `startLevel = lastUnlockedLevel`
+- New Game navigates to Game with `startLevel = 1`
+
+### 10.10 StatisticsScreen
+
+- Full-screen wrapper around the Statistics presentational component
+- Displays all four stats (Games Played, Total Food, Best Level, High Score)
+- Back button returns to MainMenu
+
+### 10.11 AchievementsScreen
+
+- Full-screen wrapper around the Achievements presentational component
+- Shows all achievements with locked/unlocked state
+- Back button returns to MainMenu
+
+### 10.12 SettingsScreen
+
+- Sound toggle (ON/OFF button)
+- Theme selector dropdown (Neon Arcade, Classic Snake, Terminal, High Contrast)
+- Danger zone with reset buttons:
+  - Reset Progress (clears `snakeLastUnlockedLevel`)
+  - Reset Statistics (clears stats keys)
+  - Reset Achievements (clears `snakeAchievements`)
+- Each reset action shows a confirmation dialog with Cancel (default focus) and Confirm
+- Back button returns to MainMenu
+
+### 10.13 HelpScreen
+
+- Static help screen explaining game mechanics
+- Sections: Controls, Food Types, Special Mechanics, Progression, Achievements
+- Back button returns to MainMenu
+
 ---
 
 ## 11. Accessibility
@@ -494,30 +560,43 @@ won
 - **Mobile viewport:** `position: fixed`, `overflow: hidden`, `overscroll-behavior: none`, `touch-action: none` on body and root
 - **Safe-area insets:** `padding: max(var(--space-lg), env(safe-area-inset-*))` on game container for notched devices
 - **iOS PWA:** `apple-mobile-web-app-capable`, `viewport-fit=cover`, `theme-color` meta tags
+- **Themes:** 4 themes implemented via `[data-theme]` attribute on `<html>`:
+  - **Neon Arcade** (default): existing dark navy + neon green/purple
+  - **Classic Snake**: light cream background, forest green snake, minimal glow
+  - **Terminal**: black background, green monochrome, no glow
+  - **High Contrast**: black background, maximum contrast colors (yellow snake, red food, blue obstacles, magenta/cyan food variants), no glow
+- **Theme system:** All colors reference CSS custom properties. No component contains theme-specific logic. New themes are addable by creating a new `[data-theme="..."]` block in `src/index.css`.
 
 ---
 
 ## 15. Testing
 
 - **Framework:** Vitest with jsdom environment
-- **255 unit tests** across 17 test files:
+- **392 unit tests** across 26 test files:
   - `state.test.ts` (43 tests): gameReducer state transitions (START, RESET, PAUSE, RESUME, CHANGE_DIRECTION, MOVE_SNAKE, collisions, levelComplete, CONTINUE_GAME, win, high score, START_AT_LEVEL, lastUnlockedLevel tracking, endless mode)
-  - `Engine.test.ts` (26 tests): Engine class behavior (start, pause, resume, reset, continueGame, startAtLevel, startEndless, loop management, subscriptions, destroy, sound callback wiring, lastUnlockedLevel persistence)
+  - `Engine.test.ts` (31 tests): Engine class behavior (start, pause, resume, reset, continueGame, startAtLevel, restartLevel, startEndless, loop management, subscriptions, destroy, sound callback wiring, lastUnlockedLevel persistence)
   - `gameLogic.test.ts` (31 tests): positionsEqual, calculateNewHead, isWallCollision, isSelfCollision, isObstacleCollision, isCollision, spawnFood
   - `levelData.test.ts` (20 tests): getLevelData, generateObstacles, level metadata (name, description), layout validity
   - `storage.test.ts` (13 tests): loadHighScore, saveHighScore, loadLastUnlockedLevel, saveLastUnlockedLevel with localStorage mock
   - `statistics.test.ts` (5 tests): loadStats, incrementGamesPlayed, incrementTotalFood, updateBestLevel, saveStats
   - `achievements.test.ts` (7 tests): loadAchievements, saveAchievement, checkAchievements (beat_game, score_500, no_pause, wasPaused, re-award prevention)
+  - `profile.test.ts` (4 tests): loadGameProfile shape, defaults, corruption resilience, saveGameProfile
   - `Cell.test.tsx` (4 tests): Cell component rendering, accessibility, and direction styling
   - `touch.test.ts` (12 tests): Gesture recognizer with axis locking, cooldown, progress, disabled state
   - `useTouch.test.tsx` (2 tests): Hook integration with touch events
-  - `Game.test.tsx` (4 tests): Pause button rendering and interaction
+  - `Game.test.tsx` (9 tests): Pause button, dev level select, ReadyOverlay, Start click, PauseMenu return to menu, rapid mount/unmount stress test
   - `Board.test.tsx` (3 tests): Board rendering and responsive sizing
   - `pwa.test.ts` (6 tests): PWA build output verification (service worker, manifest, registration, HTML title, HTML manifest/SW links, manifest values)
   - `LevelTransition.test.tsx` (5 tests): LevelTransition component rendering, interaction, and accessibility
   - `GameOver.test.tsx` (9 tests): GameOver component rendering with continue/new game buttons, callback verification, win variant, endless mode UI
   - `Statistics.test.tsx` (1 test): Statistics component rendering
   - `Achievements.test.tsx` (3 tests): Achievements component rendering, locked/unlocked state, NEW badge
+  - `MainMenu.test.tsx` (6 tests): Menu options, Continue visibility, navigation callbacks
+  - `PauseMenu.test.tsx` (5 tests): Resume/Restart/Return buttons, callbacks, autoFocus
+  - `SettingsScreen.test.tsx` (6 tests): Sections, theme, sound, reset confirmation, back navigation, Escape cancels dialog
+  - `HelpScreen.test.tsx` (2 tests): Mechanics sections, back navigation
+  - `ReadyOverlay.test.tsx` (3 tests): Level metadata, Start button, autoFocus
+  - `StatisticsScreen.test.tsx` (2 tests): Stats rendering, back navigation
 
 ---
 
@@ -551,3 +630,64 @@ won
 - **Icons:** SVG favicon used as PWA icon (`purpose: 'any'`)
 - **iOS:** `apple-mobile-web-app-capable` enables standalone mode; no custom `apple-touch-icon` (falls back to screenshot)
 - **Deployment:** GitHub Pages via GitHub Actions (`.github/workflows/deploy.yml`)
+
+## 19. Navigation & Screens
+
+### 19.1 Screen Architecture
+
+The app uses a lightweight state-based navigation system in `App.tsx` with a `useState<Screen>` hook. No routing library is used. Screens are purely presentational and receive all data as props from `App.tsx`.
+
+Screens:
+- `menu` — MainMenu
+- `game` — Game (with `startLevel` prop)
+- `statistics` — StatisticsScreen
+- `achievements` — AchievementsScreen
+- `settings` — SettingsScreen
+- `help` — HelpScreen
+
+### 19.2 Startup Flow
+
+The only path from menu to gameplay:
+```
+MainMenu → Game (startLevel) → ReadyOverlay → Start → playing
+```
+
+- `Game` accepts `startLevel: number` and `onNavigateToMenu?: () => void` props
+- When mounted, `Game` shows `ReadyOverlay` with level metadata
+- Clicking Start calls `startGameAtLevel(startLevel)` and hides the overlay
+- The old idle overlay has been removed entirely
+
+### 19.3 Game Over Navigation
+
+| Action | Destination | Behavior |
+|--------|-------------|----------|
+| Continue | ReadyOverlay → lastUnlockedLevel | Preserves score |
+| New Game | ReadyOverlay → Level 1 | Resets score to 0 |
+| Return to Menu | MainMenu | Destroys Engine |
+
+### 19.4 Pause Menu
+
+The pause overlay shows three options:
+- **Resume** — continues gameplay
+- **Restart Level** — retries current level, preserves accumulated run score
+- **Return to Menu** — calls `onNavigateToMenu`, destroys Engine
+
+### 19.5 Persistence Service
+
+`src/game/profile.ts` provides a centralized `loadGameProfile()` function that returns:
+- `progress`: `{ lastUnlockedLevel, highScore }`
+- `statistics`: `Stats`
+- `achievements`: `Achievement[]`
+- `settings`: `{ soundEnabled, theme }`
+
+`App.tsx` loads the profile once on mount and passes slices to each screen as props. No screen reads localStorage directly.
+
+### 19.6 Theme System
+
+Themes are implemented via CSS custom property overrides on `[data-theme]` attribute on `<html>`:
+- `neon-arcade` (default)
+- `classic`
+- `terminal`
+- `high-contrast`
+
+The `useTheme()` hook in `src/hooks/useTheme.ts` reads/writes `snakeTheme` from localStorage and updates `document.documentElement.dataset.theme`. `main.tsx` sets the theme synchronously before React mounts to prevent flash.

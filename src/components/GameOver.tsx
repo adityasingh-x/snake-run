@@ -10,7 +10,7 @@ interface ButtonDef {
   variant: 'primary' | 'secondary';
 }
 
-export const GameOver = ({ score, onRestart, onContinueFromLevel, lastUnlockedLevel, variant = 'gameover', isEndless, onStartEndless, stats, achievements, newAchievementIds }: GameOverProps) => {
+export const GameOver = ({ score, onRestart, onContinueFromLevel, lastUnlockedLevel, variant = 'gameover', isEndless, onStartEndless, onReturnToMenu, stats, achievements, newAchievementIds }: GameOverProps) => {
   const isWin = variant === 'win';
 
   const buttons: ButtonDef[] = [];
@@ -47,6 +47,15 @@ export const GameOver = ({ score, onRestart, onContinueFromLevel, lastUnlockedLe
             {btn.label}
           </button>
         ))}
+        {onReturnToMenu && (
+          <button
+            className={styles.mutedButton}
+            onClick={onReturnToMenu}
+            type="button"
+          >
+            Return to Menu
+          </button>
+        )}
         {stats && (
           <Statistics gamesPlayed={stats.gamesPlayed} totalFood={stats.totalFood} bestLevel={stats.bestLevel} highScore={stats.highScore} />
         )}
@@ -54,7 +63,7 @@ export const GameOver = ({ score, onRestart, onContinueFromLevel, lastUnlockedLe
           <Achievements achievements={achievements} newAchievementIds={newAchievementIds} />
         )}
         <p className={styles.hint}>
-          {isWin && !isEndless ? 'Press Space for new game, or choose Endless Mode' : lastUnlockedLevel > 1 ? 'Press Space for new game — click Continue to resume' : 'Press Space to restart'}
+          {isWin && !isEndless ? 'Press Space for new game, or choose Endless Mode' : 'Press Space for new game'}
         </p>
       </div>
     </div>

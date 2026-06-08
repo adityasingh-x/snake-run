@@ -55,6 +55,7 @@ describe('Game Component', () => {
       initAudio: vi.fn(),
       startGame: vi.fn(),
       startGameAtLevel: vi.fn(),
+      restartLevel: vi.fn(),
       startEndlessGame: vi.fn(),
       pauseGame: mockPauseGame,
       resumeGame: vi.fn(),
@@ -65,7 +66,7 @@ describe('Game Component', () => {
   });
 
   it('renders pause button when game is playing', () => {
-    render(<Game />);
+    render(<Game startLevel={1} />);
     const pauseButton = screen.getByRole('button', { name: /pause game/i });
     expect(pauseButton).toBeInTheDocument();
   });
@@ -78,6 +79,7 @@ describe('Game Component', () => {
       initAudio: vi.fn(),
       startGame: vi.fn(),
       startGameAtLevel: vi.fn(),
+      restartLevel: vi.fn(),
       startEndlessGame: vi.fn(),
       pauseGame: mockPauseGame,
       resumeGame: vi.fn(),
@@ -86,13 +88,13 @@ describe('Game Component', () => {
       continueGame: vi.fn(),
     });
 
-    render(<Game />);
+    render(<Game startLevel={1} />);
     expect(screen.queryByRole('button', { name: /pause game/i })).not.toBeInTheDocument();
   });
 
   it('calls pauseGame when pause button is clicked', async () => {
     const user = userEvent.setup();
-    render(<Game />);
+    render(<Game startLevel={1} />);
     const pauseButton = screen.getByRole('button', { name: /pause game/i });
     await user.click(pauseButton);
     expect(mockPauseGame).toHaveBeenCalledTimes(1);
@@ -107,6 +109,7 @@ describe('Game Component', () => {
       initAudio: vi.fn(),
       startGame: vi.fn(),
       startGameAtLevel: mockStartAtLevel,
+      restartLevel: vi.fn(),
       startEndlessGame: vi.fn(),
       pauseGame: vi.fn(),
       resumeGame: vi.fn(),
@@ -116,7 +119,7 @@ describe('Game Component', () => {
     });
 
     const user = userEvent.setup();
-    render(<Game />);
+    render(<Game startLevel={1} />);
 
     const select = screen.getByRole('combobox', { name: 'Developer level select' });
     expect(select).toBeInTheDocument();
@@ -130,7 +133,7 @@ describe('Game Component', () => {
     expect(mockStartAtLevel).toHaveBeenCalledWith(5);
   });
 
-  it('renders Statistics and Achievements panels on idle screen', () => {
+  it('renders ReadyOverlay when startLevel prop is provided', () => {
     mockUseGame.mockReturnValue({
       state: makeIdleState(),
       stats: { gamesPlayed: 5, totalFood: 42, bestLevel: 3, highScore: 200 },
@@ -142,6 +145,7 @@ describe('Game Component', () => {
       initAudio: vi.fn(),
       startGame: vi.fn(),
       startGameAtLevel: vi.fn(),
+      restartLevel: vi.fn(),
       startEndlessGame: vi.fn(),
       pauseGame: vi.fn(),
       resumeGame: vi.fn(),
@@ -150,12 +154,89 @@ describe('Game Component', () => {
       continueGame: vi.fn(),
     });
 
-    render(<Game />);
+    render(<Game startLevel={1} />);
 
-    expect(screen.getByText('Games Played')).toBeInTheDocument();
-    expect(screen.getByText('5')).toBeInTheDocument();
-    expect(screen.getByText('Total Food')).toBeInTheDocument();
-    expect(screen.getByText('42')).toBeInTheDocument();
-    expect(screen.getByText('High Scorer')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Start' })).toBeInTheDocument();
+    expect(screen.getByText('Eat 10 food to complete this level.')).toBeInTheDocument();
+  });
+
+  it('calls startGameAtLevel when Start is clicked on ReadyOverlay', async () => {
+    const mockStartAtLevel = vi.fn();
+    mockUseGame.mockReturnValue({
+      state: makeIdleState(),
+      stats: { gamesPlayed: 0, totalFood: 0, bestLevel: 1, highScore: 0 },
+      achievements: [],
+      initAudio: vi.fn(),
+      startGame: vi.fn(),
+      startGameAtLevel: mockStartAtLevel,
+      restartLevel: vi.fn(),
+      startEndlessGame: vi.fn(),
+      pauseGame: vi.fn(),
+      resumeGame: vi.fn(),
+      changeDirection: vi.fn(),
+      resetGame: vi.fn(),
+      continueGame: vi.fn(),
+    });
+
+    const user = userEvent.setup();
+    render(<Game startLevel={3} />);
+
+    const startBtn = screen.getByRole('button', { name: 'Start' });
+    await user.click(startBtn);
+    expect(mockStartAtLevel).toHaveBeenCalledWith(3);
+  });
+
+  it('calls onNavigateToMenu when Return to Menu is clicked from PauseMenu', async () => {
+    const mockNavigateToMenu = vi.fn();
+    const mockStartAtLevel = vi.fn();
+    mockUseGame.mockReturnValue({
+      state: { ...makePlayingState(), status: 'paused' as const },
+      stats: { gamesPlayed: 0, totalFood: 0, bestLevel: 1, highScore: 0 },
+      achievements: [],
+      initAudio: vi.fn(),
+      startGame: vi.fn(),
+      startGameAtLevel: mockStartAtLevel,
+      restartLevel: vi.fn(),
+      startEndlessGame: vi.fn(),
+      pauseGame: vi.fn(),
+      resumeGame: vi.fn(),
+      changeDirection: vi.fn(),
+      resetGame: vi.fn(),
+      continueGame: vi.fn(),
+    });
+
+    const user = userEvent.setup();
+    render(<Game startLevel={1} onNavigateToMenu={mockNavigateToMenu} />);
+
+    // Dismiss ReadyOverlay first by clicking Start
+    await user.click(screen.getByRole('button', { name: 'Start' }));
+    expect(mockStartAtLevel).toHaveBeenCalledWith(1);
+
+    const returnBtn = screen.getByRole('button', { name: 'Return to Menu' });
+    await user.click(returnBtn);
+    expect(mockNavigateToMenu).toHaveBeenCalledTimes(1);
+  });
+
+  it('survives rapid mount/unmount cycles without errors', () => {
+    mockUseGame.mockReturnValue({
+      state: makeIdleState(),
+      stats: { gamesPlayed: 0, totalFood: 0, bestLevel: 1, highScore: 0 },
+      achievements: [],
+      initAudio: vi.fn(),
+      startGame: vi.fn(),
+      startGameAtLevel: vi.fn(),
+      restartLevel: vi.fn(),
+      startEndlessGame: vi.fn(),
+      pauseGame: vi.fn(),
+      resumeGame: vi.fn(),
+      changeDirection: vi.fn(),
+      resetGame: vi.fn(),
+      continueGame: vi.fn(),
+    });
+
+    for (let i = 0; i < 10; i++) {
+      const { unmount } = render(<Game startLevel={1} />);
+      unmount();
+    }
   });
 });

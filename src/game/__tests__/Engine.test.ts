@@ -467,4 +467,64 @@ describe('Engine', () => {
       expect(localStorage.getItem('snakeStatsGamesPlayed')).toBe('1');
     });
   });
+
+  describe('restartLevel', () => {
+    it('resets snake to initial length at current level', () => {
+      engine.startAtLevel(3);
+      engine.setState({
+        ...engine.getState(),
+        snake: [
+          { x: 12, y: 10 }, { x: 11, y: 10 }, { x: 10, y: 10 },
+          { x: 9, y: 10 }, { x: 8, y: 10 },
+        ],
+        score: 50,
+        foodEaten: 5,
+      });
+      engine.restartLevel();
+      expect(engine.getState().level).toBe(3);
+      expect(engine.getState().snake.length).toBe(3);
+      expect(engine.getState().foodEaten).toBe(0);
+    });
+
+    it('preserves score across restart', () => {
+      engine.startAtLevel(2);
+      engine.setState({
+        ...engine.getState(),
+        score: 120,
+      });
+      engine.restartLevel();
+      expect(engine.getState().score).toBe(120);
+    });
+
+    it('preserves direction across restart', () => {
+      engine.startAtLevel(2);
+      engine.changeDirection('UP');
+      engine.restartLevel();
+      // changeDirection only affects nextDirection until next MOVE_SNAKE,
+      // so direction remains RIGHT (set by startAtLevel) while nextDirection is UP
+      expect(engine.getState().direction).toBe('RIGHT');
+      expect(engine.getState().nextDirection).toBe('UP');
+    });
+
+    it('starts the loop after restart', () => {
+      engine.startAtLevel(2);
+      engine.pause();
+      engine.restartLevel();
+      expect(engine.getState().status).toBe('playing');
+      const snakeBefore = engine.getState().snake;
+      vi.advanceTimersByTime(500);
+      const snakeAfter = engine.getState().snake;
+      expect(snakeAfter).not.toEqual(snakeBefore);
+    });
+
+    it('food spawns at a valid position after restart', () => {
+      engine.startAtLevel(2);
+      engine.restartLevel();
+      const { food, snake, obstacles } = engine.getState();
+      const snakeSet = new Set(snake.map(s => `${s.x},${s.y}`));
+      const obstacleSet = new Set(obstacles.map(o => `${o.x},${o.y}`));
+      expect(snakeSet.has(`${food.position.x},${food.position.y}`)).toBe(false);
+      expect(obstacleSet.has(`${food.position.x},${food.position.y}`)).toBe(false);
+    });
+  });
 });

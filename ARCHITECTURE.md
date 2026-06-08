@@ -29,6 +29,7 @@ src/
 │   ├── storage.ts            # High score and level progress persistence
 │   ├── statistics.ts         # Player statistics tracking (localStorage)
 │   ├── achievements.ts       # Achievement definitions, detection, persistence
+│   ├── profile.ts            # Centralized persistence service (loadGameProfile)
 │   └── index.ts              # Barrel exports
 ├── platform/                 # Platform-specific adapters
 │   ├── keyboard.ts           # Keyboard event handling
@@ -38,20 +39,30 @@ src/
 ├── hooks/                    # React hooks (thin wrappers)
 │   ├── useGame.ts            # Bridges game Engine to React
 │   ├── useKeyboard.ts        # Keyboard hook (wraps platform/keyboard)
-│   └── useTouch.ts           # Touch hook (wraps platform/touch)
+│   ├── useTouch.ts           # Touch hook (wraps platform/touch)
+│   └── useTheme.ts           # Theme management hook
 ├── components/               # React UI components
+│   ├── App.tsx               # Screen router and profile loader
 │   ├── Game.tsx              # Main game container
 │   ├── Board.tsx             # Grid renderer
 │   ├── Cell.tsx              # Individual cell renderer
 │   ├── ScoreBoard.tsx        # Score display
 │   ├── GameOver.tsx          # Win/gameover modal
 │   ├── LevelTransition.tsx   # Level complete overlay
+│   ├── ReadyOverlay.tsx      # Pre-level start overlay
+│   ├── PauseMenu.tsx         # Pause overlay with resume/restart/return
+│   ├── MainMenu.tsx          # Entry menu screen
+│   ├── StatisticsScreen.tsx  # Full-screen statistics view
+│   ├── AchievementsScreen.tsx# Full-screen achievements view
+│   ├── SettingsScreen.tsx    # Settings and theme selector
+│   ├── HelpScreen.tsx        # Help / How To Play screen
 │   ├── Statistics.tsx        # Player statistics panel
 │   ├── Achievements.tsx      # Achievement display panel
 │   └── *.module.css          # Component styles
-├── types/                    # Shared types (re-exports from game/)
+├── types/                    # Shared types
 │   ├── game.ts               # Re-exports from game/types
-│   └── components.ts         # Component prop types
+│   ├── components.ts         # Component prop types
+│   └── navigation.ts         # Screen navigation types
 ├── utils/                    # Legacy utilities (re-exports from game/)
 │   ├── constants.ts          # Re-exports from game/constants
 │   ├── gameLogic.ts          # Re-exports from game/*
@@ -60,7 +71,7 @@ src/
 │   └── __tests__/            # Utility tests
 ├── assets/                   # Static assets
 ├── main.tsx                  # React entry point
-└── index.css                 # Global resets
+└── index.css                 # Global resets + theme overrides
 ```
 
 ## Architecture & Design Patterns
@@ -118,18 +129,38 @@ Sound is consumed directly via the `sharedSoundManager` singleton exported from 
 
 ### Component Architecture
 
-- **Top-level:** `Game` orchestrates hooks and rendering
-- **Hooks:** useGame, useKeyboard, useTouch
+- **Top-level:** `App.tsx` manages screen state and profile data
+- **Screen components:** Stateless presenters receiving data as props from `App.tsx`
+- **Game:** Orchestrates hooks and rendering when screen is `'game'`
+- **Hooks:** useGame, useKeyboard, useTouch, useTheme
 - **Pure utility functions:** testable logic in `game/` modules
 - **CSS Modules:** scoped styles per component
-- **Compositional rendering:** Game → ScoreBoard + Board + Overlays
+- **Compositional rendering:**
+  - App → Screen component (MainMenu, Game, StatisticsScreen, etc.)
+  - Game → ScoreBoard + Board + Overlays (ReadyOverlay, PauseMenu, LevelTransition, GameOver)
 
 ### Data Flow
 
 ```
+App.tsx loads profile → passes slices as props → Screen components render
+
+In Game:
 Input (Keyboard/Touch) → Platform Adapter → useGame hook → Engine →
 dispatch action → gameReducer → new state → subscribe → React re-render
 ```
+
+### Navigation Pattern
+
+Screen navigation is state-based using a single `useState<Screen>` in `App.tsx`:
+
+```typescript
+type Screen = 'menu' | 'game' | 'statistics' | 'achievements' | 'settings' | 'help';
+```
+
+- No routing library is used; a `switch` or conditional rendering maps `screen` to component.
+- `App.tsx` is the single owner of profile data — it calls `loadGameProfile()` once and passes slices to each screen.
+- Screen components never read localStorage directly.
+- Navigation callbacks flow upward: `Screen → App.tsx → setScreen(next)`.
 
 ## Key Features
 
@@ -294,6 +325,12 @@ interface GameState {
 - **Numeric values:** use `--font-mono` (system mono stack) for readability
 - **Level name text:** uses `--font-body` (system stack) to preserve lowercase readability
 - **Glow ceiling:** max 16px blur radius, max 6 simultaneous `box-shadow` elements visible
+- **Theme system:** 4 themes via `[data-theme]` attribute on `<html>`
+  - Neon Arcade (default): existing `:root` tokens
+  - Classic: light cream background, forest green snake, minimal glow
+  - Terminal: black background, green monochrome, no glow
+  - High Contrast: maximum contrast, no glow
+  - New themes are addable without modifying component code
 - **Dark theme tokens:** Background `--color-bg` (#1a1a2e), Surface `--color-surface` (#16213e)
 - **Snake head:** `--color-accent` (#22c55e) with glow
 - **Snake body:** `--color-accent-deep` (#16a34a)
@@ -305,8 +342,8 @@ interface GameState {
 ## Testing
 
 - **Framework:** Vitest with jsdom
-- **356 unit tests** across 19 test files
-- **Coverage:** game/ modules (state, Engine, collision, food, snake, levels, storage, statistics, achievements), hooks, utilities, touch recognizer, components (Game, Board, Cell, LevelTransition, GameOver, Statistics, Achievements)
+- **392 unit tests** across 26 test files
+- **Coverage:** game/ modules (state, Engine, collision, food, snake, levels, storage, statistics, achievements, profile), hooks, utilities, touch recognizer, components (Game, Board, Cell, LevelTransition, GameOver, Statistics, Achievements, MainMenu, PauseMenu, ReadyOverlay, SettingsScreen, HelpScreen, StatisticsScreen, AchievementsScreen)
 - **Run:** `npm test` or `npm run test:watch`
 
 # Platform Strategy

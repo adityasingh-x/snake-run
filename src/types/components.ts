@@ -41,6 +41,7 @@ export interface GameOverProps {
   variant?: 'gameover' | 'win';
   isEndless?: boolean;
   onStartEndless?: () => void;
+  onReturnToMenu?: () => void;
   stats?: Stats;
   achievements?: Achievement[];
   newAchievementIds?: string[];
