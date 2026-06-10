@@ -72,4 +72,35 @@ describe('SettingsScreen', () => {
 
     expect(screen.queryByText('Reset all progress?')).not.toBeInTheDocument();
   });
+
+  it('traps focus within the dialog: Shift+Tab on first element wraps to last', async () => {
+    const user = userEvent.setup();
+    render(<SettingsScreen onBack={mockBack} />);
+
+    await user.click(screen.getByRole('button', { name: 'Reset Progress' }));
+    const cancel = screen.getByRole('button', { name: 'Cancel' });
+    const confirm = screen.getByRole('button', { name: 'Confirm' });
+    expect(cancel).toHaveFocus();
+
+    // Shift+Tab on first focusable (Cancel) should wrap to Confirm
+    await user.keyboard('{Shift>}{Tab}{/Shift}');
+    expect(confirm).toHaveFocus();
+  });
+
+  it('traps focus within the dialog: Tab on last element wraps to first', async () => {
+    const user = userEvent.setup();
+    render(<SettingsScreen onBack={mockBack} />);
+
+    await user.click(screen.getByRole('button', { name: 'Reset Progress' }));
+    const cancel = screen.getByRole('button', { name: 'Cancel' });
+    const confirm = screen.getByRole('button', { name: 'Confirm' });
+
+    // Focus the last element
+    confirm.focus();
+    expect(confirm).toHaveFocus();
+
+    // Tab on last should wrap to first
+    await user.keyboard('{Tab}');
+    expect(cancel).toHaveFocus();
+  });
 });

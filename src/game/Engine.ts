@@ -1,6 +1,5 @@
 import type { GameState, GameAction, Direction } from './types';
 import { getInitialState, gameReducer } from './state';
-import { POINTS_PER_FOOD } from './constants';
 import { getLevelData } from './levels';
 import { saveHighScore, saveLastUnlockedLevel } from './storage';
 import { loadStats, saveStats } from './statistics';
@@ -43,6 +42,7 @@ export class Engine {
   private dispatch(action: GameAction): void {
     const prevScore = this.state.score;
     const prevLevel = this.state.level;
+    const prevFoodEaten = this.state.foodEaten;
     const prevState = { ...this.state };
 
     if (action.type === 'START_GAME' || action.type === 'RESET' || action.type === 'START_ENDLESS_GAME') {
@@ -60,9 +60,11 @@ export class Engine {
       saveLastUnlockedLevel(this.state.lastUnlockedLevel);
     }
 
-    if (this.state.score > prevScore) {
-      const foodCount = (this.state.score - prevScore) / POINTS_PER_FOOD;
-      this.statsCache.totalFood += foodCount;
+    if (this.state.foodEaten > prevFoodEaten) {
+      // Count each food consumption as exactly 1, regardless of point value.
+      // (Previously derived from score/POINTS_PER_FOOD, which inflated totalFood
+      // 3x for gold food — gold gives 30 points but is still a single item.)
+      this.statsCache.totalFood += 1;
     }
 
     if (this.state.level > prevLevel) {
@@ -136,7 +138,28 @@ export class Engine {
   }
 
   startAtLevel(level: number): void {
+    this.wasPaused = false;
     this.dispatch({ type: 'START_AT_LEVEL', payload: level });
+    this.startLoop();
+  }
+
+  /**
+   * Continue from a chosen level after gameover without discarding the
+   * accumulated run score. Mirrors restartLevel: captures score and
+   * nextDirection, dispatches START_AT_LEVEL (which resets level metadata),
+   * then restores the run state and notifies subscribers.
+   */
+  continueFromLevel(level: number): void {
+    const savedScore = this.state.score;
+    const savedNextDirection = this.state.nextDirection;
+    this.wasPaused = false;
+    this.dispatch({ type: 'START_AT_LEVEL', payload: level });
+    this.state = {
+      ...this.state,
+      score: savedScore,
+      nextDirection: savedNextDirection,
+    };
+    this.listeners.forEach(listener => listener(this.state));
     this.startLoop();
   }
 
@@ -152,6 +175,7 @@ export class Engine {
     const savedScore = this.state.score;
     const savedDirection = this.state.direction;
     const savedNextDirection = this.state.nextDirection;
+    this.wasPaused = false;
     this.dispatch({ type: 'START_AT_LEVEL', payload: this.state.level });
     // Restore accumulated run state; level metadata (obstacles, food) is already reset
     this.state = {
@@ -189,6 +213,7 @@ export class Engine {
 
     this.lastTick = 0;
     this.accumulator = 0;
+    this.ensureVisibilityListener();
 
     const tick = (timestamp: number) => {
       if (this.state.status !== 'playing') {
@@ -204,9 +229,15 @@ export class Engine {
       this.lastTick = timestamp;
       this.accumulator += delta;
 
+      // Cap accumulator to a single effective tick to avoid multi-tick jumps
+      // after tab refocus or long pauses. Without this, a single frame can
+      // dispatch many MOVE_SNAKE actions and the snake teleports into walls.
       const config = getLevelData(this.state.level);
       const speed = config.speed ?? 150;
       const effectiveSpeed = this.state.speedEffectTicks > 0 ? speed * SLOW_EFFECT_MULTIPLIER : speed;
+      if (this.accumulator > effectiveSpeed) {
+        this.accumulator = effectiveSpeed;
+      }
 
       if (this.accumulator >= effectiveSpeed) {
         this.dispatch({ type: 'MOVE_SNAKE' });
@@ -238,8 +269,35 @@ export class Engine {
   onWin?: () => void;
   onAchievementUnlock?: (id: string) => void;
 
+  private visibilityHandler: (() => void) | null = null;
+
   destroy(): void {
     this.stopLoop();
     this.listeners.clear();
+    if (typeof document !== 'undefined' && this.visibilityHandler) {
+      document.removeEventListener('visibilitychange', this.visibilityHandler);
+      this.visibilityHandler = null;
+    }
+  }
+
+  /**
+   * On tab visibility regain, the next requestAnimationFrame timestamp can
+   * jump by several seconds. Without a reset, the accumulator would queue
+   * multiple MOVE_SNAKE dispatches in a single frame and the snake could
+   * teleport into a wall. Cap the accumulator to a single tick to prevent
+   * multi-tick jumps and unfair deaths (BUG-009 / BUG-010).
+   */
+  private handleVisibilityChange = (): void => {
+    if (typeof document === 'undefined') return;
+    if (document.hidden) return;
+    this.lastTick = 0;
+    this.accumulator = 0;
+  };
+
+  private ensureVisibilityListener(): void {
+    if (typeof document !== 'undefined' && !this.visibilityHandler) {
+      this.visibilityHandler = () => this.handleVisibilityChange();
+      document.addEventListener('visibilitychange', this.visibilityHandler);
+    }
   }
 }

@@ -10,7 +10,7 @@ interface MainMenuProps {
 }
 
 export const MainMenu = ({ lastUnlockedLevel, highScore, onNavigate, onStartGame }: MainMenuProps) => {
-  const hasProgress = lastUnlockedLevel > 1 || highScore > 0;
+  const canContinue = lastUnlockedLevel > 1;
 
   return (
     <div className={screenStyles.screen}>
@@ -18,7 +18,7 @@ export const MainMenu = ({ lastUnlockedLevel, highScore, onNavigate, onStartGame
         <h1 className={styles.title}>Snake Run</h1>
         <div className={screenStyles.neonDivider} />
 
-        {hasProgress && (
+        {canContinue && (
           <div className={styles.continueHint}>
             <span>Continue Level {lastUnlockedLevel}</span>
             <span className={styles.highScoreHint}>High Score: {highScore}</span>
@@ -26,7 +26,7 @@ export const MainMenu = ({ lastUnlockedLevel, highScore, onNavigate, onStartGame
         )}
 
         <nav className={styles.menuNav} aria-label="Main menu">
-          {hasProgress && (
+          {canContinue && (
             <button
               className={`${styles.menuButton} ${styles.primaryButton}`}
               onClick={() => onStartGame(lastUnlockedLevel)}
