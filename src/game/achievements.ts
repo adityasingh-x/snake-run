@@ -34,19 +34,16 @@ export function loadAchievements(): Achievement[] {
 
 export function saveAchievement(id: string): void {
   try {
-    const current = loadAchievements();
-    const already = current.find(a => a.id === id);
-    if (already && already.unlocked) return;
-
     let unlockedIds: string[] = [];
     const raw = localStorage.getItem(ACHIEVEMENT_KEY);
     if (raw) {
       unlockedIds = JSON.parse(raw);
     }
-    if (!unlockedIds.includes(id)) {
-      unlockedIds.push(id);
-      localStorage.setItem(ACHIEVEMENT_KEY, JSON.stringify(unlockedIds));
-    }
+
+    if (unlockedIds.includes(id)) return;
+
+    unlockedIds.push(id);
+    localStorage.setItem(ACHIEVEMENT_KEY, JSON.stringify(unlockedIds));
   } catch {
     // ignore
   }

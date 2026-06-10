@@ -1,27 +1,43 @@
+const HIGH_SCORE_KEY = 'snakeHighScore';
 const LAST_UNLOCKED_KEY = 'snakeLastUnlockedLevel';
 
+function readNumber(key: string, fallback: number): number {
+  try {
+    const val = localStorage.getItem(key);
+    if (val === null) return fallback;
+    const parsed = parseInt(val, 10);
+    return Number.isNaN(parsed) ? fallback : parsed;
+  } catch {
+    return fallback;
+  }
+}
+
+function writeNumber(key: string, value: number): void {
+  try {
+    localStorage.setItem(key, value.toString());
+  } catch {
+    // ignore
+  }
+}
+
 export function loadHighScore(): number {
-  const val = localStorage.getItem('snakeHighScore') || '0';
-  const parsed = parseInt(val, 10);
-  return Number.isNaN(parsed) ? 0 : parsed;
+  return readNumber(HIGH_SCORE_KEY, 0);
 }
 
 export function saveHighScore(score: number): void {
-  const current = loadHighScore();
+  const current = readNumber(HIGH_SCORE_KEY, 0);
   if (score > current) {
-    localStorage.setItem('snakeHighScore', score.toString());
+    writeNumber(HIGH_SCORE_KEY, score);
   }
 }
 
 export function loadLastUnlockedLevel(): number {
-  const val = localStorage.getItem(LAST_UNLOCKED_KEY) || '1';
-  const parsed = parseInt(val, 10);
-  return Number.isNaN(parsed) ? 1 : parsed;
+  return readNumber(LAST_UNLOCKED_KEY, 1);
 }
 
 export function saveLastUnlockedLevel(level: number): void {
-  const current = loadLastUnlockedLevel();
+  const current = readNumber(LAST_UNLOCKED_KEY, 1);
   if (level > current) {
-    localStorage.setItem(LAST_UNLOCKED_KEY, level.toString());
+    writeNumber(LAST_UNLOCKED_KEY, level);
   }
 }

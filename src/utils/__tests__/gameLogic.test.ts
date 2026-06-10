@@ -233,4 +233,43 @@ describe('spawnFood', () => {
     const special = [...types].filter(t => t !== 'normal');
     expect(special.length).toBeGreaterThanOrEqual(2);
   });
+
+  it('produces correct weighted distribution over 10,000 spawns', () => {
+    // spawnFood calls Math.random 3 times per successful spawn:
+    //   1. position x
+    //   2. position y
+    //   3. food type roll (rollFoodType)
+    // Position always lands on {10,10} (free cell), so no retries.
+    // Only every 3rd call (idx % 3 === 2) feeds the food-type roll.
+    const ITERATIONS = 10000;
+    let callIndex = 0;
+    const originalRandom = Math.random;
+    Math.random = () => {
+      const idx = callIndex++;
+      if (idx % 3 === 2) {
+        // Food type roll: cycle evenly through [0, 1)
+        const foodIdx = Math.floor(idx / 3);
+        // +0.5 avoids exact boundary ambiguity (r=80.000 is a fencepost)
+        return (foodIdx + 0.5) / ITERATIONS;
+      }
+      // Position calls: {10,10} is always free for snake at {5,5}
+      return 0.5;
+    };
+
+    const counts: Record<string, number> = { normal: 0, gold: 0, poison: 0, slow: 0 };
+    try {
+      for (let i = 0; i < ITERATIONS; i++) {
+        const food = spawnFood(snake, []);
+        counts[food.type]++;
+      }
+    } finally {
+      Math.random = originalRandom;
+    }
+
+    // Expected: normal 8000, gold 1000, poison 500, slow 500
+    expect(counts.normal).toBe(8000);
+    expect(counts.gold).toBe(1000);
+    expect(counts.poison).toBe(500);
+    expect(counts.slow).toBe(500);
+  });
 });

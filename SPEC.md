@@ -82,8 +82,8 @@ A classic single-player Snake Run. The player controls a snake on a 20x20 grid. 
 - Direction changes are debounced per tick; only the last queued direction is applied
 
 ### 5.2 Collision Detection (checked in order on each MOVE_SNAKE)
-1. **Wrap-around:** If the current level has `wrapAround: true`, normalize head coordinates modulo grid size before collision checks. The snake exits one edge and appears on the opposite edge.
-2. **Portal teleport:** If the current level has `portals`, check if the (possibly wrapped) head position matches a portal tile. If so, teleport to the paired position.
+1. **Wrap-around:** If the current level has `wrapAround: true`, normalize head coordinates modulo grid size before collision checks. The snake exits one edge and appears on the opposite edge. If the resulting position collides with the snake's own body or an obstacle, game over applies.
+2. **Portal teleport:** If the current level has `portals`, check if the (possibly wrapped) head position matches a portal tile. If so, teleport to the paired position. If the resulting position lands on the snake's own body, an obstacle, or outside the grid, game over applies.
 3. **Wall collision:** new head position x < 0, x >= 20, y < 0, or y >= 20 (after wrap/portal)
 4. **Self collision:** new head overlaps any snake segment EXCEPT the tail (tail moves away before head arrives)
 5. **Obstacle collision:** new head position matches any obstacle position (Set-based O(1) lookup)
