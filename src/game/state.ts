@@ -50,6 +50,9 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       return { ...state, status: 'playing' };
 
     case 'CHANGE_DIRECTION': {
+      if (state.status !== 'playing') {
+        return state;
+      }
       if (action.payload === DIRECTION_OPPOSITE[state.direction]) {
         return state;
       }
@@ -83,9 +86,11 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
       const ateFood = positionsEqual(newHead, state.food.position);
 
-      // Decrement food timer
+      // Decrement food timer (skip when food is being eaten on this tick;
+      // the ateFood branch below spawns the replacement, and we don't want
+      // a double-spawn or a timer mutation on the just-consumed food.)
       let currentFood = state.food;
-      if (currentFood.timer > 0) {
+      if (currentFood.timer > 0 && !ateFood) {
         const newTimer = currentFood.timer - 1;
         if (newTimer === 0) {
           // Spawn replacement normal food
@@ -127,7 +132,13 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
           }
           case 'slow':
             newScore += POINTS_PER_FOOD;
-            finalSpeedEffectTicks = 10;
+            // Prevent slow-food chain exploit: only refresh the effect if
+            // it has already expired. This stops a player from indefinitely
+            // chaining slow foods to keep the snake locked at the slowest
+            // speed regardless of the current level.
+            if (state.speedEffectTicks <= 0) {
+              finalSpeedEffectTicks = 10;
+            }
             break;
         }
 

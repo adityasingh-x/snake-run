@@ -37,6 +37,7 @@ export const Game = ({ startLevel, onNavigateToMenu }: GameProps) => {
     initAudio,
     startGame,
     startGameAtLevel,
+    continueFromLevel,
     restartLevel,
     startEndlessGame,
     pauseGame,
@@ -55,8 +56,17 @@ export const Game = ({ startLevel, onNavigateToMenu }: GameProps) => {
     }
   });
 
+  // Keep local soundOn in sync if the user toggled sound in another screen
+  // (e.g., SettingsScreen) so the toolbar icon/aria-label stay accurate.
+  useEffect(() => {
+    return sharedSoundManager.subscribe(setSoundOn);
+  }, []);
+
   // Ready overlay state: when set, shows the ready overlay for the given level
   const [readyLevel, setReadyLevel] = useState<number | null>(startLevel);
+  // When true, starting from the ready overlay preserves the run's score
+  // (used by Game Over's "Continue from Level N" flow).
+  const [continueWithScore, setContinueWithScore] = useState(false);
 
   const handleToggleSound = useCallback(() => {
     const next = sharedSoundManager.toggleSound();
@@ -78,12 +88,17 @@ export const Game = ({ startLevel, onNavigateToMenu }: GameProps) => {
   const handleReadyStart = useCallback(() => {
     initAudio();
     if (readyLevel !== null) {
-      startGameAtLevel(readyLevel);
+      if (continueWithScore) {
+        continueFromLevel(readyLevel);
+        setContinueWithScore(false);
+      } else {
+        startGameAtLevel(readyLevel);
+      }
       setReadyLevel(null);
     } else {
       startGame();
     }
-  }, [initAudio, readyLevel, startGameAtLevel, startGame]);
+  }, [initAudio, readyLevel, continueWithScore, continueFromLevel, startGameAtLevel, startGame]);
 
   const handleResume = useCallback(() => {
     initAudio();
@@ -269,8 +284,14 @@ export const Game = ({ startLevel, onNavigateToMenu }: GameProps) => {
         {(state.status === 'gameover' || state.status === 'won') && readyLevel === null && (
           <GameOver
             score={state.score}
-            onRestart={() => handleSetReadyLevel(1)}
-            onContinueFromLevel={(level) => handleSetReadyLevel(level)}
+            onRestart={() => {
+              setContinueWithScore(false);
+              handleSetReadyLevel(1);
+            }}
+            onContinueFromLevel={(level) => {
+              setContinueWithScore(true);
+              handleSetReadyLevel(level);
+            }}
             lastUnlockedLevel={state.lastUnlockedLevel}
             variant={state.status === 'won' ? 'win' : 'gameover'}
             isEndless={state.isEndless}

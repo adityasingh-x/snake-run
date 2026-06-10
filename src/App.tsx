@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import type { Screen } from './types/navigation';
 import { loadGameProfile, type GameProfile } from './game/profile';
 import { MainMenu } from './components/MainMenu';
@@ -11,7 +11,17 @@ import { HelpScreen } from './components/HelpScreen';
 function App() {
   const [screen, setScreen] = useState<Screen>('menu');
   const [startLevel, setStartLevel] = useState(1);
-  const [profile] = useState<GameProfile>(() => loadGameProfile());
+  const [profile, setProfile] = useState<GameProfile>(() => loadGameProfile());
+
+  // Refresh profile from storage whenever the menu or stat/achievement screens are shown.
+  // The engine persists progression in the background; reading once at mount leaves
+  // MainMenu / StatisticsScreen with stale values after returning from a run.
+  useEffect(() => {
+    if (screen === 'menu' || screen === 'statistics' || screen === 'achievements') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: re-read localStorage when returning to a read-only screen
+      setProfile(loadGameProfile());
+    }
+  }, [screen]);
 
   const handleNavigate = useCallback((next: Screen) => {
     setScreen(next);

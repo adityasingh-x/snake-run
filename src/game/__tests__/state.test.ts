@@ -74,14 +74,20 @@ describe('gameReducer', () => {
 
   describe('CHANGE_DIRECTION', () => {
     it('updates nextDirection', () => {
-      const state = makeState();
+      const state = makeState({ status: 'playing' });
       const next = gameReducer(state, { type: 'CHANGE_DIRECTION', payload: 'UP' });
       expect(next.nextDirection).toBe('UP');
     });
 
     it('ignores opposite direction', () => {
-      const state = makeState({ direction: 'RIGHT', nextDirection: 'RIGHT' });
+      const state = makeState({ direction: 'RIGHT', nextDirection: 'RIGHT', status: 'playing' });
       const next = gameReducer(state, { type: 'CHANGE_DIRECTION', payload: 'LEFT' });
+      expect(next.nextDirection).toBe('RIGHT');
+    });
+
+    it('does not change nextDirection when status is not playing (BUG-014)', () => {
+      const state = makeState({ status: 'gameover', nextDirection: 'RIGHT' });
+      const next = gameReducer(state, { type: 'CHANGE_DIRECTION', payload: 'UP' });
       expect(next.nextDirection).toBe('RIGHT');
     });
   });
@@ -743,7 +749,7 @@ describe('gameReducer', () => {
       expect(next.speedEffectTicks).toBe(10);
     });
 
-    it('slow food re-eat while speedEffectTicks > 0 resets to 10', () => {
+    it('slow food re-eat while speedEffectTicks > 0 does not refresh (BUG-027)', () => {
       const state = makeState({
         snake: [{ x: 9, y: 10 }, { x: 8, y: 10 }, { x: 7, y: 10 }],
         food: { position: { x: 10, y: 10 }, type: 'slow', timer: 8 },
@@ -752,7 +758,8 @@ describe('gameReducer', () => {
         speedEffectTicks: 5,
       });
       const next = gameReducer(state, { type: 'MOVE_SNAKE' });
-      expect(next.speedEffectTicks).toBe(10);
+      // Effect decrements to 4 instead of resetting to 10.
+      expect(next.speedEffectTicks).toBe(4);
     });
 
     it('MOVE_SNAKE decrements speedEffectTicks each tick', () => {
@@ -790,6 +797,68 @@ describe('gameReducer', () => {
       const next = gameReducer(state, { type: 'MOVE_SNAKE' });
       expect(next.food.timer).toBeGreaterThanOrEqual(-1);
       expect(next.food.type).toBe('normal');
+    });
+
+    it('MOVE_SNAKE does not mutate food when gameover occurs (BUG-011)', () => {
+      const goldFood = { position: { x: 10, y: 10 }, type: 'gold' as const, timer: 5 };
+      const state = makeState({
+        snake: [{ x: 0, y: 5 }],
+        nextDirection: 'LEFT',
+        food: goldFood,
+      });
+      const next = gameReducer(state, { type: 'MOVE_SNAKE' });
+      expect(next.status).toBe('gameover');
+      // Food should be unchanged on the gameover tick — no timer decrement,
+      // no replacement spawn. The player should see the same gold food
+      // they last saw.
+      expect(next.food).toEqual(goldFood);
+    });
+
+    it('MOVE_SNAKE eating gold food at timer=1 spawns replacement exactly once (BUG-012)', () => {
+      const state = makeState({
+        snake: [
+          { x: 9, y: 10 },
+          { x: 8, y: 10 },
+          { x: 7, y: 10 },
+        ],
+        food: { position: { x: 10, y: 10 }, type: 'gold', timer: 1 },
+        nextDirection: 'RIGHT',
+      });
+      const next = gameReducer(state, { type: 'MOVE_SNAKE' });
+      // Score should reflect a single gold eat (+30).
+      expect(next.score).toBe(30);
+      // Food should be a fresh spawn, not a re-spawned replacement of the
+      // just-consumed gold food. Position must differ from the eaten food.
+      expect(next.food.position).not.toEqual(state.food.position);
+    });
+
+    it('MOVE_SNAKE eating slow food does not refresh while effect is active (BUG-027)', () => {
+      // While the effect has any positive ticks, eating another slow food
+      // should NOT reset it to 10. The effect simply ticks down. This
+      // prevents the slow-food chain exploit.
+      const makeSlowState = (effectTicks: number) => makeState({
+        snake: [
+          { x: 9, y: 10 },
+          { x: 8, y: 10 },
+          { x: 7, y: 10 },
+        ],
+        food: { position: { x: 10, y: 10 }, type: 'slow', timer: -1 },
+        nextDirection: 'RIGHT',
+        speedEffectTicks: effectTicks,
+      });
+
+      // At 10 ticks: decrement to 9, no refresh
+      const at10 = gameReducer(makeSlowState(10), { type: 'MOVE_SNAKE' });
+      expect(at10.speedEffectTicks).toBe(9);
+      expect(at10.score).toBe(POINTS_PER_FOOD);
+
+      // At 1 tick: decrement to 0, no refresh
+      const at1 = gameReducer(makeSlowState(1), { type: 'MOVE_SNAKE' });
+      expect(at1.speedEffectTicks).toBe(0);
+
+      // At 0 ticks (effect already expired): refresh to 10
+      const at0 = gameReducer(makeSlowState(0), { type: 'MOVE_SNAKE' });
+      expect(at0.speedEffectTicks).toBe(10);
     });
 
     it('CONTINUE_GAME resets speedEffectTicks to 0', () => {

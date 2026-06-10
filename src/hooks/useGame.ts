@@ -86,6 +86,10 @@ export function useGame() {
     engineRef.current?.continueGame();
   }, []);
 
+  const continueFromLevel = useCallback((level: number) => {
+    engineRef.current?.continueFromLevel(level);
+  }, []);
+
   const startGameAtLevel = useCallback((level: number) => {
     engineRef.current?.startAtLevel(level);
   }, []);
@@ -105,6 +109,7 @@ export function useGame() {
     initAudio,
     startGame,
     startGameAtLevel,
+    continueFromLevel,
     restartLevel,
     startEndlessGame,
     pauseGame,

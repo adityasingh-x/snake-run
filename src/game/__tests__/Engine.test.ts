@@ -241,6 +241,118 @@ describe('Engine', () => {
     });
   });
 
+  describe('continueFromLevel', () => {
+    it('preserves accumulated score when continuing from a level after gameover', () => {
+      engine.setState({
+        ...getInitialState(),
+        status: 'gameover',
+        level: 3,
+        score: 120,
+        lastUnlockedLevel: 3,
+      });
+      engine.continueFromLevel(3);
+      expect(engine.getState().status).toBe('playing');
+      expect(engine.getState().level).toBe(3);
+      expect(engine.getState().score).toBe(120);
+    });
+
+    it('preserves queued nextDirection when continuing', () => {
+      engine.setState({
+        ...getInitialState(),
+        status: 'gameover',
+        level: 2,
+        score: 60,
+        nextDirection: 'DOWN',
+      });
+      engine.continueFromLevel(2);
+      expect(engine.getState().nextDirection).toBe('DOWN');
+    });
+
+    it('resets snake length to initial when continuing (fresh level metadata)', () => {
+      engine.setState({
+        ...getInitialState(),
+        status: 'gameover',
+        level: 2,
+        score: 60,
+        snake: [
+          { x: 12, y: 10 }, { x: 11, y: 10 }, { x: 10, y: 10 },
+          { x: 9, y: 10 }, { x: 8, y: 10 },
+        ],
+      });
+      engine.continueFromLevel(2);
+      expect(engine.getState().snake.length).toBe(3);
+    });
+  });
+
+  describe('visibility / accumulator cap (BUG-009)', () => {
+    it('snake in wrap-around level survives a 5-second timer advance (no multi-tick crash)', () => {
+      // Level 5 has wrapAround, so the snake can loop the grid without
+      // hitting a wall. A 5-second fake-timer advance should dispatch many
+      // MOVE_SNAKE actions; with the accumulator cap, no single frame
+      // should teleport the snake into a wall.
+      engine.startAtLevel(5);
+      engine.setState({
+        ...engine.getState(),
+        // Vertical strip in the middle of the grid — snake can move up
+        // indefinitely (wrap-around sends it to the bottom).
+        snake: [{ x: 10, y: 5 }, { x: 10, y: 6 }, { x: 10, y: 7 }],
+        nextDirection: 'UP',
+        food: { position: { x: 0, y: 0 }, type: 'normal', timer: -1 },
+        obstacles: [],
+      });
+
+      vi.advanceTimersByTime(5000);
+
+      // Snake should still be alive (status: 'playing') — no unfair crash.
+      expect(engine.getState().status).toBe('playing');
+    });
+
+    it('registers a visibilitychange listener on startAtLevel', () => {
+      const addSpy = vi.spyOn(document, 'addEventListener');
+      engine.startAtLevel(1);
+      const visibilityRegistered = addSpy.mock.calls.some(
+        ([event]) => event === 'visibilitychange'
+      );
+      addSpy.mockRestore();
+      expect(visibilityRegistered).toBe(true);
+    });
+  });
+
+  describe('no_pause achievement across startAtLevel', () => {
+    beforeEach(() => {
+      localStorage.clear();
+    });
+
+    it('startAtLevel resets wasPaused so a paused run does not carry over the flag', () => {
+      engine.start();
+      engine.pause();
+      // After pause, internal wasPaused = true. startAtLevel must clear it.
+      engine.startAtLevel(10);
+      // Force a win on the final level.
+      engine.setState({
+        ...engine.getState(),
+        status: 'playing',
+        level: 10,
+        score: 290,
+        foodEaten: 29,
+        snake: [
+          { x: 9, y: 10 },
+          { x: 8, y: 10 },
+          { x: 7, y: 10 },
+        ],
+        food: { position: { x: 10, y: 10 }, type: 'normal', timer: -1 },
+        nextDirection: 'RIGHT',
+      });
+      engine.testDispatch({ type: 'MOVE_SNAKE' });
+      // After winning, the no_pause achievement should be eligible because
+      // wasPaused was cleared by startAtLevel. We assert via localStorage.
+      const achievementsRaw = localStorage.getItem('snakeAchievements');
+      const unlocked = achievementsRaw ? JSON.parse(achievementsRaw) : [];
+      expect(engine.getState().status).toBe('won');
+      expect(unlocked).toContain('no_pause');
+    });
+  });
+
   describe('lastUnlockedLevel persistence', () => {
     beforeEach(() => {
       localStorage.clear();
@@ -431,6 +543,50 @@ describe('Engine', () => {
       const newEngine = new Engine();
       expect(localStorage.getItem('snakeLastUnlockedLevel')).toBe('3');
       newEngine.destroy();
+    });
+  });
+
+  describe('totalFood stat accounting (BUG-024)', () => {
+    beforeEach(() => {
+      localStorage.clear();
+    });
+
+    it('counts each food as exactly 1, even gold food (BUG-024)', () => {
+      engine.startAtLevel(1);
+      // Position snake to eat a gold food on the next move.
+      engine.setState({
+        ...engine.getState(),
+        score: 0,
+        foodEaten: 0,
+        snake: [
+          { x: 9, y: 10 },
+          { x: 8, y: 10 },
+          { x: 7, y: 10 },
+        ],
+        food: { position: { x: 10, y: 10 }, type: 'gold', timer: -1 },
+        obstacles: [],
+      });
+      // Move into the gold food: +30 points but only 1 food consumed.
+      engine.testDispatch({ type: 'MOVE_SNAKE' });
+      expect(engine.getState().score).toBe(30);
+      // totalFood should be 1, not 3 (30 / POINTS_PER_FOOD = 3).
+      expect(engine.getStats().totalFood).toBe(1);
+    });
+
+    it('counts normal food as exactly 1 (no regression)', () => {
+      engine.startAtLevel(1);
+      engine.setState({
+        ...engine.getState(),
+        snake: [
+          { x: 9, y: 10 },
+          { x: 8, y: 10 },
+          { x: 7, y: 10 },
+        ],
+        food: { position: { x: 10, y: 10 }, type: 'normal', timer: -1 },
+        obstacles: [],
+      });
+      engine.testDispatch({ type: 'MOVE_SNAKE' });
+      expect(engine.getStats().totalFood).toBe(1);
     });
   });
 

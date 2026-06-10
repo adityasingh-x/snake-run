@@ -20,6 +20,7 @@ function saveSoundPreference(enabled: boolean): void {
 export class SoundManager {
   private enabled: boolean;
   private ctx: AudioContext | null = null;
+  private listeners: Set<(enabled: boolean) => void> = new Set();
 
   constructor() {
     this.enabled = loadSoundPreference();
@@ -74,11 +75,30 @@ export class SoundManager {
   toggleSound(): boolean {
     this.enabled = !this.enabled;
     saveSoundPreference(this.enabled);
+    this.notify();
     return this.enabled;
   }
 
   isEnabled(): boolean {
     return this.enabled;
+  }
+
+  /**
+   * Subscribe to sound-enabled changes. Returns an unsubscribe function.
+   * Used by Game/Settings screens to keep their local state in sync when
+   * the user toggles sound in either place.
+   */
+  subscribe(listener: (enabled: boolean) => void): () => void {
+    this.listeners.add(listener);
+    return () => {
+      this.listeners.delete(listener);
+    };
+  }
+
+  private notify(): void {
+    for (const listener of this.listeners) {
+      listener(this.enabled);
+    }
   }
 }
 

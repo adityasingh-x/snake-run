@@ -55,12 +55,37 @@ export const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
     }
   }, [confirmAction]);
 
+  // Keep local soundOn in sync if the user toggled sound elsewhere
+  // (e.g., Game toolbar).
   useEffect(() => {
+    return sharedSoundManager.subscribe(setSoundOn);
+  }, []);
+
+  useEffect(() => {
+    if (!confirmAction) return;
     const handleKey = (e: KeyboardEvent) => {
-      if (!confirmAction) return;
       if (e.key === 'Escape') {
         e.preventDefault();
         setConfirmAction(null);
+        return;
+      }
+      if (e.key !== 'Tab') return;
+      // Focus trap: cycle focus between the Cancel and Confirm buttons
+      // so Tab/Shift+Tab cannot escape the dialog and trigger destructive
+      // actions on the screen behind it.
+      const dialog = document.querySelector('[role="dialog"]');
+      if (!dialog) return;
+      const focusable = dialog.querySelectorAll<HTMLElement>('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const active = document.activeElement as HTMLElement | null;
+      if (e.shiftKey && active === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault();
+        first.focus();
       }
     };
     window.addEventListener('keydown', handleKey);

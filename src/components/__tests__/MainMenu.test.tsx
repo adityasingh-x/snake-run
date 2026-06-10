@@ -36,6 +36,13 @@ describe('MainMenu', () => {
     expect(screen.queryByRole('button', { name: 'Continue' })).not.toBeInTheDocument();
   });
 
+  it('does not show Continue when lastUnlockedLevel === 1 even with a high score (BUG-005)', () => {
+    render(<MainMenu lastUnlockedLevel={1} highScore={100} onNavigate={mockNavigate} onStartGame={mockStartGame} />);
+
+    expect(screen.queryByRole('button', { name: 'Continue' })).not.toBeInTheDocument();
+    expect(screen.queryByText(/Continue Level/)).not.toBeInTheDocument();
+  });
+
   it('calls onStartGame with lastUnlockedLevel when Continue is clicked', async () => {
     const user = userEvent.setup();
     render(<MainMenu lastUnlockedLevel={3} highScore={100} onNavigate={mockNavigate} onStartGame={mockStartGame} />);
