@@ -2,27 +2,57 @@
 
 ## Project Vision
 
-Snake Evolution is evolving through the following stages:
+Snake Run is evolving through the following stages:
 
-Prototype → Playable Game → Shared Game → Fun Game → Shippable Game
+Prototype → Playable Runner → Fun Runner → Polished Runner → Shippable Game
 
 The project prioritizes:
 
 1. Fun
 2. Playability
-3. Simplicity
-4. Maintainability
-5. Performance
+3. Game Feel
+4. Simplicity
+5. Maintainability
+6. Performance
+
+---
+
+# Product Vision
+
+Snake Run is an endless runner where the player controls a growing snake.
+
+The snake automatically advances through increasingly dangerous obstacle courses.
+
+Food increases snake length.
+
+Longer snakes increase score potential but also increase difficulty.
+
+The core gameplay loop is:
+
+Run
+→ Collect Food
+→ Grow Longer
+→ Earn Higher Score
+→ Become Harder To Control
+→ Take Bigger Risks
+→ Eventually Crash
+→ Play Again
+
+Snake Run is not competing with traditional Snake games.
+
+Snake Run is competing with:
+
+- Temple Run
+- Subway Surfers
+- Jetpack Joyride
+
+The unique differentiator is snake growth and length-based risk management.
 
 ---
 
 # Technology Direction
 
-The following platform strategy is considered the current project direction.
-
-AI agents should align proposals with this direction unless there is a compelling reason to change it.
-
-## Current Stack
+The following platform strategy remains the current direction.
 
 Frontend:
 
@@ -62,17 +92,36 @@ Planned release path:
 
 - Progressive Web App (PWA)
 
+Target:
+
+- Android
+- iPhone
+- Windows
+- macOS
+- Linux
+
 ### Mobile Applications
 
 Planned packaging technology:
 
 - Capacitor
 
+Target:
+
+- Android
+- iOS
+
 ### Desktop Applications
 
 Planned packaging technology:
 
 - Tauri
+
+Target:
+
+- Windows
+- macOS
+- Linux
 
 ---
 
@@ -104,40 +153,36 @@ Planned packaging technology:
 
 ### Milestone 4 - Level Progression System
 
-- Level metadata system (names, descriptions)
-- Level complete overlay (combined completion + next level preview)
-- Level name displayed in ScoreBoard HUD
-- Two-step level transition (freeze → continue)
-- Keyboard and button support for advancing between levels
+- Level metadata system
+- Level completion flow
+- Level HUD integration
+- Level progression support
 
 ### Milestone 5 - Obstacle Redesign
 
-- Handcrafted obstacle layouts for all 10 levels
-- Predefined `layout` arrays in level metadata
-- Random obstacle generation replaced with layout lookup
-- Deterministic obstacle placement per level
-- Level names and descriptions updated to match layouts
+- Handcrafted obstacle layouts
+- Deterministic obstacle placement
+- Layout-based level generation
 
 ### Milestone 6 - Progress Persistence & Developer Experience
 
-- Continue from last reached level
-- New Game option
+- Continue support
+- New Game support
 - Developer level select
 - Local persistence
 
 ### Milestone 7 - Difficulty Rebalance
 
-- Food-objective progression system
+- Food objective progression
 - Speed curve rebalance
-- HUD food progress display
+- HUD progress tracking
 
 ### Milestone 8 - Visual Identity
 
-- Tokenized design system
-- Retro arcade visual identity
+- Design token system
+- Visual identity pass
 - HUD redesign
 - Overlay redesign
-- Typography pass
 
 ### Milestone 9 - Replayability Systems
 
@@ -156,553 +201,538 @@ Planned packaging technology:
 
 ### Milestone 11 - Gameplay Validation & Stability
 
-- BFS-based reachability analysis module
-- Portal safety validation (bounds, overlap, distinctness)
-- Food spawn capacity validation (all 10 levels)
-- Systematic level-by-level validation suite (75 tests)
-- Persistence corruption resilience (statistics, achievements)
-- Engine persistence validation (destroy+recreate, pause stats, playing high score)
-- Manual validation documentation
+- Reachability validation
+- Spawn validation
+- Portal validation
+- Progression validation
+- Gameplay test suite
 
 ### Milestone 12 - User Experience & Navigation
 
-- Main Menu with Continue, New Game, Statistics, Achievements, Settings, Help
-- Continue experience showing last unlocked level and high score
-- Statistics Screen (dedicated full-screen view)
-- Achievements Screen (dedicated full-screen view)
-- Help / How To Play Screen
-- Settings Screen with sound toggle, theme selection, and reset options
-- 4-theme system (Neon Arcade, Classic, Terminal, High Contrast)
-- ReadyOverlay showing level metadata before gameplay starts
-- Improved PauseMenu with Resume, Restart Level, and Return to Menu
-- Centralized persistence service (`loadGameProfile()`)
-- State-based screen navigation (no routing library)
-- 392 tests across 26 test files
+- Main menu
+- Continue flow
+- Statistics screen
+- Achievements screen
+- Settings screen
+- Theme system
+- Help screen
+- Pause menu improvements
 
 ---
 
 ## In Progress
 
-None
+### Milestone 13 - Runner Prototype Validation
 
----
-
-## Not Started
-
-- Onboarding
-- Polish
-- Accessibility pass
-- Mobile release
-- Desktop release
+Not Started
 
 ---
 
 # Current Project Assessment
 
-The game has moved beyond the "Playable Game" stage.
+The original level-based Snake experience is feature-rich and technically complete.
 
-The project already contains:
+However, gameplay evaluation suggests that the current direction does not create sufficient tension, excitement, or replayability.
 
-- Full gameplay loop
-- 10 handcrafted levels
-- Multiple gameplay mechanics
-- Replayability systems
+The project is pivoting toward an endless runner structure while preserving the strongest parts of the existing codebase:
+
+- Engine architecture
+- Input systems
+- Mobile controls
 - Persistence systems
-- Mobile support
-- PWA deployment
-- Accessibility foundations
-- Endless mode
-- Main menu and screen navigation
-- Settings and theme system
-- Improved pause experience
+- Statistics systems
+- Achievement systems
+- Theme system
+- Audio foundation
 
-The next phase should focus on:
-
-1. Onboarding
-2. Polish
-3. Accessibility pass
-4. Packaging
-
-Large gameplay feature additions are intentionally paused until validation is complete.
+The objective is to discover whether endless-runner gameplay produces a more engaging experience than the current level-based design.
 
 ---
 
-# Milestone 11 - Gameplay Validation & Stability
+# Milestone 13 - Runner Prototype Validation
 
-Goal:
+## Goal
 
-Guarantee that all gameplay systems are correct, stable, completable, and free of progression blockers.
+Prove that Snake Run is more engaging as an endless runner than as a traditional snake game.
 
-Problem Statement:
+This milestone is intentionally experimental.
 
-Recent testing identified level-start issues and potential level design defects.
+Do not optimize architecture.
 
-Handcrafted levels currently lack automated validation.
+Do not optimize polish.
 
-The game must prove that every level is playable before further expansion.
+Do not optimize menus.
 
----
-
-## Feature: Spawn Safety Validation
-
-Every level must guarantee:
-
-- Snake does not overlap obstacles
-- Snake does not overlap portals
-- Snake does not overlap food
-- Snake spawn is inside board bounds
-- Snake has at least one valid movement option
+Focus exclusively on validating the core gameplay loop.
 
 ---
 
-## Feature: Level Integrity Validation
+## Success Question
 
-Every level must guarantee:
+At the end of this milestone the team must answer:
 
-- Obstacles remain inside board bounds
-- No overlapping obstacle coordinates
-- No overlapping special objects
-- No unreachable board sections caused by layout errors
+"Is endless runner gameplay more enjoyable than the current level-based gameplay?"
 
 ---
 
-## Feature: Reachability Validation
-
-Every level must guarantee:
-
-- Food can spawn in reachable locations
-- Food cannot spawn inside obstacles
-- Food cannot spawn inside portals
-- Level objectives can always be completed
-
----
-
-## Feature: Portal Validation
-
-Portal levels must guarantee:
-
-- Exactly two portal endpoints
-- No portal overlap with obstacles
-- No portal overlap with spawn locations
-- Teleport destinations remain safe
-
----
-
-## Feature: Wrap-Around Validation
-
-Wrap-around levels must guarantee:
-
-- Consistent edge behavior
-- No collision bugs during wrapping
-- Correct interaction with food and obstacles
-
----
-
-## Feature: Persistence Validation
-
-Verify:
-
-- Continue progression
-- High score persistence
-- Statistics persistence
-- Achievement persistence
-
----
-
-## Feature: Automated Gameplay Validation Suite
-
-Create tests for:
-
-- Every level definition
-- Every food variant
-- Portals
-- Wrap-around logic
-- Progression
-- Endless mode
-
----
-
-## Manual Validation Requirement
-
-Complete:
-
-- One full Level 1–10 run
-- One Endless Mode run
-- One keyboard-only run
-- One mobile run
-
-Document findings.
-
----
-
-## Success Criteria
-
-- No broken levels
-- No impossible starts
-- No progression blockers
-- No known gameplay defects
-- All validation tests passing
-
----
-
-# Milestone 12 - User Experience & Navigation
-
-Goal:
-
-Make the game feel like a complete product rather than a development build, including navigation, settings, and player personalization.
-
-Problem Statement:
-
-The game contains many systems, but players are not guided through them.
-
-Current navigation is functional but developer-oriented.
-
----
-
-## Feature: Main Menu
-
-Create a dedicated entry experience.
-
-Options:
-
-- Continue
-- New Game
-- Statistics
-- Achievements
-- Settings
-
----
-
-## Feature: Continue Experience
-
-Display:
-
-- Last unlocked level
-- High score
-- Best level reached
-
-Continue should clearly communicate what will happen.
-
----
-
-## Feature: Statistics Screen
-
-Dedicated screen.
-
-Display:
-
-- Games played
-- Food eaten
-- High score
-- Best level reached
-
----
-
-## Feature: Achievements Screen
-
-Dedicated screen.
-
-Display:
-
-- Achievement list
-- Locked achievements
-- Unlock requirements
-
----
-
-## Feature: Settings Screen
-
-Settings:
-
-- Sound on/off
-- Theme selection
-- Reset progress
-- Reset statistics
-- Reset achievements
-
-Dangerous actions require confirmation.
-
-### Theme Selection
-
-Allow players to choose from multiple visual themes.
-
-Themes should be implemented using the existing design token system introduced in Milestone 8.
+## Feature: Runner Prototype Mode
 
 Requirements:
 
-- Theme selection available from Settings
-- Theme choice persists between sessions
-- Theme changes apply immediately without page reload
-- All game screens must support themes
-- All HUD elements must support themes
-- All overlays must support themes
-- Accessibility contrast requirements must still be met
-
-Initial themes:
-
-#### Neon Arcade (Default)
-
-Current visual style.
-
-Characteristics:
-
-- Dark navy background
-- Cyan glow
-- Green snake
-- Purple obstacles
-
-#### Classic Snake
-
-Inspired by classic mobile snake games.
-
-Characteristics:
-
-- Light background
-- Dark snake
-- Minimal glow effects
-- Retro appearance
-
-#### Terminal
-
-Inspired by retro computer terminals.
-
-Characteristics:
-
-- Black background
-- Green monochrome palette
-- Minimal visual effects
-
-#### High Contrast
-
-Accessibility-focused theme.
-
-Characteristics:
-
-- Maximum contrast
-- Highly distinguishable gameplay elements
-- Reduced decorative effects
-
-Implementation Notes:
-
-- Themes should modify design tokens only
-- Components should not contain theme-specific logic
-- Existing CSS variable architecture should remain the single source of truth
-- New themes should be addable without modifying gameplay components
-
-Theme Success Criteria:
-
-- Players can switch themes at any time
-- Theme selection persists across sessions
-- All game screens render correctly in every theme
-- New themes can be added with minimal engineering effort
+- Create a dedicated Runner Mode.
+- Existing gameplay remains functional.
+- Runner Mode can be launched directly from the menu.
+- Runner Mode becomes the primary experimentation environment.
 
 ---
 
-## Feature: Improved Pause Experience
+## Feature: Automatic Forward Motion
 
-Pause screen should expose:
+Requirements:
 
-- Resume
-- Restart level
-- Return to menu
+- Snake continuously advances.
+- Player does not control forward movement.
+- Player only controls horizontal movement.
+
+Desktop Controls:
+
+- Left Arrow
+- Right Arrow
+- A
+- D
+
+Mobile Controls:
+
+- Swipe Left
+- Swipe Right
+
+No Up control.
+
+No Down control.
 
 ---
 
-## Success Criteria
+## Feature: Three Lane System
 
-- Players always know what to do next
-- Navigation feels intentional
-- Settings feel complete
-- Theme selection works across the entire application
-- Game feels complete
+Requirements:
+
+- Fixed lane architecture.
+- Left lane.
+- Center lane.
+- Right lane.
+
+Snake occupies exactly one lane.
+
+Lane changes should feel responsive.
 
 ---
 
-# Milestone 13 - Onboarding & Discoverability
+## Feature: Infinite Course Generation
 
-Goal:
+Requirements:
 
-Teach players the game's mechanics without requiring external documentation.
+- Infinite scrolling gameplay.
+- Obstacles continuously appear.
+- Course extends indefinitely.
+- Difficulty gradually increases.
 
-Problem Statement:
+Initial implementation should prioritize simplicity over sophistication.
 
-The game now contains mechanics that are not self-explanatory.
+---
 
-A new player may not understand:
+## Feature: Distance-Based Scoring
+
+Primary Score Source:
+
+- Distance traveled
+
+Secondary Score Source:
+
+- Food collected
+
+Display:
+
+- Distance
+- Food
+- Length
+- High Score
+
+---
+
+## Feature: Basic Food Collection
+
+Requirements:
+
+- Food appears inside lanes.
+- Food increases score.
+- Food increases snake length.
+
+Exclude:
 
 - Gold food
 - Poison food
 - Slow food
-- Portals
-- Wrap-around levels
-- Endless mode
-- Achievements
+
+for this milestone.
 
 ---
 
-## Feature: First-Time Player Experience
+## Feature: Obstacle Avoidance
 
-Show onboarding only when appropriate.
+Requirements:
 
-Must be skippable.
+- Obstacles appear in lanes.
+- Obstacle collision immediately ends run.
 
----
+No health system.
 
-## Feature: Gameplay Guide
+No shields.
 
-Create an in-game guide.
-
-Explain:
-
-- Controls
-- Objectives
-- Scoring
-- Progression
+No recovery mechanics.
 
 ---
 
-## Feature: Mechanics Guide
+## Feature: Fast Restart Flow
 
-Explain:
+Game Over Screen Displays:
 
-### Gold Food
+- Distance traveled
+- Food collected
+- Final snake length
+- High score
 
-- Bonus score
-- Temporary availability
+Primary Action:
 
-### Poison Food
+- Play Again
 
-- Snake shrinking behavior
+Target:
 
-### Slow Food
-
-- Temporary speed reduction
-
-### Portals
-
-- Teleportation rules
-
-### Wrap-Around Levels
-
-- Edge behavior
-
----
-
-## Feature: Endless Mode Explanation
-
-Explain:
-
-- Unlock conditions
-- Endless progression
-- Scoring expectations
+Player can begin a new run within 2 seconds.
 
 ---
 
 ## Success Criteria
 
-- New players understand all mechanics
-- No external documentation required
+The game creates the following loop:
+
+Play
+→ Crash
+→ Retry
+
+Players voluntarily restart multiple times.
+
+The team believes this direction is more engaging than the level-based version.
 
 ---
 
-# Milestone 14 - Game Polish
+# Milestone 14 - Snake Growth Risk System
 
-Goal:
+## Goal
 
-Improve game feel and presentation.
-
-Problem Statement:
-
-The game is feature-complete but lacks the feedback expected from a finished game.
+Make growth create meaningful tension.
 
 ---
 
-## Feature: Food Collection Effects
+## Problem Statement
 
-Add:
+Growth currently provides reward without sufficient downside.
 
-- Glow pulse
-- Particle burst
-- Collection animation
+Longer snakes should become increasingly difficult to manage.
 
 ---
 
-## Feature: Snake Death Effects
+## Feature: Dynamic Tail Difficulty
 
-Add:
+Requirements:
 
-- Death animation
-- Impact feedback
-- Screen response
-
----
-
-## Feature: Level Completion Effects
-
-Add:
-
-- Completion celebration
-- Improved transitions
-- Visual reward feedback
+- Longer snakes consume more space.
+- Navigation becomes more difficult.
+- Mistakes become more punishing.
 
 ---
 
-## Feature: Achievement Popups
+## Feature: Score Multipliers
 
-Display:
+Multiplier increases with snake length.
 
-- Achievement name
-- Description
-- Temporary notification
+Example:
+
+- Length 3 = x1
+- Length 10 = x2
+- Length 20 = x3
+- Length 30 = x4
+
+Exact values to be tuned.
 
 ---
 
-## Feature: HUD Animation Pass
+## Feature: Risk Routes
+
+Design obstacle layouts that create choices:
+
+Safe Route:
+
+- Lower score potential
+
+Risk Route:
+
+- More food
+- More score
+- Greater danger
+
+---
+
+## Feature: Growth Milestones
+
+Examples:
+
+- Length 10
+- Length 20
+- Length 30
+
+Provide:
+
+- Visual feedback
+- Audio feedback
+- Score feedback
+
+---
+
+## Success Criteria
+
+Players willingly take dangerous routes in order to grow larger.
+
+Growth becomes the central strategic decision.
+
+---
+
+# Milestone 15 - Runner Content Expansion
+
+## Goal
+
+Create gameplay variety while preserving the core loop.
+
+---
+
+## Feature: Obstacle Pattern Library
+
+Create reusable obstacle patterns.
+
+Examples:
+
+- Single blocker
+- Double blocker
+- Triple blocker
+- Funnel
+- Zig-zag
+- Split route
+- Narrow passage
+
+---
+
+## Feature: Near Miss Design
+
+Requirements:
+
+Create situations where:
+
+- Success feels exciting
+- Failure feels fair
+
+---
+
+## Feature: Difficulty Director
+
+Progressively increase:
+
+- Speed
+- Obstacle density
+- Pattern complexity
+
+during longer runs.
+
+---
+
+## Feature: Runner Events
+
+Examples:
+
+- Dense traffic sections
+- Food rush sections
+- Survival sections
+- High-risk sections
+
+---
+
+## Success Criteria
+
+Runs remain engaging for at least 5 minutes.
+
+Players encounter meaningful variation.
+
+---
+
+# Milestone 16 - Powerups & Advanced Mechanics
+
+## Goal
+
+Expand gameplay depth after the core loop is proven.
+
+---
+
+## Feature: Magnet
+
+Temporarily attracts nearby food.
+
+---
+
+## Feature: Shield
+
+Protects from one collision.
+
+---
+
+## Feature: Slow Motion
+
+Temporarily reduces game speed.
+
+---
+
+## Feature: Food Chains
+
+Reward consecutive food collection.
+
+---
+
+## Feature: Combo System
+
+Increase score through sustained performance.
+
+---
+
+## Success Criteria
+
+Powerups enhance gameplay without replacing the core risk/reward loop.
+
+---
+
+# Milestone 17 - Meta Progression
+
+## Goal
+
+Create long-term player retention.
+
+---
+
+## Feature: Missions
+
+Examples:
+
+- Reach Length 20
+- Reach Length 50
+- Survive 3 Minutes
+- Collect 500 Food
+
+---
+
+## Feature: Achievement Integration
+
+Adapt existing achievement system to runner gameplay.
+
+---
+
+## Feature: Statistics Integration
+
+Track:
+
+- Best Distance
+- Longest Snake
+- Total Food
+- Total Runs
+- Average Run Length
+
+---
+
+## Feature: Unlockables
+
+Examples:
+
+- Snake skins
+- Themes
+- Trails
+- Effects
+
+---
+
+## Success Criteria
+
+Players have goals beyond chasing a single high score.
+
+---
+
+# Milestone 18 - Visual Identity & Game Feel
+
+## Goal
+
+Make Snake Run visually distinct and emotionally satisfying.
+
+---
+
+## Feature: Runner Presentation
 
 Improve:
 
-- Score updates
-- Food counters
-- Level indicators
+- Sense of speed
+- Motion feedback
+- Visual depth
+- Dynamic backgrounds
 
 ---
 
-## Feature: Menu Animation Pass
-
-Improve:
-
-- Screen transitions
-- Overlay transitions
-- Button interactions
-
----
-
-## Feature: Audio Expansion
+## Feature: Growth Feedback
 
 Add:
 
-- Menu sounds
-- Achievement sounds
-- Better level-complete sounds
+- Growth animation
+- Milestone effects
+- Multiplier feedback
+
+---
+
+## Feature: Collection Feedback
+
+Add:
+
+- Particle effects
+- Screen feedback
+- Reward animations
+
+---
+
+## Feature: Audio Pass
+
+Add:
+
+- Collection sounds
+- Near miss sounds
+- Growth milestone sounds
 - Improved death sounds
 
-Do not add background music in this milestone.
-
 ---
 
 ## Success Criteria
 
-- Stronger game feel
-- Better feedback
-- More satisfying gameplay
+The game immediately communicates:
+
+"Endless runner with a growing snake."
 
 ---
 
-# Milestone 15 - Accessibility & Quality
+# Milestone 19 - Accessibility & Quality
 
-Goal:
+## Goal
 
-Improve inclusivity, maintainability, and long-term stability.
+Improve inclusivity, quality, and stability.
 
 ---
 
@@ -721,9 +751,9 @@ Review:
 
 Verify:
 
-- Food variants remain distinguishable
-- Portals remain distinguishable
-- Obstacles remain distinguishable
+- Food visibility
+- Obstacle visibility
+- Powerup visibility
 
 ---
 
@@ -731,54 +761,34 @@ Verify:
 
 Support browser motion preferences.
 
-Reduce:
-
-- Animations
-- Effects
-- Transitions
-
 ---
 
-## Feature: UI Testing
-
-Introduce automated UI validation.
+## Feature: Automated UI Testing
 
 Cover:
 
-- Main menu
-- Progression flow
-- Achievement flow
-- Statistics flow
-- Settings flow
+- Menu flows
+- Runner flows
+- Progression flows
+- Statistics flows
 
 ---
 
 ## Success Criteria
 
-- Better accessibility
-- Better quality guarantees
-- Reduced regression risk
+High-quality, accessible experience.
 
 ---
 
-# Milestone 16 - Mobile App Release
+# Milestone 20 - Mobile Release
 
 Technology:
 
-Capacitor
+- Capacitor
 
 Goal:
 
 Ship native mobile versions.
-
----
-
-## Feature: Capacitor Integration
-
-Support:
-
-- Android
-- iOS
 
 ---
 
@@ -787,9 +797,9 @@ Support:
 Verify:
 
 - Gestures
-- Touch controls
 - Safe areas
-- Orientation handling
+- Performance
+- Device compatibility
 
 ---
 
@@ -797,38 +807,27 @@ Verify:
 
 Create:
 
-- App icons
-- Splash screens
+- Icons
 - Screenshots
+- Marketing assets
 
 ---
 
 ## Success Criteria
 
-- Android build available
-- iOS build available
+Android and iOS builds available.
 
 ---
 
-# Milestone 17 - Desktop Release
+# Milestone 21 - Desktop Release
 
 Technology:
 
-Tauri
+- Tauri
 
 Goal:
 
 Ship native desktop versions.
-
----
-
-## Feature: Desktop Packaging
-
-Support:
-
-- Windows
-- macOS
-- Linux
 
 ---
 
@@ -837,23 +836,21 @@ Support:
 Verify:
 
 - Keyboard controls
-- Window resizing
-- Fullscreen behavior
-- Offline behavior
+- Resizing
+- Fullscreen support
+- Offline support
 
 ---
 
 ## Success Criteria
 
-- Windows build available
-- macOS build available
-- Linux build available
+Windows, macOS, and Linux builds available.
 
 ---
 
 # Future Opportunities
 
-Only consider after Milestone 17.
+Only consider after Milestone 21.
 
 Potential future additions:
 
@@ -862,12 +859,9 @@ Potential future additions:
 - Daily challenges
 - Ghost runs
 - Multiplayer
-- Procedural challenge generation
-- Additional level packs
-- Additional achievements
-- Theme packs
 - Seasonal events
-- AI-assisted content generation
+- Community challenges
+- Additional game modes
 
 ---
 
@@ -875,11 +869,11 @@ Potential future additions:
 
 When completing a milestone:
 
-1. Update roadmap progress
-2. Update PROJECT_STATE.md
-3. Archive implementation plans
-4. Verify documentation matches implementation
+1. Update roadmap progress.
+2. Update PROJECT_STATE.md.
+3. Archive implementation plans.
+4. Verify documentation consistency.
 
 A milestone is not complete until documentation has been updated.
 
-The roadmap is the source of truth for project direction.
+The roadmap remains the source of truth for project direction.
