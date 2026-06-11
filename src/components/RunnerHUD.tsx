@@ -5,12 +5,18 @@ interface RunnerHUDProps {
   foodEaten: number;
   snakeLength: number;
   highScore: number;
+  score: number;
 }
 
-export const RunnerHUD = ({ distance, foodEaten, snakeLength, highScore }: RunnerHUDProps) => {
+export const RunnerHUD = ({ distance, foodEaten, snakeLength, highScore, score }: RunnerHUDProps) => {
   return (
     <>
       <div className={styles.runnerHud} aria-live="polite">
+        <div className={`${styles.section} ${styles.scoreSection}`}>
+          <span className={styles.label}>Score</span>
+          <span className={styles.scoreValue}>{score}</span>
+        </div>
+        <div className={styles.separator} />
         <div className={styles.section}>
           <span className={styles.label}>Distance</span>
           <span className={styles.value}>{distance}</span>
@@ -32,7 +38,7 @@ export const RunnerHUD = ({ distance, foodEaten, snakeLength, highScore }: Runne
         </div>
       </div>
       <div className="sr-only" aria-live="assertive" role="status">
-        Distance: {distance}. Food: {foodEaten}. Length: {snakeLength}.
+        Score: {score}. Distance: {distance}. Food: {foodEaten}. Length: {snakeLength}.
       </div>
     </>
   );

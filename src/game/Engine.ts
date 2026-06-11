@@ -1,6 +1,6 @@
 import type { GameState, GameAction, Direction } from './types';
 import { getInitialState, gameReducer } from './state';
-import { RUNNER_INITIAL_SPEED, RUNNER_MIN_SPEED } from './constants';
+import { RUNNER_INITIAL_SPEED, RUNNER_MIN_SPEED, RUNNER_SPEED_MULTIPLIER } from './constants';
 import { getLevelData } from './levels';
 import { saveHighScore, saveLastUnlockedLevel } from './storage';
 import { loadStats, saveStats } from './statistics';
@@ -247,6 +247,7 @@ export class Engine {
           RUNNER_MIN_SPEED,
           RUNNER_INITIAL_SPEED - Math.floor(this.state.distance / 50) * 2
         );
+        effectiveSpeed = Math.round(effectiveSpeed / RUNNER_SPEED_MULTIPLIER);
       } else {
         const config = getLevelData(this.state.level);
         const speed = config.speed ?? 150;

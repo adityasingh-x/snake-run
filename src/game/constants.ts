@@ -36,3 +36,5 @@ export const RUNNER_LANE_X: [number, number, number] = [4, 10, 16];
 export const RUNNER_INITIAL_SPEED = 200;
 export const RUNNER_MIN_SPEED = 80;
 export const RUNNER_DISTANCE_PER_POINT = 10;
+export const RUNNER_VIEWPORT_TAIL = 13;
+export const RUNNER_SPEED_MULTIPLIER = 1.0;

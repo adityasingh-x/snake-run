@@ -27,3 +27,8 @@ work-extras/
 *.sln
 *.sw?
 bugs.md
+
+# Milestone 13.5 validation recordings (stored externally)
+docs/Milestone 13_5_validation/recordings/*.webm
+docs/Milestone 13_5_validation/recordings/*.mp4
+docs/Milestone 13_5_validation/recordings/*.mov

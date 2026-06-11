@@ -368,3 +368,17 @@ It only needs to validate the gameplay concept.
 - `RUNNER_LANE_X` exported through game barrel and utils/constants
 - Classic mode rendering completely unchanged
 - 434 tests passing across 27 test files
+
+---
+
+## Milestone 13.5 — Controls & UX
+
+- Viewport scrolling: snake fixed at lower third (screen row 13), obstacles scroll downward via `screenRow = (gridY - headY + VIEWPORT_TAIL + GRID_SIZE) % GRID_SIZE`
+- Lane change visual feedback: directional slide animation (150ms) with green glow on snake head
+- Speed profile multiplier: `RUNNER_SPEED_MULTIPLIER` constant for validation testing across 4 profiles (1.0x, 1.25x, 1.5x, 1.75x)
+- Course generation: `MIN_PATTERN_SPACING = 2` prevents obstacles on adjacent rows; bounds check for out-of-grid patterns
+- HUD score display: Score section (gold) in RunnerHUD; score comparison with "New Best!" badge in RunnerGameOver
+- Board wrapped in `React.memo` for scroll performance; `data-viewport-scrolling` attribute; `isViewportScrolling` prop on Cell
+- Validation infrastructure: recording directory with README, .gitignore for recordings
+- 447 tests passing across 27 test files
+- Documentation: SPEC.md §20.2 / §20.5 / §20.11 / §20.12, ARCHITECTURE.md updated, ROADMAP.md updated

@@ -93,3 +93,31 @@ describe('Cell — runner lane styling', () => {
     expect(cell.className).not.toContain('nonLaneColumn');
   });
 });
+
+describe('Cell — lane change direction', () => {
+  it('applies laneSlidingLeft class for left lane change on snake head', () => {
+    render(<Cell x={10} y={0} isSnakeHead={true} isSnakeBody={false}
+      foodType={undefined} isObstacle={false} direction="UP" laneChangeDirection="left" />);
+    expect(screen.getByRole('gridcell').className).toContain('laneSlidingLeft');
+  });
+
+  it('applies laneSlidingRight class for right lane change on snake head', () => {
+    render(<Cell x={10} y={0} isSnakeHead={true} isSnakeBody={false}
+      foodType={undefined} isObstacle={false} direction="UP" laneChangeDirection="right" />);
+    expect(screen.getByRole('gridcell').className).toContain('laneSlidingRight');
+  });
+
+  it('does not apply lane change class on non-head cells', () => {
+    render(<Cell x={10} y={0} isSnakeHead={false} isSnakeBody={true}
+      foodType={undefined} isObstacle={false} laneChangeDirection="left" />);
+    const cell = screen.getByRole('gridcell');
+    expect(cell.className).not.toContain('laneSlidingLeft');
+    expect(cell.className).not.toContain('laneSlidingRight');
+  });
+
+  it('applies cellScrolling class when isViewportScrolling is true', () => {
+    render(<Cell x={10} y={0} isSnakeHead={false} isSnakeBody={false}
+      foodType={undefined} isObstacle={false} isViewportScrolling={true} />);
+    expect(screen.getByRole('gridcell').className).toContain('cellScrolling');
+  });
+});

@@ -32,15 +32,34 @@ export const RunnerGame = ({ onNavigateToMenu }: RunnerGameProps) => {
     setHasStarted(true);
   }, [initAudio, startRunner]);
 
+  const [laneChangeDir, setLaneChangeDir] = useState<'left' | 'right' | null>(null);
+  const laneChangeTimerRef = useRef<number | null>(null);
+
+  const handleLaneChange = useCallback((dir: -1 | 1) => {
+    changeLane(dir);
+    if (laneChangeTimerRef.current) clearTimeout(laneChangeTimerRef.current);
+    setLaneChangeDir(dir === -1 ? 'left' : 'right');
+    laneChangeTimerRef.current = window.setTimeout(() => {
+      setLaneChangeDir(null);
+      laneChangeTimerRef.current = null;
+    }, 200);
+  }, [changeLane]);
+
+  useEffect(() => {
+    return () => {
+      if (laneChangeTimerRef.current) clearTimeout(laneChangeTimerRef.current);
+    };
+  }, []);
+
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       const key = e.key;
       if (key === 'ArrowLeft' || key === 'a' || key === 'A') {
         e.preventDefault();
-        changeLane(-1);
+        handleLaneChange(-1);
       } else if (key === 'ArrowRight' || key === 'd' || key === 'D') {
         e.preventDefault();
-        changeLane(1);
+        handleLaneChange(1);
       } else if (key === ' ' || key === 'Spacebar') {
         e.preventDefault();
         if (!hasStarted || state.status === 'gameover') {
@@ -55,12 +74,12 @@ export const RunnerGame = ({ onNavigateToMenu }: RunnerGameProps) => {
     };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [hasStarted, state.status, changeLane, startRunner, initAudio, onNavigateToMenu]);
+  }, [hasStarted, state.status, handleLaneChange, startRunner, initAudio, onNavigateToMenu]);
 
   useTouch({
     onSwipe: (dir) => {
-      if (dir === 'LEFT') changeLane(-1);
-      if (dir === 'RIGHT') changeLane(1);
+      if (dir === 'LEFT') handleLaneChange(-1);
+      if (dir === 'RIGHT') handleLaneChange(1);
     },
     enabled: state.status === 'playing' && state.isRunner,
     boardRef,
@@ -86,6 +105,7 @@ export const RunnerGame = ({ onNavigateToMenu }: RunnerGameProps) => {
         foodEaten={state.foodEaten}
         snakeLength={state.snake.length}
         highScore={state.highScore}
+        score={state.score}
       />
 
       <div ref={boardRef} className={styles.boardWrapper}>
@@ -95,6 +115,8 @@ export const RunnerGame = ({ onNavigateToMenu }: RunnerGameProps) => {
           food={state.food}
           obstacles={state.obstacles}
           runnerLane={state.lane}
+          viewportHeadY={state.isRunner && state.status === 'playing' ? state.snake[0].y : undefined}
+          laneChangeDirection={laneChangeDir}
         />
       </div>
 
@@ -114,6 +136,7 @@ export const RunnerGame = ({ onNavigateToMenu }: RunnerGameProps) => {
           foodEaten={state.foodEaten}
           snakeLength={state.snake.length}
           highScore={state.highScore}
+          score={state.score}
           onPlayAgain={handleStart}
           onReturnToMenu={onNavigateToMenu}
         />

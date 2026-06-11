@@ -5,15 +5,28 @@ interface RunnerGameOverProps {
   foodEaten: number;
   snakeLength: number;
   highScore: number;
+  score: number;
   onPlayAgain: () => void;
   onReturnToMenu?: () => void;
 }
 
-export const RunnerGameOver = ({ distance, foodEaten, snakeLength, highScore, onPlayAgain, onReturnToMenu }: RunnerGameOverProps) => {
+export const RunnerGameOver = ({ distance, foodEaten, snakeLength, highScore, score, onPlayAgain, onReturnToMenu }: RunnerGameOverProps) => {
+  const isNewBest = score > 0 && score >= highScore;
+
   return (
     <div className={styles.overlay}>
       <div className={styles.modal}>
         <h2 className={styles.title}>Run Over!</h2>
+        <div className={styles.scoreDisplay}>
+          <span className={styles.scoreLabel}>Score</span>
+          <span className={styles.scoreNumber}>{score}</span>
+          {isNewBest && <span className={styles.newBestBadge}>New Best!</span>}
+        </div>
+        {!isNewBest && (
+          <div className={styles.bestComparison}>
+            Best: {highScore}
+          </div>
+        )}
         <div className={styles.stats}>
           <div className={styles.statRow}>
             <span className={styles.statLabel}>Distance</span>
@@ -26,10 +39,6 @@ export const RunnerGameOver = ({ distance, foodEaten, snakeLength, highScore, on
           <div className={styles.statRow}>
             <span className={styles.statLabel}>Length</span>
             <span className={styles.statValue}>{snakeLength}</span>
-          </div>
-          <div className={`${styles.statRow} ${styles.highScoreRow}`}>
-            <span className={styles.statLabel}>Best</span>
-            <span className={styles.statValue}>{highScore}</span>
           </div>
         </div>
         <button

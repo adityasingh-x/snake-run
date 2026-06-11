@@ -4,6 +4,10 @@
   height: 100%;
 }
 
+.cellScrolling {
+  transition: border-color 100ms ease;
+}
+
 .nonLaneColumn {
   border: none;
   background: transparent;
@@ -124,4 +128,22 @@
 @keyframes spinReverse {
   from { transform: rotate(360deg); }
   to { transform: rotate(0deg); }
+}
+
+.laneSlidingLeft {
+  animation: slideLeft 150ms ease-out;
+}
+
+.laneSlidingRight {
+  animation: slideRight 150ms ease-out;
+}
+
+@keyframes slideLeft {
+  0% { transform: translateX(-30%); box-shadow: 0 0 16px var(--color-accent); }
+  100% { transform: translateX(0); box-shadow: var(--shadow-neon-green-strong); }
+}
+
+@keyframes slideRight {
+  0% { transform: translateX(30%); box-shadow: 0 0 16px var(--color-accent); }
+  100% { transform: translateX(0); box-shadow: var(--shadow-neon-green-strong); }
 }

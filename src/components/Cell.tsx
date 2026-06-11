@@ -2,8 +2,11 @@ import { memo } from 'react';
 import type { CellProps } from '../types/components';
 import styles from './Cell.module.css';
 
-export const Cell = memo(({ x, y, isSnakeHead, isSnakeBody, foodType, isObstacle, isPortal, direction, isLaneColumn, isActiveLane }: CellProps) => {
+export const Cell = memo(({ x, y, isSnakeHead, isSnakeBody, foodType, isObstacle, isPortal, direction, isLaneColumn, isActiveLane, isViewportScrolling, laneChangeDirection }: CellProps) => {
   let className = styles.cell;
+  if (isViewportScrolling) {
+    className += ` ${styles.cellScrolling}`;
+  }
   if (isLaneColumn === false) {
     className += ` ${styles.nonLaneColumn}`;
   } else if (isActiveLane) {
@@ -12,6 +15,8 @@ export const Cell = memo(({ x, y, isSnakeHead, isSnakeBody, foodType, isObstacle
   if (isSnakeHead) {
     className += ` ${styles.snakeHead}`;
     if (direction) className += ` ${styles[`snakeHead--${direction.toLowerCase()}`]}`;
+    if (laneChangeDirection === 'left') className += ` ${styles.laneSlidingLeft}`;
+    if (laneChangeDirection === 'right') className += ` ${styles.laneSlidingRight}`;
   }
   else if (isSnakeBody) className += ` ${styles.snakeBody}`;
   else if (foodType === 'gold') className += ` ${styles.gold}`;
