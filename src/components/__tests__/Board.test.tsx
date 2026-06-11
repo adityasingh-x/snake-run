@@ -30,3 +30,29 @@ describe('Board Component', () => {
     expect(board.className).toContain('board');
   });
 });
+
+describe('Board — runner mode', () => {
+  const defaultProps = {
+    snake: [{ x: 10, y: 10 }],
+    direction: 'RIGHT' as const,
+    food: { position: { x: 10, y: 5 }, type: 'normal' as const, timer: -1 },
+    obstacles: [],
+  };
+
+  it('renders 400 cells in runner mode', () => {
+    render(<Board {...defaultProps} runnerLane={1} />);
+    expect(screen.getAllByRole('gridcell').length).toBe(400);
+  });
+
+  it('sets data-runner attribute in runner mode', () => {
+    render(<Board {...defaultProps} runnerLane={1} />);
+    const board = screen.getByRole('grid');
+    expect(board.getAttribute('data-runner')).toBe('true');
+  });
+
+  it('does not set data-runner attribute in classic mode', () => {
+    render(<Board {...defaultProps} />);
+    const board = screen.getByRole('grid');
+    expect(board.hasAttribute('data-runner')).toBe(false);
+  });
+});

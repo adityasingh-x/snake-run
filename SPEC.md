@@ -708,6 +708,7 @@ Runner Mode is an endless runner variant of Snake Run. The snake automatically m
 - The snake always occupies exactly one lane
 - Lane changes shift the head's x-coordinate immediately (zero tick delay)
 - Lane changes clamp to bounds [0, 2] and are rejected if the target lane already contains a body segment at the head's Y position (tail lane blocking)
+- **Lane visualization:** In runner mode, the 20×20 grid is visually transformed into a 3-lane presentation. Lane columns (x=4, 10, 16) are rendered at full visibility with visible borders. Non-lane columns are dimmed to near-transparent with no borders. The active lane shows a subtle green background highlight. This replaces the previous text-only "Lanes: Left | Center | Right" indicator. The board border changes from purple to green accent to reinforce runner mode at a glance.
 
 ### 20.3 Movement Model
 
@@ -729,6 +730,8 @@ The `RunnerHUD` component displays:
 - Food eaten
 - Snake length
 - High score (Best)
+
+Lane structure is communicated visually on the board rather than via text.
 
 ### 20.6 Game Over
 

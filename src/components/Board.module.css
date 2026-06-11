@@ -12,3 +12,7 @@
 .board[data-wrap-around="true"] {
   border: 2px dashed var(--color-warning);
 }
+
+.board[data-runner="true"] {
+  border: 2px solid var(--color-accent);
+}

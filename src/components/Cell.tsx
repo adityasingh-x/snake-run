@@ -2,8 +2,13 @@ import { memo } from 'react';
 import type { CellProps } from '../types/components';
 import styles from './Cell.module.css';
 
-export const Cell = memo(({ x, y, isSnakeHead, isSnakeBody, foodType, isObstacle, isPortal, direction }: CellProps) => {
+export const Cell = memo(({ x, y, isSnakeHead, isSnakeBody, foodType, isObstacle, isPortal, direction, isLaneColumn, isActiveLane }: CellProps) => {
   let className = styles.cell;
+  if (isLaneColumn === false) {
+    className += ` ${styles.nonLaneColumn}`;
+  } else if (isActiveLane) {
+    className += ` ${styles.activeLane}`;
+  }
   if (isSnakeHead) {
     className += ` ${styles.snakeHead}`;
     if (direction) className += ` ${styles[`snakeHead--${direction.toLowerCase()}`]}`;

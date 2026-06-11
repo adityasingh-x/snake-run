@@ -9,6 +9,7 @@ export interface BoardProps {
   obstacles: Position[];
   wrapAround?: boolean;
   portals?: Position[];
+  runnerLane?: 0 | 1 | 2;
 }
 
 export interface CellProps {
@@ -20,6 +21,8 @@ export interface CellProps {
   isObstacle: boolean;
   isPortal?: boolean;
   direction?: Direction;
+  isLaneColumn?: boolean;
+  isActiveLane?: boolean;
 }
 
 export interface ScoreBoardProps {

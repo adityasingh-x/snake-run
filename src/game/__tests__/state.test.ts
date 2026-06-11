@@ -1138,5 +1138,23 @@ describe('gameReducer', () => {
       const laneX = [4, 10, 16];
       expect(laneX).toContain(next.food.position.x);
     });
+    it('spawns food only on lane columns when food is eaten', () => {
+      const state = makeState({
+        isRunner: true,
+        status: 'playing',
+        snake: [
+          { x: 10, y: 10 },
+          { x: 10, y: 11 },
+          { x: 10, y: 12 },
+        ],
+        food: { position: { x: 10, y: 9 }, type: 'normal', timer: -1 },
+        obstacles: [],
+        lane: 1,
+        direction: 'UP',
+        nextDirection: 'UP',
+      });
+      const next = gameReducer(state, { type: 'MOVE_SNAKE' });
+      expect([4, 10, 16]).toContain(next.food.position.x);
+    });
   });
 });

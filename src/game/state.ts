@@ -5,7 +5,7 @@ import { spawnFood } from './food';
 import { calculateNewHead } from './snake';
 import { loadHighScore, loadLastUnlockedLevel } from './storage';
 import { getLevelData, generateObstacles, getPortalPositions } from './levels';
-import { generateRunnerCourse } from './runnerCourse';
+import { generateRunnerCourse, spawnRunnerFood } from './runnerCourse';
 
 export function getInitialState(): GameState {
   const obstacles = generateObstacles(1);
@@ -128,7 +128,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         let newObstacles = state.obstacles;
 
         if (ateFood) {
-          newFood = spawnFood(newSnake, newObstacles, [], 'normal');
+          newFood = spawnRunnerFood(newSnake, newObstacles, newHead.y);
         }
 
         if (wrapped) {

@@ -41,14 +41,6 @@
   touch-action: none;
 }
 
-.laneIndicator {
-  color: var(--color-text-hint);
-  font-family: var(--font-body);
-  font-size: 0.75rem;
-  margin-top: var(--space-sm);
-  text-align: center;
-}
-
 .startOverlay {
   position: absolute;
   top: 0;

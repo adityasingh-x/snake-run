@@ -72,3 +72,24 @@ describe('Cell Component', () => {
     expect(cell).toHaveAttribute('aria-label', 'Portal at 2,4');
   });
 });
+
+describe('Cell — runner lane styling', () => {
+  it('applies nonLaneColumn class for non-lane columns', () => {
+    render(<Cell x={0} y={0} isSnakeHead={false} isSnakeBody={false}
+      foodType={undefined} isObstacle={false} isLaneColumn={false} />);
+    expect(screen.getByRole('gridcell').className).toContain('nonLaneColumn');
+  });
+
+  it('applies activeLane class when isActiveLane is true', () => {
+    render(<Cell x={10} y={0} isSnakeHead={false} isSnakeBody={false}
+      foodType={undefined} isObstacle={false} isLaneColumn={true} isActiveLane={true} />);
+    expect(screen.getByRole('gridcell').className).toContain('activeLane');
+  });
+
+  it('does not apply nonLaneColumn when isLaneColumn is undefined (classic mode)', () => {
+    render(<Cell x={0} y={0} isSnakeHead={false} isSnakeBody={false}
+      foodType={undefined} isObstacle={false} />);
+    const cell = screen.getByRole('gridcell');
+    expect(cell.className).not.toContain('nonLaneColumn');
+  });
+});

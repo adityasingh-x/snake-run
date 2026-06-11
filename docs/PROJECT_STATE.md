@@ -2,58 +2,67 @@
 
 ## Current Version
 
-v0.13.0
+v0.13.1
 
 ---
 
 ## Current Status
 
-Milestone 13 (Runner Prototype Validation) Complete
+Milestone 13.1 (Visual Lane Redesign) Complete
 
-All phases of Milestone 13 are now complete:
-- Phase 1: Runner Types, Constants & Core Reducer Logic — `isRunner`, `distance`, `lane` added to GameState; `START_RUNNER` and `CHANGE_LANE` actions; runner short-circuit in MOVE_SNAKE; `spawnFood()` `forceType` parameter
-- Phase 2: Engine Runner Support — `startRunner()`, `changeLane()` methods; runner distance-based speed curve (200ms → 80ms)
-- Phase 3: Runner Course Generation — `runnerCourse.ts` with difficulty-scaling obstacle patterns (6-12 per lap, single/double blockers)
-- Phase 4: Runner HUD & Game Over Components — `RunnerHUD` (Distance/Food/Length/Best), `RunnerGameOver` (Play Again / Menu)
-- Phase 5: RunnerGame Component — Orchestrator with inline keyboard handler, useTouch, Board, HUD, game over, sound toggle
-- Phase 6: Navigation Integration — "Runner Mode" button on MainMenu, `'runner'` Screen type, App.tsx routing
-- Phase 7: Documentation — SPEC.md §20 Runner Mode, ARCHITECTURE.md updated, PROJECT_STATE.md updated, ROADMAP.md updated, version bumped to 0.13.0
+All phases of Milestone 13.1 are now complete:
+- Phase 1: Props & Data Flow — `isLaneColumn`, `isActiveLane`, `runnerLane` props added to Cell/Board; `RUNNER_LANE_X` exported through barrel; lane context computed in Board and passed to Cell
+- Phase 2: CSS Lane Visualization — `.nonLaneColumn` (no border, transparent background), `.activeLane` (green tint + inset glow), `.board[data-runner="true"]` (green accent border)
+- Phase 3: Food Spawning Bug Fix — Runner-mode food respawn uses `spawnRunnerFood()` instead of generic `spawnFood()`, constraining food to lane columns (x=4, 10, 16)
+- Phase 4: Text Lane Indicator Removed — "Lanes: Left | Center | Right" text and `.laneIndicator` CSS removed
+- Phase 5: Testing — +3 Cell lane tests, +3 Board runner tests, `runnerCourse.test.ts` (1 test), `state.test.ts` runner food lane test; all 434 tests pass across 27 test files
+- Phase 6: Documentation — SPEC.md §20.2/§20.5 updated, ARCHITECTURE.md updated, PROJECT_STATE.md updated, ROADMAP.md updated
 
 ---
 
 ## Current Milestone
 
-Milestone 14 - Snake Growth Risk System
+Milestone 13.5 — Controls & UX
 
 Next Goal:
 
-Make growth create meaningful tension. Dynamic tail difficulty, score multipliers, risk routes, growth milestones.
+Improve runner controls, add visual feedback for lane changes, and polish the HUD/game over experience.
 
 ---
 
 ## Current Priorities
 
-1. Runner gameplay evaluation (post-M13 playtesting)
-2. Dynamic tail difficulty system (Milestone 14)
-3. Score multiplier system (Milestone 14)
-4. Risk route design (Milestone 14)
+1. Lane change visual feedback (Milestone 13.5)
+2. Touch control improvements (Milestone 13.5)
+3. Board scroll/camera effects (Milestone 13.5)
 
 ---
 
 ## Next Milestone
 
-Milestone 14 - Snake Growth Risk System
+Milestone 13.5 — Controls & UX
 
 Planned Focus:
 
-- Dynamic tail difficulty (longer snakes = harder navigation)
-- Score multipliers (length-based: x1 at length 3 → x4 at length 30)
-- Risk routes (safe path vs. food-rich path)
-- Growth milestone feedback (visual/audio at lengths 10, 20, 30)
+- Lane change visual feedback (swipe/d-pad/keyboard)
+- Board scroll/camera effects
+- HUD and game over polish
+- Touch control refinements
 
 ---
 
 ## Completed Features
+
+### Visual Lane Redesign (Milestone 13.1)
+
+- Lane columns (x=4, 10, 16) visually highlighted with full visibility and visible borders
+- Non-lane columns dimmed to near-transparent (no border, transparent background)
+- Active lane indicator with subtle green background highlight and inset glow
+- Runner mode board border changed to green accent (`data-runner="true"`)
+- Food spawning constrained to lane columns in runner mode via `spawnRunnerFood()`
+- Removed text "Lanes: Left | Center | Right" lane indicator
+- Runner-mode aria-label: "Snake Run runner board — 3 lanes"
+- 434 tests passing across 27 test files
 
 ### Runner Mode (Milestone 13)
 
@@ -287,7 +296,7 @@ Planned Focus:
 
 ## In Progress
 
-Milestone 14 — Snake Growth Risk System (planning phase).
+Milestone 13.5 — Controls & UX.
 
 ---
 
@@ -335,28 +344,23 @@ Gameplay Principles:
 
 ## Success Definition For Current Milestone
 
-### Milestone 13 — Runner Prototype Validation
+### Milestone 13.1 — Visual Lane Redesign
 
 Target:
 
-- Prove that Snake Run is more engaging as an endless runner than as a traditional level-based game
-- Validate the base runner loop (advance + collect + avoid) is fun
-- Determine whether to continue the runner direction or pivot
+- Transform the 20×20 grid into a clear 3-lane visual presentation
+- Align visual communication with runner gameplay reality
+- Fix the food spawning bug in runner mode
 
-Milestone 13 success criteria (completed):
+Milestone 13.1 success criteria (completed):
 
-- Runner Mode playable from main menu ✅
-- Snake auto-advances UP; LEFT/RIGHT change lanes ✅
-- Tail lane blocking prevents changing into body-occupied lanes ✅
-- Three-lane system responsive and clear ✅
-- Obstacles continuously appear; collision calls `markGameOver` ✅
-- Food in lanes; collection increases score (with length multiplier) and length ✅
-- Distance-based scoring with HUD display ✅
-- Game over shows run stats; Play Again under 2 seconds ✅
-- Classic level-based game remains fully functional ✅
-- All tests pass (415, up from 414) ✅
+- Lane columns (x=4, 10, 16) visually highlighted; non-lane columns dimmed ✅
+- Active lane indicator with subtle green background and inner glow ✅
+- Runner mode board border changed to green accent ✅
+- Food respawning constrained to lane columns via `spawnRunnerFood()` ✅
+- Text "Lanes: Left | Center | Right" removed ✅
+- Classic mode rendering completely unchanged ✅
+- All tests pass (434, up from 426, across 27 test files) ✅
 - Lint clean ✅
 - Build clean ✅
-- PWA precache includes all new files ✅
 - All documentation updated and consistent ✅
-- `package.json` version bumped to `0.13.0` ✅

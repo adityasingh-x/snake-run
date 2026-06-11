@@ -7,4 +7,5 @@ export {
   INITIAL_SNAKE,
   DIRECTION_OPPOSITE,
   KEY_MAP,
+  RUNNER_LANE_X,
 } from '../game';

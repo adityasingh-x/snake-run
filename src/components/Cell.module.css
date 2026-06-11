@@ -4,6 +4,16 @@
   height: 100%;
 }
 
+.nonLaneColumn {
+  border: none;
+  background: transparent;
+}
+
+.activeLane {
+  background: rgba(34, 197, 94, 0.08);
+  box-shadow: inset 0 0 8px rgba(34, 197, 94, 0.15);
+}
+
 .snakeHead {
   background: var(--color-accent);
   box-shadow: var(--shadow-neon-green-strong);
