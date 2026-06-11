@@ -352,3 +352,19 @@ The prototype is successful if the answer to the following question is YES:
 The prototype does not need to be polished.
 
 It only needs to validate the gameplay concept.
+
+---
+
+## Milestone 13.1 - Visual Lane Redesign
+
+- Lane columns (x=4, 10, 16) visually highlighted with full visibility and visible borders
+- Non-lane columns dimmed to near-transparent (no border, transparent background)
+- Active lane indicator with subtle green background highlight and inner glow
+- Runner mode board border changed to green accent (`data-runner="true"`)
+- Board aria-label updated: "Snake Run runner board — 3 lanes"
+- Food respawning in runner mode uses `spawnRunnerFood()`, constraining spawns to lane columns
+- Removed text "Lanes: Left | Center | Right" and `.laneIndicator` CSS
+- New props: `runnerLane` (Board), `isLaneColumn`/`isActiveLane` (Cell)
+- `RUNNER_LANE_X` exported through game barrel and utils/constants
+- Classic mode rendering completely unchanged
+- 434 tests passing across 27 test files

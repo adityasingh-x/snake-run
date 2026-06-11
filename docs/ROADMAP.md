@@ -128,9 +128,9 @@ Target:
 ## Documentation Structure
 
 ROADMAP.md
-prd/PRD_M13_1.md
-prd/PRD_M13_5.md
-prd/PRD_M14.md
+docs/prd/PRD_M13_1.md
+docs/prd/PRD_M13_5.md
+docs/prd/PRD_M14.md
 
 PRDs are authoritative.
 
@@ -138,7 +138,9 @@ PRDs are authoritative.
 
 # Current Progress
 
-Milestone 13.1 is the next milestone. Previously completed milestones are archived in archive/completed-milestone.md
+Milestone 13.5 is the next milestone.
+
+Milestone 13 (Runner Prototype Validation) and Milestone 13.1 (Visual Lane Redesign) are complete and archived in archive/completed-milestone.md
 
 ---
 
@@ -165,13 +167,12 @@ The objective is to discover whether endless-runner gameplay produces a more eng
 
 ## Current Sequence
 
-Milestone 13 Completed
+Milestone 13 and Milestone 13.1 Completed
 
 Next:
 
-- Milestone 13.1 -> prd/PRD_M13_1.md
-- Milestone 13.5 -> prd/PRD_M13_5.md
-- Milestone 14 -> prd/PRD_M14.md
+- Milestone 13.5 -> docs/prd/PRD_M13_5.md
+- Milestone 14 -> docs/prd/PRD_M14.md
 
 No milestone may begin until previous milestone acceptance criteria pass.
 

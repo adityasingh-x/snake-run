@@ -26,7 +26,7 @@ export function generateRunnerCourse(
   return { obstacles, food };
 }
 
-function spawnRunnerFood(
+export function spawnRunnerFood(
   snake: Position[],
   obstacles: Position[],
   headY: number

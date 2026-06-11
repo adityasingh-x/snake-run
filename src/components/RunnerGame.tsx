@@ -66,7 +66,6 @@ export const RunnerGame = ({ onNavigateToMenu }: RunnerGameProps) => {
     boardRef,
   });
 
-  const isPlaying = state.status === 'playing' && state.isRunner;
   const isGameOver = state.status === 'gameover' && state.isRunner;
 
   return (
@@ -95,14 +94,9 @@ export const RunnerGame = ({ onNavigateToMenu }: RunnerGameProps) => {
           direction={state.direction}
           food={state.food}
           obstacles={state.obstacles}
+          runnerLane={state.lane}
         />
       </div>
-
-      {isPlaying && (
-        <div className={styles.laneIndicator}>
-          Lanes: Left | Center | Right
-        </div>
-      )}
 
       {!hasStarted && (
         <div className={styles.startOverlay}>

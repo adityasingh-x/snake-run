@@ -188,6 +188,10 @@ Level 5 (Maze Runner) has `wrapAround: true`. The snake's head coordinates are n
 
 Level 7 (Four Chambers) has one portal pair. When the snake's head lands on a portal tile, it teleports to the paired position. Collision is checked against the teleported position. Food does not spawn on portal tiles.
 
+### Runner Lane Visualization
+
+In runner mode, the Board and Cell components accept optional `runnerLane`, `isLaneColumn`, and `isActiveLane` props. When these are provided, CSS classes transform the 20×20 grid into a 3-lane visual presentation without changing the underlying grid structure. Lane columns (x=4, 10, 16) render at full visibility with visible borders. Non-lane columns are dimmed to near-transparent. The active lane shows a subtle green background highlight. The board border changes to green accent (`data-runner="true"`). Food respawning in runner mode is constrained to lane columns via `spawnRunnerFood()`.
+
 ### Collision Detection
 
 1. **Wall collision:** bounds check
