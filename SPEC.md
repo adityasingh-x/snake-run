@@ -709,6 +709,7 @@ Runner Mode is an endless runner variant of Snake Run. The snake automatically m
 - Lane changes shift the head's x-coordinate immediately (zero tick delay)
 - Lane changes clamp to bounds [0, 2] and are rejected if the target lane already contains a body segment at the head's Y position (tail lane blocking)
 - **Lane visualization:** In runner mode, the 20×20 grid is visually transformed into a 3-lane presentation. Lane columns (x=4, 10, 16) are rendered at full visibility with visible borders. Non-lane columns are dimmed to near-transparent with no borders. The active lane shows a subtle green background highlight. This replaces the previous text-only "Lanes: Left | Center | Right" indicator. The board border changes from purple to green accent to reinforce runner mode at a glance.
+- **Lane change feedback:** When the player changes lanes, the snake head shows a brief directional slide animation (150ms) with a green glow pulse. The direction determines whether it slides left or right, providing immediate visual confirmation of input registration.
 
 ### 20.3 Movement Model
 
@@ -726,6 +727,7 @@ Runner Mode is an endless runner variant of Snake Run. The snake automatically m
 ### 20.5 HUD
 
 The `RunnerHUD` component displays:
+- Score (total points from distance + food, displayed in gold)
 - Distance
 - Food eaten
 - Snake length
@@ -737,7 +739,8 @@ Lane structure is communicated visually on the board rather than via text.
 
 The `RunnerGameOver` overlay displays:
 - "Run Over!" heading
-- Distance, food eaten, snake length, high score
+- Score prominently with "New Best!" badge when score equals or exceeds high score, or "Best: {highScore}" for comparison
+- Distance, food eaten, snake length
 - "Play Again" button (primary, autoFocus)
 - "Menu" button (secondary)
 - "Press Space to play again" hint
@@ -783,3 +786,32 @@ gameover (isRunner=true)
 ### 20.10 Difficulty Scaling
 
 Speed decreases from 200ms (initial) by 2ms every 50 distance, flooring at 80ms minimum speed. This creates an accelerating difficulty curve as the run progresses.
+
+### 20.11 Viewport Scrolling
+
+Runner mode uses a viewport scrolling render transform that creates forward motion perception. The snake stays fixed in the lower third of the board (screen row 13) while obstacles and food scroll downward from the top.
+
+- **Rendering transform:** Board maps screen rows to grid rows via `screenRow = (gridY - headY + VIEWPORT_TAIL + GRID_SIZE) % GRID_SIZE`
+- **Constants:** `RUNNER_VIEWPORT_TAIL = 13` (rows visible behind snake), giving 6 rows ahead and 13 behind
+- **Implementation:** Pure rendering transform in Board.tsx. When `viewportHeadY` is provided, Board iterates screen rows and computes corresponding grid rows via modulo. Game engine is unchanged. `data-viewport-scrolling="true"` attribute on Board element.
+- **Classic mode:** When `viewportHeadY` is undefined, Board renders identically to pre-viewport behavior
+- **Wrap-around:** Modulo formula handles Y-axis wrap (snake at y=0 wrapping to y=19 correctly shows content from the new lap above)
+
+### 20.12 Speed Profiles
+
+A dev-only speed multiplier constant enables validation testing at different speeds:
+
+```ts
+export const RUNNER_SPEED_MULTIPLIER = 1.0;
+```
+
+Speed profiles for validation:
+
+| Profile | Multiplier | Initial Speed | Min Speed |
+|---------|-----------|---------------|-----------|
+| A (baseline) | 1.00 | 200ms | 80ms |
+| B (+25%) | 1.25 | 160ms | 64ms |
+| C (+50%) | 1.50 | 133ms | 53ms |
+| D (+75%) | 1.75 | 114ms | 46ms |
+
+The multiplier is applied in Engine.ts tick calculation as `effectiveSpeed = Math.round(effectiveSpeed / RUNNER_SPEED_MULTIPLIER)`. This is temporary validation infrastructure, not user-exposed.

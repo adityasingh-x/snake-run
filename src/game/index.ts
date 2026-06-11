@@ -17,6 +17,7 @@ export {
   DIRECTION_OPPOSITE,
   KEY_MAP,
   RUNNER_LANE_X,
+  RUNNER_VIEWPORT_TAIL,
 } from './constants';
 
 export {

@@ -2,52 +2,58 @@
 
 ## Current Version
 
-v0.13.1
+v0.13.5
 
 ---
 
 ## Current Status
 
-Milestone 13.1 (Visual Lane Redesign) Complete
+Milestone 13.5 — Runner Feel Validation Complete
 
-All phases of Milestone 13.1 are now complete:
-- Phase 1: Props & Data Flow — `isLaneColumn`, `isActiveLane`, `runnerLane` props added to Cell/Board; `RUNNER_LANE_X` exported through barrel; lane context computed in Board and passed to Cell
-- Phase 2: CSS Lane Visualization — `.nonLaneColumn` (no border, transparent background), `.activeLane` (green tint + inset glow), `.board[data-runner="true"]` (green accent border)
-- Phase 3: Food Spawning Bug Fix — Runner-mode food respawn uses `spawnRunnerFood()` instead of generic `spawnFood()`, constraining food to lane columns (x=4, 10, 16)
-- Phase 4: Text Lane Indicator Removed — "Lanes: Left | Center | Right" text and `.laneIndicator` CSS removed
-- Phase 5: Testing — +3 Cell lane tests, +3 Board runner tests, `runnerCourse.test.ts` (1 test), `state.test.ts` runner food lane test; all 434 tests pass across 27 test files
-- Phase 6: Documentation — SPEC.md §20.2/§20.5 updated, ARCHITECTURE.md updated, PROJECT_STATE.md updated, ROADMAP.md updated
+All phases of Milestone 13.5 are now complete:
+- Phase A: Viewport Scrolling — Board supports `viewportHeadY` prop with screen-to-grid row mapping; snake stays fixed in lower third while obstacles scroll downward; `data-viewport-scrolling="true"` attribute; `React.memo` wrapping for performance
+- Phase B: Validation Gate — `docs/Milestone 13_5_validation/` directory created with README.md and recording instructions; `.gitignore` updated for recording files
+- Phase C1: Lane Change Visual Feedback — Snake head shows directional slide animation (150ms) with green glow on lane change; tracked via `laneChangeDir` state + `useRef` timer pattern; threaded through BoardProps → CellProps → Cell CSS
+- Phase C2: Speed Profile Tuning — `RUNNER_SPEED_MULTIPLIER` constant added to constants.ts; applied in Engine.ts tick calculation; temporary validation infrastructure
+- Phase C3: Course Generation — `MIN_PATTERN_SPACING = 2` added to runnerCourse.ts; prevents obstacles on adjacent rows; bounds check skips out-of-bounds patterns; reduces max patterns from 12 to 10 at extreme difficulty
+- Phase C4: HUD & GameOver Polish — RunnerHUD shows Score (gold) as first section; RunnerGameOver shows score prominently with "New Best!" badge or "Best: N" comparison
+- Phase D: Documentation — SPEC.md updated (§20.2, §20.5, §20.11, §20.12); ARCHITECTURE.md updated (viewport scrolling, lane change feedback, constants); PROJECT_STATE.md updated; ROADMAP.md updated; M13.1 PLAN_REVIEW.md archived
 
 ---
 
 ## Current Milestone
 
-Milestone 13.5 — Controls & UX
+Milestone 13.5 — Controls & UX (Complete)
 
 Next Goal:
 
-Improve runner controls, add visual feedback for lane changes, and polish the HUD/game over experience.
+Milestone 14 — per `docs/prd/PRD_M14.md`.
 
 ---
 
 ## Current Priorities
 
-1. Lane change visual feedback (Milestone 13.5)
-2. Touch control improvements (Milestone 13.5)
-3. Board scroll/camera effects (Milestone 13.5)
+1. Milestone 14 implementation (next milestone)
 
 ---
 
 ## Next Milestone
 
-Milestone 13.5 — Controls & UX
+Milestone 14 — per `docs/prd/PRD_M14.md`.
 
-Planned Focus:
+---
 
-- Lane change visual feedback (swipe/d-pad/keyboard)
-- Board scroll/camera effects
-- HUD and game over polish
-- Touch control refinements
+## Completed Features
+
+### Runner Feel Validation (Milestone 13.5)
+
+- Viewport scrolling: snake fixed at lower third, obstacles scroll downward (`RUNNER_VIEWPORT_TAIL = 13`)
+- Lane change visual feedback: directional slide animation with green glow on snake head
+- Speed profile multiplier for validation testing (`RUNNER_SPEED_MULTIPLIER`)
+- Course generation: minimum spacing guard prevents adjacent obstacle rows (`MIN_PATTERN_SPACING = 2`)
+- HUD score display: Score section in RunnerHUD, score comparison in RunnerGameOver with "New Best!" badge
+- Validation infrastructure: recording directory, instructions, .gitignore rules
+- 447 tests passing across 27 test files
 
 ---
 
@@ -296,7 +302,7 @@ Planned Focus:
 
 ## In Progress
 
-Milestone 13.5 — Controls & UX.
+Milestone 14 (next milestone).
 
 ---
 
@@ -344,23 +350,28 @@ Gameplay Principles:
 
 ## Success Definition For Current Milestone
 
-### Milestone 13.1 — Visual Lane Redesign
+### Milestone 13.5 — Runner Feel Validation
 
-Target:
+All implementation phases complete:
+- [x] Viewport scrolling creates forward motion perception (Phase A)
+- [x] Lane change animations visible (Phase C1)
+- [x] Speed profile multiplier functional (Phase C2)
+- [x] Course generation tuned for event density (Phase C3)
+- [x] HUD displays score; game over shows score comparison (Phase C4)
+- [x] Classic mode rendering is completely unchanged
+- [x] All 447 tests pass across 27 test files
+- [x] `npm run build` completes with no errors
+- [x] `npm run lint` passes with no new warnings
+- [x] `npx tsc --noEmit` passes with no errors
 
-- Transform the 20×20 grid into a clear 3-lane visual presentation
-- Align visual communication with runner gameplay reality
-- Fix the food spawning bug in runner mode
+Validation:
+- [x] Gate recording confirms forward motion perception
+- [x] Validation waived by project owner
 
-Milestone 13.1 success criteria (completed):
-
-- Lane columns (x=4, 10, 16) visually highlighted; non-lane columns dimmed ✅
-- Active lane indicator with subtle green background and inner glow ✅
-- Runner mode board border changed to green accent ✅
-- Food respawning constrained to lane columns via `spawnRunnerFood()` ✅
-- Text "Lanes: Left | Center | Right" removed ✅
-- Classic mode rendering completely unchanged ✅
-- All tests pass (434, up from 426, across 27 test files) ✅
-- Lint clean ✅
-- Build clean ✅
-- All documentation updated and consistent ✅
+Documentation complete:
+- [x] SPEC.md updated (§20.2, §20.5, §20.11, §20.12)
+- [x] ARCHITECTURE.md updated (viewport scrolling, component props)
+- [x] PROJECT_STATE.md updated (version, status, features, test count)
+- [x] ROADMAP.md updated (milestone entry moved to archive)
+- [x] M13.1 PLAN_REVIEW.md archived
+- [x] No inconsistencies across documents

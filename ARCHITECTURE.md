@@ -136,12 +136,16 @@ Sound is consumed directly via the `sharedSoundManager` singleton exported from 
 - **Top-level:** `App.tsx` manages screen state and profile data
 - **Screen components:** Stateless presenters receiving data as props from `App.tsx`
 - **Game:** Orchestrates hooks and rendering when screen is `'game'`
+- **RunnerGame:** Orchestrates runner mode with viewport scrolling (`viewportHeadY` prop), lane change feedback (`laneChangeDirection` state), HUD and game over
+- **Board:** Wrapped in `React.memo`; accepts `viewportHeadY` for viewport scrolling, `laneChangeDirection` for feedback threading, `runnerLane` for lane visualization
+- **Cell:** Pure presentational component; accepts `isViewportScrolling`, `laneChangeDirection` for animation classes
 - **Hooks:** useGame, useKeyboard, useTouch, useTheme
 - **Pure utility functions:** testable logic in `game/` modules
 - **CSS Modules:** scoped styles per component
 - **Compositional rendering:**
-  - App → Screen component (MainMenu, Game, StatisticsScreen, etc.)
+  - App → Screen component (MainMenu, Game, RunnerGame, StatisticsScreen, etc.)
   - Game → ScoreBoard + Board + Overlays (ReadyOverlay, PauseMenu, LevelTransition, GameOver)
+  - RunnerGame → RunnerHUD + Board + Overlays (Start, RunnerGameOver)
 
 ### Data Flow
 
@@ -191,6 +195,14 @@ Level 7 (Four Chambers) has one portal pair. When the snake's head lands on a po
 ### Runner Lane Visualization
 
 In runner mode, the Board and Cell components accept optional `runnerLane`, `isLaneColumn`, and `isActiveLane` props. When these are provided, CSS classes transform the 20×20 grid into a 3-lane visual presentation without changing the underlying grid structure. Lane columns (x=4, 10, 16) render at full visibility with visible borders. Non-lane columns are dimmed to near-transparent. The active lane shows a subtle green background highlight. The board border changes to green accent (`data-runner="true"`). Food respawning in runner mode is constrained to lane columns via `spawnRunnerFood()`.
+
+### Runner Viewport Scrolling
+
+In runner mode, Board supports a `viewportHeadY` prop that creates forward motion perception by mapping screen rows to grid rows. The snake stays fixed at screen row 13 (`RUNNER_VIEWPORT_TAIL`) while obstacles and food scroll downward. The rendering transform is: `screenRow = (gridY - headY + VIEWPORT_TAIL + GRID_SIZE) % GRID_SIZE`. The Board is wrapped in `React.memo` and uses `data-viewport-scrolling="true"` attribute when viewport is active. When `viewportHeadY` is undefined (classic mode), rendering is identical to pre-viewport behavior.
+
+### Lane Change Visual Feedback
+
+When the player changes lanes, RunnerGame tracks the direction via `laneChangeDir` state and clears it after 200ms via a `laneChangeTimerRef`. The direction is threaded through `BoardProps` and `CellProps` as `laneChangeDirection`. Cell applies `laneSlidingLeft` or `laneSlidingRight` CSS classes on the snake head cell, triggering a 150ms directional slide animation with green glow.
 
 ### Collision Detection
 
@@ -332,6 +344,8 @@ interface GameState {
 | RUNNER_INITIAL_SPEED | 200ms  | Runner starting speed |
 | RUNNER_MIN_SPEED | 80ms      | Runner minimum speed |
 | RUNNER_DISTANCE_PER_POINT | 10 | Distance units per score point |
+| RUNNER_VIEWPORT_TAIL | 13 | Rows visible behind snake head in viewport scrolling |
+| RUNNER_SPEED_MULTIPLIER | 1.0 | Dev-only speed multiplier for validation testing |
 
 ## Styling Conventions
 

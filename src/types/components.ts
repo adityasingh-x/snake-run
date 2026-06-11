@@ -10,6 +10,8 @@ export interface BoardProps {
   wrapAround?: boolean;
   portals?: Position[];
   runnerLane?: 0 | 1 | 2;
+  viewportHeadY?: number;
+  laneChangeDirection?: 'left' | 'right' | null;
 }
 
 export interface CellProps {
@@ -23,6 +25,8 @@ export interface CellProps {
   direction?: Direction;
   isLaneColumn?: boolean;
   isActiveLane?: boolean;
+  isViewportScrolling?: boolean;
+  laneChangeDirection?: 'left' | 'right' | null;
 }
 
 export interface ScoreBoardProps {

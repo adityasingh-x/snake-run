@@ -10,10 +10,12 @@ export function generateRunnerCourse(
   const numPatterns = 6 + Math.floor(difficulty * 6);
 
   const obstacles: Position[] = [];
-  const rowStep = Math.floor(GRID_SIZE / numPatterns);
+  const MIN_PATTERN_SPACING = 2;
+  const rowStep = Math.max(MIN_PATTERN_SPACING, Math.floor(GRID_SIZE / numPatterns));
 
   for (let i = 0; i < numPatterns; i++) {
     const y = i * rowStep;
+    if (y >= GRID_SIZE) continue;
     if (Math.abs(y - headY) < 3) continue;
 
     const blockedLanes = selectBlockedLanes(difficulty);
