@@ -1,0 +1,62 @@
+.runnerHud {
+  display: flex;
+  align-items: center;
+  gap: var(--space-lg);
+  padding: var(--space-sm) var(--space-lg);
+  background: var(--color-surface);
+  border: 1px solid var(--color-board-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-neon-green);
+  margin-bottom: var(--space-md);
+}
+
+.section {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-xs);
+}
+
+.label {
+  color: var(--color-text-label);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.value {
+  color: var(--color-text-primary);
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.separator {
+  width: 1px;
+  height: 24px;
+  background: var(--color-board-border);
+}
+
+.highScoreSection .label {
+  color: var(--color-warning);
+}
+
+.highScoreValue {
+  color: var(--color-warning);
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-shadow: var(--shadow-neon-gold);
+}
+
+@media (max-width: 600px) {
+  .runnerHud {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-sm) var(--space-md);
+    padding: var(--space-sm) var(--space-md);
+  }
+
+  .separator {
+    display: none;
+  }
+}

@@ -1,6 +1,6 @@
 ---
 description: Address implementation review findings
-model: opencode-go/qwen3.6-plus
+model: opencode-go/deepseek-v4-pro
 ---
 
 Read and execute:

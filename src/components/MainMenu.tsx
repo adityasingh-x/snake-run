@@ -7,9 +7,10 @@ interface MainMenuProps {
   highScore: number;
   onNavigate: (screen: Screen) => void;
   onStartGame: (level: number) => void;
+  onStartRunner: () => void;
 }
 
-export const MainMenu = ({ lastUnlockedLevel, highScore, onNavigate, onStartGame }: MainMenuProps) => {
+export const MainMenu = ({ lastUnlockedLevel, highScore, onNavigate, onStartGame, onStartRunner }: MainMenuProps) => {
   const canContinue = lastUnlockedLevel > 1;
 
   return (
@@ -17,6 +18,14 @@ export const MainMenu = ({ lastUnlockedLevel, highScore, onNavigate, onStartGame
       <div className={screenStyles.screenContent}>
         <h1 className={styles.title}>Snake Run</h1>
         <div className={screenStyles.neonDivider} />
+
+        <button
+          className={`${styles.menuButton} ${styles.runnerButton}`}
+          onClick={onStartRunner}
+          type="button"
+        >
+          Runner Mode
+        </button>
 
         {canContinue && (
           <div className={styles.continueHint}>

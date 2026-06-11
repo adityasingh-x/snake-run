@@ -7,14 +7,16 @@ import { MainMenu } from '../MainMenu';
 describe('MainMenu', () => {
   const mockNavigate = vi.fn();
   const mockStartGame = vi.fn();
+  const mockStartRunner = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it('renders all menu options', () => {
-    render(<MainMenu lastUnlockedLevel={1} highScore={0} onNavigate={mockNavigate} onStartGame={mockStartGame} />);
+    render(<MainMenu lastUnlockedLevel={1} highScore={0} onNavigate={mockNavigate} onStartGame={mockStartGame} onStartRunner={mockStartRunner} />);
 
+    expect(screen.getByRole('button', { name: 'Runner Mode' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'New Game' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Statistics' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Achievements' })).toBeInTheDocument();
@@ -23,7 +25,7 @@ describe('MainMenu', () => {
   });
 
   it('shows Continue when there is progress', () => {
-    render(<MainMenu lastUnlockedLevel={3} highScore={100} onNavigate={mockNavigate} onStartGame={mockStartGame} />);
+    render(<MainMenu lastUnlockedLevel={3} highScore={100} onNavigate={mockNavigate} onStartGame={mockStartGame} onStartRunner={mockStartRunner} />);
 
     expect(screen.getByRole('button', { name: 'Continue' })).toBeInTheDocument();
     expect(screen.getByText('Continue Level 3')).toBeInTheDocument();
@@ -31,13 +33,13 @@ describe('MainMenu', () => {
   });
 
   it('does not show Continue when no progress', () => {
-    render(<MainMenu lastUnlockedLevel={1} highScore={0} onNavigate={mockNavigate} onStartGame={mockStartGame} />);
+    render(<MainMenu lastUnlockedLevel={1} highScore={0} onNavigate={mockNavigate} onStartGame={mockStartGame} onStartRunner={mockStartRunner} />);
 
     expect(screen.queryByRole('button', { name: 'Continue' })).not.toBeInTheDocument();
   });
 
   it('does not show Continue when lastUnlockedLevel === 1 even with a high score (BUG-005)', () => {
-    render(<MainMenu lastUnlockedLevel={1} highScore={100} onNavigate={mockNavigate} onStartGame={mockStartGame} />);
+    render(<MainMenu lastUnlockedLevel={1} highScore={100} onNavigate={mockNavigate} onStartGame={mockStartGame} onStartRunner={mockStartRunner} />);
 
     expect(screen.queryByRole('button', { name: 'Continue' })).not.toBeInTheDocument();
     expect(screen.queryByText(/Continue Level/)).not.toBeInTheDocument();
@@ -45,7 +47,7 @@ describe('MainMenu', () => {
 
   it('calls onStartGame with lastUnlockedLevel when Continue is clicked', async () => {
     const user = userEvent.setup();
-    render(<MainMenu lastUnlockedLevel={3} highScore={100} onNavigate={mockNavigate} onStartGame={mockStartGame} />);
+    render(<MainMenu lastUnlockedLevel={3} highScore={100} onNavigate={mockNavigate} onStartGame={mockStartGame} onStartRunner={mockStartRunner} />);
 
     await user.click(screen.getByRole('button', { name: 'Continue' }));
     expect(mockStartGame).toHaveBeenCalledWith(3);
@@ -53,7 +55,7 @@ describe('MainMenu', () => {
 
   it('calls onStartGame with level 1 when New Game is clicked', async () => {
     const user = userEvent.setup();
-    render(<MainMenu lastUnlockedLevel={1} highScore={0} onNavigate={mockNavigate} onStartGame={mockStartGame} />);
+    render(<MainMenu lastUnlockedLevel={1} highScore={0} onNavigate={mockNavigate} onStartGame={mockStartGame} onStartRunner={mockStartRunner} />);
 
     await user.click(screen.getByRole('button', { name: 'New Game' }));
     expect(mockStartGame).toHaveBeenCalledWith(1);
@@ -61,7 +63,7 @@ describe('MainMenu', () => {
 
   it('calls onNavigate for other menu items', async () => {
     const user = userEvent.setup();
-    render(<MainMenu lastUnlockedLevel={1} highScore={0} onNavigate={mockNavigate} onStartGame={mockStartGame} />);
+    render(<MainMenu lastUnlockedLevel={1} highScore={0} onNavigate={mockNavigate} onStartGame={mockStartGame} onStartRunner={mockStartRunner} />);
 
     await user.click(screen.getByRole('button', { name: 'Statistics' }));
     expect(mockNavigate).toHaveBeenCalledWith('statistics');
@@ -74,5 +76,13 @@ describe('MainMenu', () => {
 
     await user.click(screen.getByRole('button', { name: 'Help' }));
     expect(mockNavigate).toHaveBeenCalledWith('help');
+  });
+
+  it('calls onStartRunner when Runner Mode is clicked', async () => {
+    const user = userEvent.setup();
+    render(<MainMenu lastUnlockedLevel={1} highScore={0} onNavigate={mockNavigate} onStartGame={mockStartGame} onStartRunner={mockStartRunner} />);
+
+    await user.click(screen.getByRole('button', { name: 'Runner Mode' }));
+    expect(mockStartRunner).toHaveBeenCalled();
   });
 });

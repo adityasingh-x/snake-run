@@ -1,5 +1,6 @@
 import type { GameState, GameAction, Direction } from './types';
 import { getInitialState, gameReducer } from './state';
+import { RUNNER_INITIAL_SPEED, RUNNER_MIN_SPEED } from './constants';
 import { getLevelData } from './levels';
 import { saveHighScore, saveLastUnlockedLevel } from './storage';
 import { loadStats, saveStats } from './statistics';
@@ -45,7 +46,7 @@ export class Engine {
     const prevFoodEaten = this.state.foodEaten;
     const prevState = { ...this.state };
 
-    if (action.type === 'START_GAME' || action.type === 'RESET' || action.type === 'START_ENDLESS_GAME') {
+    if (action.type === 'START_GAME' || action.type === 'RESET' || action.type === 'START_ENDLESS_GAME' || action.type === 'START_RUNNER') {
       this.statsCache.gamesPlayed += 1;
     }
 
@@ -194,6 +195,16 @@ export class Engine {
     this.startLoop();
   }
 
+  startRunner(): void {
+    this.wasPaused = false;
+    this.dispatch({ type: 'START_RUNNER' });
+    this.startLoop();
+  }
+
+  changeLane(delta: -1 | 1): void {
+    this.dispatch({ type: 'CHANGE_LANE', payload: delta });
+  }
+
   getStats(): Stats {
     return { ...this.statsCache, highScore: this.state.highScore };
   }
@@ -232,9 +243,17 @@ export class Engine {
       // Cap accumulator to a single effective tick to avoid multi-tick jumps
       // after tab refocus or long pauses. Without this, a single frame can
       // dispatch many MOVE_SNAKE actions and the snake teleports into walls.
-      const config = getLevelData(this.state.level);
-      const speed = config.speed ?? 150;
-      const effectiveSpeed = this.state.speedEffectTicks > 0 ? speed * SLOW_EFFECT_MULTIPLIER : speed;
+      let effectiveSpeed: number;
+      if (this.state.isRunner) {
+        effectiveSpeed = Math.max(
+          RUNNER_MIN_SPEED,
+          RUNNER_INITIAL_SPEED - Math.floor(this.state.distance / 50) * 2
+        );
+      } else {
+        const config = getLevelData(this.state.level);
+        const speed = config.speed ?? 150;
+        effectiveSpeed = this.state.speedEffectTicks > 0 ? speed * SLOW_EFFECT_MULTIPLIER : speed;
+      }
       if (this.accumulator > effectiveSpeed) {
         this.accumulator = effectiveSpeed;
       }

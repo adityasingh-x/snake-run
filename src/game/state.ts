@@ -1,10 +1,11 @@
-import type { GameState, GameAction } from './types';
-import { INITIAL_SNAKE, POINTS_PER_FOOD, DIRECTION_OPPOSITE, LEVEL_COUNT, GRID_SIZE } from './constants';
+import type { GameState, GameAction, Position } from './types';
+import { INITIAL_SNAKE, POINTS_PER_FOOD, DIRECTION_OPPOSITE, LEVEL_COUNT, GRID_SIZE, RUNNER_LANE_X, RUNNER_DISTANCE_PER_POINT } from './constants';
 import { positionsEqual, isCollision } from './collision';
 import { spawnFood } from './food';
 import { calculateNewHead } from './snake';
 import { loadHighScore, loadLastUnlockedLevel } from './storage';
 import { getLevelData, generateObstacles, getPortalPositions } from './levels';
+import { generateRunnerCourse } from './runnerCourse';
 
 export function getInitialState(): GameState {
   const obstacles = generateObstacles(1);
@@ -23,6 +24,9 @@ export function getInitialState(): GameState {
     foodEaten: 0,
     isEndless: false,
     speedEffectTicks: 0,
+    isRunner: false,
+    distance: 0,
+    lane: 1,
   };
 }
 
@@ -43,6 +47,28 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       return { ...initial, status: 'playing', lastUnlockedLevel: state.lastUnlockedLevel };
     }
 
+    case 'START_RUNNER': {
+      const initial = getInitialState();
+      const runnerSnake: Position[] = [
+        { x: RUNNER_LANE_X[1], y: 18 },
+        { x: RUNNER_LANE_X[1], y: 19 },
+        { x: RUNNER_LANE_X[1], y: 19 },
+      ];
+      const course = generateRunnerCourse(18, runnerSnake, 0);
+      return {
+        ...initial,
+        snake: runnerSnake,
+        food: course.food,
+        direction: 'UP',
+        nextDirection: 'UP',
+        status: 'playing',
+        isRunner: true,
+        obstacles: course.obstacles,
+        lastUnlockedLevel: state.lastUnlockedLevel,
+        lane: 1,
+      };
+    }
+
     case 'PAUSE_GAME':
       return { ...state, status: 'paused' };
 
@@ -59,7 +85,72 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       return { ...state, nextDirection: action.payload };
     }
 
+    case 'CHANGE_LANE': {
+      if (!state.isRunner || state.status !== 'playing') return state;
+      const newLane = Math.max(0, Math.min(2, state.lane + action.payload)) as 0 | 1 | 2;
+      if (newLane === state.lane) return state;
+      const head = state.snake[0];
+      const bodyAtHeadY = state.snake.slice(1).some(
+        seg => seg.x === RUNNER_LANE_X[newLane] && seg.y === head.y
+      );
+      if (bodyAtHeadY) return state;
+      return {
+        ...state,
+        lane: newLane,
+        snake: [{ x: RUNNER_LANE_X[newLane], y: head.y }, ...state.snake.slice(1)],
+      };
+    }
+
     case 'MOVE_SNAKE': {
+      if (state.isRunner) {
+        const head = state.snake[0];
+        let newHead: Position = { x: RUNNER_LANE_X[state.lane], y: head.y - 1 };
+
+        const wrapped = newHead.y < 0;
+        if (wrapped) newHead = { ...newHead, y: 19 };
+
+        if (isCollision(newHead, state.snake, state.obstacles, false)) {
+          return markGameOver(state);
+        }
+
+        const ateFood = positionsEqual(newHead, state.food.position);
+        const newSnake = ateFood
+          ? [newHead, ...state.snake]
+          : [newHead, ...state.snake.slice(0, -1)];
+        const newFoodEaten = state.foodEaten + (ateFood ? 1 : 0);
+        const newDistance = state.distance + 1;
+
+        const lengthMultiplier = Math.floor(state.snake.length / 5) + 1;
+        let newScore = state.score + (ateFood ? POINTS_PER_FOOD * lengthMultiplier : 0);
+        newScore += Math.floor(newDistance / RUNNER_DISTANCE_PER_POINT)
+                 - Math.floor(state.distance / RUNNER_DISTANCE_PER_POINT);
+
+        let newFood = state.food;
+        let newObstacles = state.obstacles;
+
+        if (ateFood) {
+          newFood = spawnFood(newSnake, newObstacles, [], 'normal');
+        }
+
+        if (wrapped) {
+          const course = generateRunnerCourse(newHead.y, newSnake, newDistance);
+          newObstacles = course.obstacles;
+          newFood = course.food;
+        }
+
+        return {
+          ...state,
+          snake: newSnake,
+          food: newFood,
+          obstacles: newObstacles,
+          direction: 'UP',
+          nextDirection: 'UP',
+          score: newScore,
+          distance: newDistance,
+          foodEaten: newFoodEaten,
+        };
+      }
+
       const head = state.snake[0];
       let newHead = calculateNewHead(head, state.nextDirection);
 

@@ -3,6 +3,7 @@ import type { Screen } from './types/navigation';
 import { loadGameProfile, type GameProfile } from './game/profile';
 import { MainMenu } from './components/MainMenu';
 import { Game } from './components/Game';
+import { RunnerGame } from './components/RunnerGame';
 import { StatisticsScreen } from './components/StatisticsScreen';
 import { AchievementsScreen } from './components/AchievementsScreen';
 import { SettingsScreen } from './components/SettingsScreen';
@@ -37,6 +38,10 @@ function App() {
     setStartLevel(1);
   }, []);
 
+  const handleStartRunner = useCallback(() => {
+    setScreen('runner');
+  }, []);
+
   return (
     <>
       {screen === 'menu' && (
@@ -45,10 +50,14 @@ function App() {
           highScore={profile.progress.highScore}
           onNavigate={handleNavigate}
           onStartGame={handleStartGame}
+          onStartRunner={handleStartRunner}
         />
       )}
       {screen === 'game' && (
         <Game startLevel={startLevel} onNavigateToMenu={handleNavigateToMenu} />
+      )}
+      {screen === 'runner' && (
+        <RunnerGame onNavigateToMenu={handleNavigateToMenu} />
       )}
       {screen === 'statistics' && (
         <StatisticsScreen stats={profile.statistics} onBack={handleNavigateToMenu} />

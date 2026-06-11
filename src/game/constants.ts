@@ -31,3 +31,8 @@ export const KEY_MAP: Record<string, Direction> = {
   A: 'LEFT',
   D: 'RIGHT',
 };
+
+export const RUNNER_LANE_X: [number, number, number] = [4, 10, 16];
+export const RUNNER_INITIAL_SPEED = 200;
+export const RUNNER_MIN_SPEED = 80;
+export const RUNNER_DISTANCE_PER_POINT = 10;

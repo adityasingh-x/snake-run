@@ -102,6 +102,14 @@ export function useGame() {
     engineRef.current?.startEndless();
   }, []);
 
+  const startRunner = useCallback(() => {
+    engineRef.current?.startRunner();
+  }, []);
+
+  const changeLane = useCallback((delta: -1 | 1) => {
+    engineRef.current?.changeLane(delta);
+  }, []);
+
   return {
     state,
     stats,
@@ -112,6 +120,8 @@ export function useGame() {
     continueFromLevel,
     restartLevel,
     startEndlessGame,
+    startRunner,
+    changeLane,
     pauseGame,
     resumeGame,
     changeDirection,

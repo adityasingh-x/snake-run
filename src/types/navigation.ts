@@ -1,1 +1,1 @@
-export type Screen = 'menu' | 'game' | 'statistics' | 'achievements' | 'settings' | 'help';
+export type Screen = 'menu' | 'game' | 'runner' | 'statistics' | 'achievements' | 'settings' | 'help';

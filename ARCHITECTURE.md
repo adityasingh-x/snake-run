@@ -26,6 +26,7 @@ src/
 │   ├── food.ts               # Food spawning logic
 │   ├── snake.ts              # Snake movement helpers
 │   ├── levels.ts             # Level data and obstacle generation
+│   ├── runnerCourse.ts       # Runner mode course generation
 │   ├── storage.ts            # High score and level progress persistence
 │   ├── statistics.ts         # Player statistics tracking (localStorage)
 │   ├── achievements.ts       # Achievement definitions, detection, persistence
@@ -44,10 +45,13 @@ src/
 ├── components/               # React UI components
 │   ├── App.tsx               # Screen router and profile loader
 │   ├── Game.tsx              # Main game container
+│   ├── RunnerGame.tsx        # Runner mode orchestrator
 │   ├── Board.tsx             # Grid renderer
 │   ├── Cell.tsx              # Individual cell renderer
 │   ├── ScoreBoard.tsx        # Score display
+│   ├── RunnerHUD.tsx         # Runner mode HUD bar
 │   ├── GameOver.tsx          # Win/gameover modal
+│   ├── RunnerGameOver.tsx    # Runner mode game over overlay
 │   ├── LevelTransition.tsx   # Level complete overlay
 │   ├── ReadyOverlay.tsx      # Pre-level start overlay
 │   ├── PauseMenu.tsx         # Pause overlay with resume/restart/return
@@ -154,7 +158,7 @@ dispatch action → gameReducer → new state → subscribe → React re-render
 Screen navigation is state-based using a single `useState<Screen>` in `App.tsx`:
 
 ```typescript
-type Screen = 'menu' | 'game' | 'statistics' | 'achievements' | 'settings' | 'help';
+type Screen = 'menu' | 'game' | 'runner' | 'statistics' | 'achievements' | 'settings' | 'help';
 ```
 
 - No routing library is used; a `switch` or conditional rendering maps `screen` to component.
@@ -279,6 +283,12 @@ GAMEOVER
 WON
     ├── RESTART → RESET → PLAYING (level 1)          [New Game]
     └── START_AT_LEVEL(N) → PLAYING (level N)        [Continue from Level N]
+
+RUNNER MODE
+    ├── START_RUNNER → PLAYING (isRunner=true, snake auto-advances UP)
+    ├── CHANGE_LANE(-1|1) → PLAYING (shift lane, immediate head x change)
+    ├── MOVE_SNAKE (collision) → GAMEOVER
+    └── MOVE_SNAKE (wrap, y<0→y=19) → PLAYING (regenerate course)
 ```
 
 ## State Shape
@@ -298,6 +308,9 @@ interface GameState {
   foodEaten: number;          // Per-level food counter
   isEndless: boolean;         // True when playing endless mode
   speedEffectTicks: number;   // Slow effect remaining ticks (0 = inactive)
+  isRunner: boolean;          // True when playing runner mode
+  distance: number;           // Distance traveled in runner mode
+  lane: 0 | 1 | 2;            // Current lane in runner mode
 }
 ```
 
@@ -311,6 +324,10 @@ interface GameState {
 | INITIAL_SNAKE   | 3 segments | Starting length   |
 | LEVEL_COUNT     | 10         | Total levels      |
 | INITIAL_SPEED   | 150ms      | Starting speed    |
+| RUNNER_LANE_X   | [4, 10, 16] | Runner lane x-coordinates |
+| RUNNER_INITIAL_SPEED | 200ms  | Runner starting speed |
+| RUNNER_MIN_SPEED | 80ms      | Runner minimum speed |
+| RUNNER_DISTANCE_PER_POINT | 10 | Distance units per score point |
 
 ## Styling Conventions
 
@@ -342,7 +359,7 @@ interface GameState {
 ## Testing
 
 - **Framework:** Vitest with jsdom
-- **392 unit tests** across 26 test files
+- **415 unit tests** across 26 test files
 - **Coverage:** game/ modules (state, Engine, collision, food, snake, levels, storage, statistics, achievements, profile), hooks, utilities, touch recognizer, components (Game, Board, Cell, LevelTransition, GameOver, Statistics, Achievements, MainMenu, PauseMenu, ReadyOverlay, SettingsScreen, HelpScreen, StatisticsScreen, AchievementsScreen)
 - **Run:** `npm test` or `npm run test:watch`
 
