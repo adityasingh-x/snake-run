@@ -14,7 +14,7 @@ function rollFoodType(): FoodType {
   return 'normal';
 }
 
-export function spawnFood(snake: Position[], obstacles: Position[] = [], portals: Position[] = []): Food {
+export function spawnFood(snake: Position[], obstacles: Position[] = [], portals: Position[] = [], forceType?: FoodType): Food {
   const maxAttempts = GRID_SIZE * GRID_SIZE;
   const occupied = new Set([
     ...snake.map(p => `${p.x},${p.y}`),
@@ -37,6 +37,6 @@ export function spawnFood(snake: Position[], obstacles: Position[] = [], portals
   } while (occupied.has(`${food.x},${food.y}`) && attempts < maxAttempts);
 
   const position = occupied.has(`${food.x},${food.y}`) ? (snake[0] ?? { x: 0, y: 0 }) : food;
-  const type = rollFoodType();
+  const type = forceType ?? rollFoodType();
   return { position, type, timer: FOOD_TIMERS[type] };
 }

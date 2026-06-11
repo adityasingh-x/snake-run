@@ -40,6 +40,9 @@ export interface GameState {
   foodEaten: number;
   isEndless: boolean;
   speedEffectTicks: number;
+  isRunner: boolean;
+  distance: number;
+  lane: 0 | 1 | 2;
 }
 
 export type GameAction =
@@ -51,4 +54,6 @@ export type GameAction =
   | { type: 'RESET' }
   | { type: 'CONTINUE_GAME' }
   | { type: 'START_AT_LEVEL'; payload: number }
-  | { type: 'START_ENDLESS_GAME' };
+  | { type: 'START_ENDLESS_GAME' }
+  | { type: 'START_RUNNER' }
+  | { type: 'CHANGE_LANE'; payload: -1 | 1 };

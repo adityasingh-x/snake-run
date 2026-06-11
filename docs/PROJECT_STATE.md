@@ -2,58 +2,74 @@
 
 ## Current Version
 
-v0.12.0
+v0.13.0
 
 ---
 
 ## Current Status
 
-Milestone 12 (User Experience & Navigation) Complete
+Milestone 13 (Runner Prototype Validation) Complete
 
-All phases of Milestone 12 are now complete:
-- Phase 1: Navigation Infrastructure — state-based screen router, MainMenu shell, shared screen styles
-- Phase 2: Screens & Persistence — MainMenu, StatisticsScreen, AchievementsScreen, HelpScreen, ReadyOverlay, centralized `loadGameProfile()` service
-- Phase 3: Settings & Themes — SettingsScreen with sound toggle, theme selector (4 themes), reset confirmations
-- Phase 4: Improved Pause — PauseMenu with Resume, Restart Level, Return to Menu; Engine `restartLevel()`
-- Phase 5: Tests & Documentation — 392 tests across 26 test files, all documentation updated
+All phases of Milestone 13 are now complete:
+- Phase 1: Runner Types, Constants & Core Reducer Logic — `isRunner`, `distance`, `lane` added to GameState; `START_RUNNER` and `CHANGE_LANE` actions; runner short-circuit in MOVE_SNAKE; `spawnFood()` `forceType` parameter
+- Phase 2: Engine Runner Support — `startRunner()`, `changeLane()` methods; runner distance-based speed curve (200ms → 80ms)
+- Phase 3: Runner Course Generation — `runnerCourse.ts` with difficulty-scaling obstacle patterns (6-12 per lap, single/double blockers)
+- Phase 4: Runner HUD & Game Over Components — `RunnerHUD` (Distance/Food/Length/Best), `RunnerGameOver` (Play Again / Menu)
+- Phase 5: RunnerGame Component — Orchestrator with inline keyboard handler, useTouch, Board, HUD, game over, sound toggle
+- Phase 6: Navigation Integration — "Runner Mode" button on MainMenu, `'runner'` Screen type, App.tsx routing
+- Phase 7: Documentation — SPEC.md §20 Runner Mode, ARCHITECTURE.md updated, PROJECT_STATE.md updated, ROADMAP.md updated, version bumped to 0.13.0
 
 ---
 
 ## Current Milestone
 
-Milestone 13 - Onboarding & Discoverability
+Milestone 14 - Snake Growth Risk System
 
 Next Goal:
 
-Teach players the game's mechanics without requiring external documentation.
+Make growth create meaningful tension. Dynamic tail difficulty, score multipliers, risk routes, growth milestones.
 
 ---
 
 ## Current Priorities
 
-1. First-time player onboarding (Milestone 13)
-2. In-game gameplay guide (Milestone 13)
-3. Mechanics guide for food variants, portals, wrap-around (Milestone 13)
-4. Endless mode explanation (Milestone 13)
+1. Runner gameplay evaluation (post-M13 playtesting)
+2. Dynamic tail difficulty system (Milestone 14)
+3. Score multiplier system (Milestone 14)
+4. Risk route design (Milestone 14)
 
 ---
 
 ## Next Milestone
 
-Milestone 13 - Onboarding & Discoverability
+Milestone 14 - Snake Growth Risk System
 
 Planned Focus:
 
-- First-time player experience
-- Gameplay guide
-- Mechanics guide
-- Endless mode explanation
+- Dynamic tail difficulty (longer snakes = harder navigation)
+- Score multipliers (length-based: x1 at length 3 → x4 at length 30)
+- Risk routes (safe path vs. food-rich path)
+- Growth milestone feedback (visual/audio at lengths 10, 20, 30)
 
 ---
 
 ## Completed Features
 
-### Core Gameplay
+### Runner Mode (Milestone 13)
+
+- Endless runner variant with auto-advancing snake (UP movement)
+- Three-lane system (Left/Center/Right at x=4/10/16)
+- Lane change controls (Arrow Left/Right, A/D keys, swipe gestures)
+- Tail lane blocking (prevents lane change into body-occupied lane at head Y)
+- Y-axis wrap-around course generation (obstacles + food regenerated per lap)
+- Difficulty-scaling obstacles (single/double blockers, 6→12 patterns per lap)
+- Distance-based scoring (10 distance = 1 point) + food scoring with length multiplier
+- RunnerHUD (Distance, Food Eaten, Snake Length, High Score)
+- RunnerGameOver overlay (stats, Play Again, Menu)
+- Runner entry point in MainMenu (always visible, accent-bordered button)
+- Speed curve: 200ms → 80ms (decreases 2ms every 50 distance)
+- Sound toggle and responsive touch controls
+- 415 tests passing across 26 test files
 
 - Snake movement
 - Food collection
@@ -271,7 +287,7 @@ Planned Focus:
 
 ## In Progress
 
-Milestone 13 — Onboarding & Discoverability (planning phase).
+Milestone 14 — Snake Growth Risk System (planning phase).
 
 ---
 
@@ -319,29 +335,28 @@ Gameplay Principles:
 
 ## Success Definition For Current Milestone
 
-### Milestone 12 — User Experience & Navigation
+### Milestone 13 — Runner Prototype Validation
 
 Target:
 
-- Players always know what to do next
-- Navigation feels intentional
-- Settings feel complete
-- Theme selection works across the entire application
-- Game feels complete
+- Prove that Snake Run is more engaging as an endless runner than as a traditional level-based game
+- Validate the base runner loop (advance + collect + avoid) is fun
+- Determine whether to continue the runner direction or pivot
 
-Milestone 12 success criteria (completed):
+Milestone 13 success criteria (completed):
 
-- Main menu implementation ✅
-- Statistics and achievements screens ✅
-- Settings and credits screens ✅
-- Improved pause and navigation experience ✅
-- `npm run build` completes with no errors ✅
-- `npm run lint` passes with no new warnings ✅
-- All existing 356 tests still pass (zero regressions) ✅
-- New tests added for all new components and engine changes ✅
-- SPEC.md updated with new screens, themes, and navigation behavior ✅
-- ARCHITECTURE.md updated with new components and theme system ✅
-- ROADMAP.md updated — Milestone 12 moved to Completed ✅
-- PROJECT_STATE.md updated — version bumped to 0.12.0, priorities updated ✅
-- `package.json` version bumped to `0.12.0` ✅
-- No hardcoded color values remain in component CSS ✅
+- Runner Mode playable from main menu ✅
+- Snake auto-advances UP; LEFT/RIGHT change lanes ✅
+- Tail lane blocking prevents changing into body-occupied lanes ✅
+- Three-lane system responsive and clear ✅
+- Obstacles continuously appear; collision calls `markGameOver` ✅
+- Food in lanes; collection increases score (with length multiplier) and length ✅
+- Distance-based scoring with HUD display ✅
+- Game over shows run stats; Play Again under 2 seconds ✅
+- Classic level-based game remains fully functional ✅
+- All tests pass (415, up from 414) ✅
+- Lint clean ✅
+- Build clean ✅
+- PWA precache includes all new files ✅
+- All documentation updated and consistent ✅
+- `package.json` version bumped to `0.13.0` ✅

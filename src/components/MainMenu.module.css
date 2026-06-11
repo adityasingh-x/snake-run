@@ -60,3 +60,8 @@
   color: var(--color-warning);
   font-family: var(--font-mono);
 }
+
+.runnerButton {
+  border: 2px solid var(--color-accent-soft);
+  box-shadow: var(--shadow-neon-green);
+}

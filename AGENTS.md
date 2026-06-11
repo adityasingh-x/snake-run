@@ -209,8 +209,8 @@ ROADMAP.md is the source of truth for project direction and milestone progress.
 
 After completing any roadmap item, milestone task, or significant feature, agents must:
 
+- Move the completed milestone from ROADMAP.md into `docs/archive/completed-milestones.md`
 - Update milestone progress
-- Move completed items into the appropriate Completed section
 - Update Current Progress
 - Remove obsolete roadmap entries
 - Keep roadmap status aligned with repository reality
@@ -387,6 +387,11 @@ plans/ACTIVE.md
 
 - Current approved implementation plan.
 - Only one active plan should exist at a time.
+
+docs/archive/
+
+- Archive of completed milestones and historical records.
+- Append-only; content is moved from ROADMAP.md upon milestone completion.
 
 docs/adr/
 

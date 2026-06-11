@@ -423,10 +423,12 @@ won
 - Entry screen displayed on app load
 - Shows:
   - Game title "Snake Run"
+  - "Runner Mode" button (always visible, highlighted with accent border)
   - Continue hint (last unlocked level + high score) when progress exists
   - Continue button (when `lastUnlockedLevel > 1` or `highScore > 0`)
   - New Game button
   - Statistics, Achievements, Settings, Help buttons
+- Runner Mode navigates to `RunnerGame` screen
 - Continue navigates to Game with `startLevel = lastUnlockedLevel`
 - New Game navigates to Game with `startLevel = 1`
 
@@ -691,3 +693,90 @@ Themes are implemented via CSS custom property overrides on `[data-theme]` attri
 - `high-contrast`
 
 The `useTheme()` hook in `src/hooks/useTheme.ts` reads/writes `snakeTheme` from localStorage and updates `document.documentElement.dataset.theme`. `main.tsx` sets the theme synchronously before React mounts to prevent flash.
+
+---
+
+## 20. Runner Mode
+
+### 20.1 Game Overview
+
+Runner Mode is an endless runner variant of Snake Run. The snake automatically moves upward and the player changes lanes (left/right) to avoid obstacles and collect food. The goal is to survive as long as possible while maximizing score through distance and food collection.
+
+### 20.2 Lane System
+
+- **Three lanes** positioned at x-coordinates: Left (4), Center (10), Right (16)
+- The snake always occupies exactly one lane
+- Lane changes shift the head's x-coordinate immediately (zero tick delay)
+- Lane changes clamp to bounds [0, 2] and are rejected if the target lane already contains a body segment at the head's Y position (tail lane blocking)
+
+### 20.3 Movement Model
+
+- The snake moves UP automatically each tick
+- The player does not control forward movement
+- **Y-axis wrap-around:** When the snake reaches y < 0, it wraps to y = 19. Obstacles and food are regenerated for the new "lap"
+- Collision detection checks x bounds (0..19), self-collision, and obstacle collision
+
+### 20.4 Scoring
+
+- **Distance points:** 1 point per 10 distance units traveled
+- **Food points:** 10 points per food × length multiplier (floor(length/5) + 1)
+- Both distance and food contribute to the total score each tick
+
+### 20.5 HUD
+
+The `RunnerHUD` component displays:
+- Distance
+- Food eaten
+- Snake length
+- High score (Best)
+
+### 20.6 Game Over
+
+The `RunnerGameOver` overlay displays:
+- "Run Over!" heading
+- Distance, food eaten, snake length, high score
+- "Play Again" button (primary, autoFocus)
+- "Menu" button (secondary)
+- "Press Space to play again" hint
+
+### 20.7 Controls
+
+**Desktop:**
+- Left Arrow / A: Change lane left
+- Right Arrow / D: Change lane right
+- Space: Start run / Play Again
+- Escape: Return to menu
+
+**Mobile:**
+- Swipe Left: Change lane left
+- Swipe Right: Change lane right
+- Tap Start button: Start run
+- Tap Play Again: Restart
+
+### 20.8 Runner State Machine
+
+```
+RUNNER_START (screen: 'runner')
+  START_RUNNER -> playing (isRunner=true, lane=1, distance=0)
+
+playing (isRunner=true)
+  MOVE_SNAKE (collision) -> gameover
+  MOVE_SNAKE (wrap, y=0->19) -> playing (regenerate course)
+  CHANGE_LANE(-1|1) -> playing (shift head x)
+
+gameover (isRunner=true)
+  START_RUNNER -> playing (fresh run)
+  Return to Menu -> menu (Engine destroyed)
+```
+
+### 20.9 Course Generation
+
+- `generateRunnerCourse()` produces obstacle patterns and one food item per lap
+- Difficulty scales from 0 to 1 over 500 distance units
+- Pattern count: 6 → 12 patterns per lap as difficulty increases
+- Blocked lanes per row: 1 (single blocker) or 2 (double blocker); at least one lane is always clear
+- Only `'normal'` food type is spawned in runner mode
+
+### 20.10 Difficulty Scaling
+
+Speed decreases from 200ms (initial) by 2ms every 50 distance, flooring at 80ms minimum speed. This creates an accelerating difficulty curve as the run progresses.

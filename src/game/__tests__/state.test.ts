@@ -24,6 +24,9 @@ function makeState(overrides: Partial<GameState> = {}): GameState {
     foodEaten: 0,
     isEndless: false,
     speedEffectTicks: 0,
+    isRunner: false,
+    distance: 0,
+    lane: 1,
     ...overrides,
   };
 }
