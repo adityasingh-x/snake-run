@@ -52,7 +52,6 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       const runnerSnake: Position[] = [
         { x: RUNNER_LANE_X[1], y: 18 },
         { x: RUNNER_LANE_X[1], y: 19 },
-        { x: RUNNER_LANE_X[1], y: 19 },
       ];
       const course = generateRunnerCourse(18, runnerSnake, 0);
       return {
@@ -135,7 +134,9 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         if (wrapped) {
           const course = generateRunnerCourse(newHead.y, newSnake, newDistance);
           newObstacles = course.obstacles;
-          newFood = course.food;
+          const foodStillValid = !newObstacles.some(o => o.x === newFood.position.x && o.y === newFood.position.y)
+            && !newSnake.some(s => s.x === newFood.position.x && s.y === newFood.position.y);
+          newFood = foodStillValid ? newFood : course.food;
         }
 
         return {
@@ -321,6 +322,10 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         obstacles,
         foodEaten: 0,
         speedEffectTicks: 0,
+        isEndless: false,
+        isRunner: false,
+        distance: 0,
+        lane: 1,
       };
     }
 

@@ -138,7 +138,7 @@ PRDs are authoritative.
 
 # Current Progress
 
-Milestone 13.1 is the next milestone.
+Milestone 13.1 is the next milestone. Previously completed milestones are archived in archive/completed-milestone.md
 
 ---
 
