@@ -303,7 +303,7 @@ export const Game = ({ startLevel, onNavigateToMenu }: GameProps) => {
           />
         )}
       </div>
-      <div className={`${styles.dpad} ${(state.status === 'playing' || state.status === 'paused') && dpadOn ? '' : styles.dpadHidden}`}>
+      <div className={`${styles.dpad} ${((state.status === 'playing' || state.status === 'paused') && dpadOn) ? '' : styles.dpadHidden}`}>
         <button className={styles.dpadBtn} onClick={handleDpadUp} aria-label="Move up">▲</button>
         <div className={styles.dpadRow}>
           <button className={styles.dpadBtn} onClick={handleDpadLeft} aria-label="Move left">◀</button>

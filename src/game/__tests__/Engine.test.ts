@@ -323,10 +323,10 @@ describe('Engine', () => {
       localStorage.clear();
     });
 
-    it('startAtLevel resets wasPaused so a paused run does not carry over the flag', () => {
+    it('startAtLevel does NOT clear wasPausedEver so a prior pause blocks no_pause', () => {
       engine.start();
       engine.pause();
-      // After pause, internal wasPaused = true. startAtLevel must clear it.
+      // After pause, internal wasPausedEver = true. startAtLevel must NOT clear it.
       engine.startAtLevel(10);
       // Force a win on the final level.
       engine.setState({
@@ -344,8 +344,31 @@ describe('Engine', () => {
         nextDirection: 'RIGHT',
       });
       engine.testDispatch({ type: 'MOVE_SNAKE' });
-      // After winning, the no_pause achievement should be eligible because
-      // wasPaused was cleared by startAtLevel. We assert via localStorage.
+      // After winning, the no_pause achievement should NOT be awarded because
+      // wasPausedEver was set by the prior pause and startAtLevel does not clear it.
+      const achievementsRaw = localStorage.getItem('snakeAchievements');
+      const unlocked = achievementsRaw ? JSON.parse(achievementsRaw) : [];
+      expect(engine.getState().status).toBe('won');
+      expect(unlocked).not.toContain('no_pause');
+    });
+
+    it('a fresh start with no pause awards no_pause on win', () => {
+      engine.startAtLevel(10);
+      engine.setState({
+        ...engine.getState(),
+        status: 'playing',
+        level: 10,
+        score: 290,
+        foodEaten: 29,
+        snake: [
+          { x: 9, y: 10 },
+          { x: 8, y: 10 },
+          { x: 7, y: 10 },
+        ],
+        food: { position: { x: 10, y: 10 }, type: 'normal', timer: -1 },
+        nextDirection: 'RIGHT',
+      });
+      engine.testDispatch({ type: 'MOVE_SNAKE' });
       const achievementsRaw = localStorage.getItem('snakeAchievements');
       const unlocked = achievementsRaw ? JSON.parse(achievementsRaw) : [];
       expect(engine.getState().status).toBe('won');
@@ -681,6 +704,84 @@ describe('Engine', () => {
       const obstacleSet = new Set(obstacles.map(o => `${o.x},${o.y}`));
       expect(snakeSet.has(`${food.position.x},${food.position.y}`)).toBe(false);
       expect(obstacleSet.has(`${food.position.x},${food.position.y}`)).toBe(false);
+    });
+  });
+
+  describe('gamesPlayed increment (BUG-008)', () => {
+    beforeEach(() => {
+      localStorage.clear();
+      engine.destroy();
+      engine = new Engine();
+    });
+
+    it('increments gamesPlayed on startAtLevel', () => {
+      engine.startAtLevel(1);
+      expect(engine.getStats().gamesPlayed).toBe(1);
+    });
+
+    it('increments gamesPlayed on startAtLevel from gameover state', () => {
+      engine.setState({
+        ...getInitialState(),
+        status: 'gameover',
+        level: 3,
+        score: 50,
+      });
+      engine.startAtLevel(1);
+      expect(engine.getStats().gamesPlayed).toBe(1);
+    });
+  });
+
+  describe('runner mode onEat suppression (BUG-007)', () => {
+    it('does NOT fire onEat for runner distance score increases', () => {
+      const onEat = vi.fn();
+      engine.onEat = onEat;
+
+      engine.startRunner();
+      // Runner starts with distance=0. After enough ticks, distance increases
+      // and score increases from distance points, but onEat should NOT fire.
+      for (let i = 0; i < 30; i++) {
+        vi.advanceTimersByTime(100);
+      }
+
+      expect(engine.getState().isRunner).toBe(true);
+      expect(engine.getState().distance).toBeGreaterThan(0);
+      // onEat should not have been called for distance-based score increases
+      expect(onEat).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('runner mode food lane compliance (BUG-010)', () => {
+    it('food always spawns in a valid lane position', () => {
+      engine.startRunner();
+      const { food } = engine.getState();
+      const laneX = [4, 10, 16];
+      expect(laneX).toContain(food.position.x);
+    });
+
+    it('food remains in lane after multiple wraps', () => {
+      engine.startRunner();
+      // Simulate many ticks to trigger wraps
+      for (let i = 0; i < 200; i++) {
+        vi.advanceTimersByTime(100);
+      }
+      const { food } = engine.getState();
+      const laneX = [4, 10, 16];
+      expect(laneX).toContain(food.position.x);
+    });
+  });
+
+  describe('runner initial snake shape (BUG-011)', () => {
+    it('initial runner snake has no duplicate segments', () => {
+      engine.startRunner();
+      const { snake } = engine.getState();
+      const positions = snake.map(s => `${s.x},${s.y}`);
+      const uniquePositions = new Set(positions);
+      expect(uniquePositions.size).toBe(snake.length);
+    });
+
+    it('initial runner snake has 2 segments', () => {
+      engine.startRunner();
+      expect(engine.getState().snake.length).toBe(2);
     });
   });
 });

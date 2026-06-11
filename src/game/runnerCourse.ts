@@ -1,6 +1,5 @@
 import type { Position, Food } from './types';
 import { RUNNER_LANE_X, GRID_SIZE } from './constants';
-import { spawnFood } from './food';
 
 export function generateRunnerCourse(
   headY: number,
@@ -23,8 +22,35 @@ export function generateRunnerCourse(
     }
   }
 
-  const food = spawnFood(snake, obstacles, [], 'normal');
+  const food = spawnRunnerFood(snake, obstacles, headY);
   return { obstacles, food };
+}
+
+function spawnRunnerFood(
+  snake: Position[],
+  obstacles: Position[],
+  headY: number
+): Food {
+  const occupied = new Set<string>();
+  for (const s of snake) occupied.add(`${s.x},${s.y}`);
+  for (const o of obstacles) occupied.add(`${o.x},${o.y}`);
+
+  const candidates: Position[] = [];
+  for (const lane of [0, 1, 2]) {
+    const x = RUNNER_LANE_X[lane];
+    for (let y = 0; y < GRID_SIZE; y++) {
+      if (Math.abs(y - headY) < 3) continue;
+      if (!occupied.has(`${x},${y}`)) {
+        candidates.push({ x, y });
+      }
+    }
+  }
+
+  const pos = candidates.length > 0
+    ? candidates[Math.floor(Math.random() * candidates.length)]
+    : { x: RUNNER_LANE_X[1], y: 10 };
+
+  return { position: pos, type: 'normal', timer: -1 };
 }
 
 function selectBlockedLanes(difficulty: number): number[] {

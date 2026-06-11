@@ -19,7 +19,9 @@ export class Engine {
   private accumulator: number = 0;
   private statsCache: Stats;
   // Engine-private tracker for the no_pause achievement; never read by UI or reducer.
-  private wasPaused: boolean = false;
+  // wasPausedEver persists across resets so the achievement cannot be earned by
+  // restarting after a pause.
+  private wasPausedEver: boolean = false;
   // Cached set of unlocked achievement IDs to avoid per-dispatch localStorage reads.
   private unlockedAchievementIds: Set<string>;
 
@@ -46,7 +48,7 @@ export class Engine {
     const prevFoodEaten = this.state.foodEaten;
     const prevState = { ...this.state };
 
-    if (action.type === 'START_GAME' || action.type === 'RESET' || action.type === 'START_ENDLESS_GAME' || action.type === 'START_RUNNER') {
+    if (action.type === 'START_GAME' || action.type === 'RESET' || action.type === 'START_ENDLESS_GAME' || action.type === 'START_RUNNER' || action.type === 'START_AT_LEVEL') {
       this.statsCache.gamesPlayed += 1;
     }
 
@@ -77,7 +79,7 @@ export class Engine {
       saveStats(this.statsCache);
     }
 
-    const newlyUnlocked = checkAchievements(this.state, prevState, this.wasPaused, this.unlockedAchievementIds);
+    const newlyUnlocked = checkAchievements(this.state, prevState, this.wasPausedEver, this.unlockedAchievementIds);
     for (const id of newlyUnlocked) {
       saveAchievement(id);
       this.unlockedAchievementIds.add(id);
@@ -90,7 +92,7 @@ export class Engine {
       this.stopLoop();
     }
 
-    if (this.state.score > prevScore) {
+    if (this.state.score > prevScore && !this.state.isRunner) {
       this.onEat?.();
     }
     if (this.state.level > prevLevel && this.state.status === 'playing') {
@@ -105,13 +107,13 @@ export class Engine {
   }
 
   start(): void {
-    this.wasPaused = false;
+    this.wasPausedEver = false;
     this.dispatch({ type: 'START_GAME' });
     this.startLoop();
   }
 
   pause(): void {
-    this.wasPaused = true;
+    this.wasPausedEver = true;
     this.dispatch({ type: 'PAUSE_GAME' });
     this.stopLoop();
   }
@@ -126,7 +128,6 @@ export class Engine {
   }
 
   reset(): void {
-    this.wasPaused = false;
     this.dispatch({ type: 'RESET' });
     if (this.state.status === 'playing') {
       this.startLoop();
@@ -139,7 +140,6 @@ export class Engine {
   }
 
   startAtLevel(level: number): void {
-    this.wasPaused = false;
     this.dispatch({ type: 'START_AT_LEVEL', payload: level });
     this.startLoop();
   }
@@ -153,7 +153,6 @@ export class Engine {
   continueFromLevel(level: number): void {
     const savedScore = this.state.score;
     const savedNextDirection = this.state.nextDirection;
-    this.wasPaused = false;
     this.dispatch({ type: 'START_AT_LEVEL', payload: level });
     this.state = {
       ...this.state,
@@ -176,7 +175,6 @@ export class Engine {
     const savedScore = this.state.score;
     const savedDirection = this.state.direction;
     const savedNextDirection = this.state.nextDirection;
-    this.wasPaused = false;
     this.dispatch({ type: 'START_AT_LEVEL', payload: this.state.level });
     // Restore accumulated run state; level metadata (obstacles, food) is already reset
     this.state = {
@@ -190,13 +188,13 @@ export class Engine {
   }
 
   startEndless(): void {
-    this.wasPaused = false;
+    this.wasPausedEver = false;
     this.dispatch({ type: 'START_ENDLESS_GAME' });
     this.startLoop();
   }
 
   startRunner(): void {
-    this.wasPaused = false;
+    this.wasPausedEver = false;
     this.dispatch({ type: 'START_RUNNER' });
     this.startLoop();
   }

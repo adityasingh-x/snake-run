@@ -14,6 +14,10 @@ interface RunnerGameProps {
 export const RunnerGame = ({ onNavigateToMenu }: RunnerGameProps) => {
   const { state, initAudio, startRunner, changeLane } = useGame();
   const [soundOn, setSoundOn] = useState(() => sharedSoundManager.isEnabled());
+
+  useEffect(() => {
+    return sharedSoundManager.subscribe(setSoundOn);
+  }, []);
   const boardRef = useRef<HTMLDivElement>(null);
   const [hasStarted, setHasStarted] = useState(false);
 
