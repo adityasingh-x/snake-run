@@ -215,6 +215,24 @@ export class Engine {
     return { ...this.statsCache, highScore: this.state.highScore };
   }
 
+  getTickInterval(): number {
+    return this.getEffectiveSpeed();
+  }
+
+  private getEffectiveSpeed(): number {
+    if (this.state.isRunner) {
+      const speed = Math.max(
+        RUNNER_MIN_SPEED,
+        RUNNER_INITIAL_SPEED - Math.floor(this.state.distance / 50) * 2
+      );
+      return Math.round(speed / RUNNER_SPEED_MULTIPLIER);
+    } else {
+      const config = getLevelData(this.state.level);
+      const speed = config.speed ?? 150;
+      return this.state.speedEffectTicks > 0 ? speed * SLOW_EFFECT_MULTIPLIER : speed;
+    }
+  }
+
   /** Test-only: set internal state for testing purposes. */
   setState(state: GameState): void {
     this.state = state;
@@ -249,18 +267,7 @@ export class Engine {
       // Cap accumulator to a single effective tick to avoid multi-tick jumps
       // after tab refocus or long pauses. Without this, a single frame can
       // dispatch many MOVE_SNAKE actions and the snake teleports into walls.
-      let effectiveSpeed: number;
-      if (this.state.isRunner) {
-        effectiveSpeed = Math.max(
-          RUNNER_MIN_SPEED,
-          RUNNER_INITIAL_SPEED - Math.floor(this.state.distance / 50) * 2
-        );
-        effectiveSpeed = Math.round(effectiveSpeed / RUNNER_SPEED_MULTIPLIER);
-      } else {
-        const config = getLevelData(this.state.level);
-        const speed = config.speed ?? 150;
-        effectiveSpeed = this.state.speedEffectTicks > 0 ? speed * SLOW_EFFECT_MULTIPLIER : speed;
-      }
+      const effectiveSpeed = this.getEffectiveSpeed();
       if (this.accumulator > effectiveSpeed) {
         this.accumulator = effectiveSpeed;
       }

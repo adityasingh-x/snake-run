@@ -122,12 +122,17 @@ export function useGame() {
     engineRef.current?.changeLane(delta);
   }, []);
 
+  const getTickInterval = useCallback(() => {
+    return engineRef.current!.getTickInterval();
+  }, []);
+
   return {
     state,
     stats,
     achievements,
     celebrateMultiplier,
     initAudio,
+    getTickInterval,
     startGame,
     startGameAtLevel,
     continueFromLevel,

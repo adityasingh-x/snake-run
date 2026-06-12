@@ -2,29 +2,25 @@
 
 ## Current Version
 
-v0.14.0
+v0.14.1
 
 ---
 
 ## Current Status
 
-Milestone 14 — Snake Growth Risk System Complete
+Milestone 14.1 — Smooth Runner Motion V2: Implementation Complete, Subjective Goal Not Achieved
 
-All phases of Milestone 14 are now complete:
-- Phase A: Multiplier Engine — Tiered length-based multiplier (`getMultiplier` in `snake.ts`, `MILESTONES = [10, 20, 30, 50]`); food scoring uses post-eat multiplier; `maxMultiplier` tracked in `GameState`; reset on `START_RUNNER`
-- Phase D: Risk-Aware Food Placement — `spawnRunnerFood()` places food by length-based tier to create choice-based risk/reward decisions; safe/medium/high row categorization; lane selection forces lane changes at higher tiers; fallback chain ensures food is always reachable
-- Phase B: HUD Expansion — RunnerHUD shows multiplier section (accent color + glow); 4-section primary layout (Score | Multiplier | Length | Distance); RunnerGameOver shows Max Multiplier and Next Milestone stats
-- Phase C: Milestone Celebration — Two-tone ascending sine sound via `playMilestone(tier)`; HUD pulse animation on multiplier section; `onMilestone` callback on Engine fires at tier crossings in runner mode
+The M14.1 CSS animation is mechanically functional (Playwright tests confirm 185 distinct translateY values across 361 frames), but project owner assessment on 2026-06-12 confirmed the implementation did not deliver on the PRD's subjective criteria ("feels more professional" and "appears visually faster" — both answered No). Three of four PRD failure conditions triggered. Code retained per project owner decision; lessons learned documented in `docs/Milestone 14.1-validation/VALIDATION.md`.
 
 ---
 
 ## Current Milestone
 
-Milestone 14 — Snake Growth Risk System (Complete)
+Milestone 14.1 — Smooth Runner Motion V2 (Implementation Complete, Subjective Goal Not Achieved)
 
 Next Goal:
 
-Milestone 15 (to be determined).
+Milestone 15.
 
 ---
 
@@ -42,7 +38,22 @@ To be determined.
 
 ## Completed Features
 
-### Snake Growth Risk System (Milestone 14)
+### Smooth Runner Motion V2 (Milestone 14.1) — Implementation Only
+
+**Outcome:** Implementation technically complete and stable. Subjective PRD criteria (Q5 "visually faster", Q6 "feels professional") not met. Code retained per project owner decision.
+
+- CSS keyframe animation on Board inner wrapper for continuous viewport motion between ticks (mechanically functional)
+- `Engine.getEffectiveSpeed()` (private) extracted from duplicated calculation; `Engine.getTickInterval()` (public) for render layer
+- Board split into outer positioning container and inner grid wrapper (`.boardInner`) with `innerRef` prop
+- `@keyframes viewportScroll` interpolates `translateY` from -5% to 0 over tick interval via `--viewport-speed` custom property
+- `useGame` exposes `getTickInterval()` callback wrapping `Engine.getTickInterval()`
+- RunnerGame useEffect restarts CSS animation each tick via class toggle + forced reflow; wrap-around detection (delta > 1) suppresses animation
+- `prefers-reduced-motion: reduce` accessibility media query suppresses animation
+- Lane change animations (150ms slide) compose independently with viewport animation
+- Classic mode unaffected — inner wrapper exists but no animation class applied
+- 503 vitest tests + 5 Playwright e2e tests passing
+
+**Why it didn't achieve the goal:** The 5% per-tick translateY (one cell height, ~23px on the rendered board) was below the threshold of perceivable meaningful motion. The tick-boundary snap (matrix going from `translateY(0)` back to `translateY(-5%)` to start the next interpolation) is visible to the eye even when interpolation between ticks is smooth. CSS animation on a wrapper does not address the underlying logical discrete-positioning model. See `docs/Milestone 14.1-validation/VALIDATION.md` for full assessment.
 
 - Tiered length-based multiplier (x1–x5) for food scoring in runner mode
 - `maxMultiplier` tracking in GameState (highest tier reached per run)
@@ -355,21 +366,26 @@ Gameplay Principles:
 
 ## Success Definition For Current Milestone
 
-### Milestone 14 — Snake Growth Risk System (Complete)
+### Milestone 14.1 — Smooth Runner Motion V2 (Implementation Complete, Subjective Goal Not Achieved)
 
-All implementation phases complete:
-- [x] Phase A: Tiered length-based multiplier (`getMultiplier`), `maxMultiplier` in GameState
-- [x] Phase D: Risk-aware food placement by length tier (choice-based lane deviation)
-- [x] Phase B: HUD multiplier section, Max Multiplier / Next Milestone on game over
-- [x] Phase C: Milestone celebration (sound + HUD pulse at length 10/20/30/50)
-- [x] Phase E: Documentation updated (SPEC, ARCHITECTURE, ROADMAP, PROJECT_STATE)
-- [x] All 487 tests pass across 30 test files
+**Outcome:** Implementation technically complete and stable. Subjective PRD criteria (Q5 "visually faster", Q6 "feels professional") not met per project owner assessment (2026-06-12). Code retained per project owner decision. See `docs/Milestone 14.1-validation/VALIDATION.md` for full assessment.
+
+Implementation phase complete:
+
+- [x] Phase 1: Engine `getEffectiveSpeed()` + `getTickInterval()` implemented, tested, `startLoop()` refactored
+- [x] Phase 2: Board inner wrapper + CSS viewport animation implemented and tested
+- [x] Phase 3: RunnerGame animation wiring implemented (useEffect restart, `--viewport-speed`, wrap detection)
+- [x] Phase 4: Edge cases handled (pause, gameover, classic mode, lane changes)
+- [x] 503 vitest tests + 5 Playwright e2e tests passing (vitest baseline: 487)
 - [x] `npm run build` completes with no errors
-- [x] `npm run lint` passes with no new warnings
 - [x] `npx tsc --noEmit` passes with no errors
+- [x] `npm run lint` passes with no warnings
+- [x] Documentation updated (SPEC.md §20.14, ARCHITECTURE.md, ROADMAP.md)
+- [x] `package.json` version bumped to 0.14.1
 
-Behavioral validation pending:
-- [ ] 5 gameplay recordings with per-death failure analysis
-- [ ] 4 behavioral observations confirmed (food skipped, food pursued, route changed, death by food)
-- [ ] Tail pressure assessed at lengths 10/20/30
-- [ ] Project owner PRD §20 confirmation
+Subjective validation:
+
+- [ ] "Does the game appear visually faster?" (PRD Q5) — **No** (project owner, 2026-06-12)
+- [ ] "Does the runner feel more professional?" (PRD Q6) — **No** (project owner, 2026-06-12)
+- [ ] Wrap transition improvement — **None** (same as before, no regression)
+

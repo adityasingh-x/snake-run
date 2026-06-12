@@ -833,10 +833,32 @@ Speed profiles for validation:
 
 The multiplier is applied in Engine.ts tick calculation as `effectiveSpeed = Math.round(effectiveSpeed / RUNNER_SPEED_MULTIPLIER)`. This is temporary validation infrastructure, not user-exposed.
 
-### 20.13 Milestone Celebration
+### 20.14 Smooth Viewport Scrolling
 
-When the snake crosses a multiplier tier boundary (length 10, 20, 30, or 50), both audio and visual feedback play:
+The runner game board uses CSS animation to create continuous visual viewport motion between logical tick updates. Without smoothing, the board appears to update at the tick rate (80-200ms), creating a visual "5 FPS" effect despite a healthy browser frame rate.
 
-- **Sound:** A two-tone ascending sine wave played through `playMilestone(tier)` on `sharedSoundManager`. Base frequency = 400 + tier × 100 Hz, with a second tone 200 Hz higher. Duration ~0.3s total. Higher tiers get slightly longer sustain.
-- **Visual:** The multiplier section in the RunnerHUD pulses (scale 1.0 → 1.15 → 1.0 over 0.6s) with an accent-color glow flash.
-- **Detection:** The Engine detects milestone crossings in `dispatch()` when `isRunner` and `foodEaten` increased and the new snake length crosses a tier boundary. The `onMilestone` callback fires with the new tier (2, 3, 4, or 5).
+**Implementation:**
+
+- An inner content wrapper `<div>` inside the Board component serves as the grid container for all 400 cells
+- A CSS `@keyframes viewportScroll` animation on the inner wrapper interpolates `translateY` from `-5%` (one cell up) to `0` over the tick interval duration
+- The animation restarts on each logical tick via class toggle with forced reflow
+- The `--viewport-speed` CSS custom property sets the animation duration to match the engine's current tick interval via `Engine.getTickInterval()`
+
+**Behavior:**
+
+- On each tick, the board re-renders with the new logical positions
+- The CSS animation pulls content back by one cell (`translateY(-5%)`) and smoothly interpolates back to neutral over the tick interval
+- The player perceives continuous downward glide of obstacles and food, rather than discrete jumps
+- Wrap-around transitions (19-cell viewport jump) suppress the animation for that single frame — the instantaneous snap is not visible at the screen edge
+- Lane change animations (150ms `slideLeft`/`slideRight` on the snake head cell) compose independently with the viewport animation on the inner wrapper
+- Pause/resume stops and restarts the animation cleanly via the `status === 'playing'` gate
+- Game over freezes the board at the collision position (no animation class applied)
+- Classic mode is unaffected — the inner wrapper exists but no animation class is applied
+
+**Accessibility:**
+
+- A `prefers-reduced-motion: reduce` media query suppresses the viewport animation entirely. The board falls back to the pre-M14.1 discrete tick rendering.
+
+**Performance:**
+
+- The `translateY` transform is GPU-accelerated on all target platforms. Zero JavaScript runs per animation frame — only one class toggle and one CSS custom property set per tick (5-12 times/second).

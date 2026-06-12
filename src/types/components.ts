@@ -12,6 +12,7 @@ export interface BoardProps {
   runnerLane?: 0 | 1 | 2;
   viewportHeadY?: number;
   laneChangeDirection?: 'left' | 'right' | null;
+  innerRef?: React.Ref<HTMLDivElement>;
 }
 
 export interface CellProps {

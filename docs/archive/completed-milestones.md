@@ -434,3 +434,62 @@ Transformed food from automatic collection into a meaningful risk/reward decisio
 - ARCHITECTURE.md: "Growth Risk System" sub-section documenting all components
 - PROJECT_STATE.md: v0.14.0, status, completed features
 - ROADMAP.md: M14 moved to archive
+
+---
+
+## Milestone 14.1 — Smooth Runner Motion V2
+
+**Status:** Implementation complete, subjective goal not achieved. Code retained per project owner decision (2026-06-12).
+
+**Goal:** Eliminate the ~5 FPS visual perception of runner mode by adding continuous viewport motion between logical tick updates, without changing any gameplay logic.
+
+**Approach:** Hybrid — CSS keyframe animation on Board's inner content wrapper for viewport scrolling. The browser interpolates `translateY` from one cell above to neutral over each tick interval, creating continuous visual downward glide.
+
+**Outcome:** Implementation is mechanically functional and stable. Playwright automated tests confirm the CSS animation interpolates continuously between ticks. However, project owner assessment on 2026-06-12 confirmed the implementation did not achieve the PRD's subjective success criteria (Q5 "visually faster": No, Q6 "feels professional": No). Three of four PRD failure conditions triggered. The code is retained in the codebase per project owner direction; the milestone is archived with full assessment in `docs/Milestone 14.1-validation/VALIDATION.md`.
+
+### Why It Didn't Work
+
+The 5% per-tick translateY (one cell height, ~23px on the rendered board) was below the threshold of perceivable meaningful motion. The tick-boundary snap (matrix going from `translateY(0)` back to `translateY(-5%)` to start the next interpolation) is visible to the eye even when interpolation between ticks is smooth. CSS animation on a wrapper does not address the underlying logical discrete-positioning model.
+
+### Architecture
+
+- `Engine.getEffectiveSpeed()` (private) — extracted from duplicated calculation in `startLoop()`; returns current tick interval
+- `Engine.getTickInterval()` (public) — returns `getEffectiveSpeed()`; consumed by render layer
+- `Board` — split into outer positioning `.board` container and inner grid `.boardInner` wrapper; accepts `innerRef` prop (`animateViewport` removed in post-review remediation)
+- `Board.module.css` — `.boardAnimated` triggers `@keyframes viewportScroll` (translateY -5%→0); `prefers-reduced-motion: reduce` suppresses
+- `useGame` — exposes `getTickInterval()` callback
+- `RunnerGame` — useEffect watches `headY` changes; restarts CSS animation via class toggle + forced reflow; sets `--viewport-speed` from engine
+
+### Key Design Decisions
+
+1. CSS animation over rAF interpolation — lowest complexity (~80 LOC), GPU-accelerated, zero JS per frame
+2. Class toggle with forced reflow for animation restart — well-understood pattern, negligible perf at 5-12 ticks/s
+3. Wrap-around suppression (delta > 1) — single-frame snap at screen edge; imperceptible
+4. Lane change animations compose independently — on different DOM elements
+
+### Key Files Changed/Created
+
+| File | Change |
+|------|--------|
+| `src/game/Engine.ts` | Added private `getEffectiveSpeed()`, public `getTickInterval()`; refactored `startLoop()` |
+| `src/components/Board.tsx` | Inner wrapper div, removed inline grid from `.board`, added `innerRef` prop (`animateViewport` removed in remediation) |
+| `src/components/Board.module.css` | `.boardInner`, `.boardAnimated`, `@keyframes viewportScroll`, `prefers-reduced-motion` |
+| `src/types/components.ts` | Added `innerRef` to `BoardProps` (`animateViewport` removed in remediation) |
+| `src/hooks/useGame.ts` | Added `getTickInterval` callback |
+| `src/components/RunnerGame.tsx` | Animation wiring useEffect, `boardInnerRef`, wrap detection |
+| `src/game/__tests__/Engine.test.ts` | 6 tests for `getTickInterval` and refactor regression |
+| `src/components/__tests__/Board.test.tsx` | 10 tests for inner wrapper, animation props, backward compat |
+| `SPEC.md` | Added §20.14 "Smooth Viewport Scrolling" |
+| `ARCHITECTURE.md` | Added "Smooth Runner Motion" sub-section |
+| `docs/PROJECT_STATE.md` | v0.14.1, M14.1 complete |
+| `docs/ROADMAP.md` | M14.1 to completed |
+| `package.json` | Version 0.13.1 → 0.14.1 |
+| `.gitignore` | Validation recordings entries |
+| `docs/Milestone 14.1-validation/` | New directory + README.md |
+
+### Verification
+
+- 503 tests passing across 30 test files (baseline: 487)
+- `npx tsc --noEmit` passes with no errors
+- `npm run build` completes cleanly
+- `npm run lint` passes with no warnings

@@ -10,6 +10,7 @@ export default mergeConfig(
       environment: 'jsdom',
       globals: true,
       setupFiles: [],
+      exclude: ['**/node_modules/**', '**/dist/**', '**/.{idea,git,cache,output,temp}/**', 'tests/e2e/**'],
     },
   }),
 )

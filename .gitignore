@@ -28,12 +28,12 @@ work-extras/
 *.sw?
 bugs.md
 
-# Milestone 13.5 validation recordings (stored externally)
-docs/Milestone 13_5_validation/recordings/*.webm
-docs/Milestone 13_5_validation/recordings/*.mp4
-docs/Milestone 13_5_validation/recordings/*.mov
+docs/Milestone 14.1-validation/recordings/*.webm
+docs/Milestone 14.1-validation/recordings/*.mp4
+docs/Milestone 14.1-validation/recordings/*.mov
+docs/Milestone 14.1-validation/recordings/*.png
+docs/Milestone 14.1-validation/recordings/*.json
 
-# Milestone 14 validation recordings (stored externally)
-docs/Milestone 14-validation/recordings/*.webm
-docs/Milestone 14-validation/recordings/*.mp4
-docs/Milestone 14-validation/recordings/*.mov
+test-results/
+playwright-report/
+

@@ -128,9 +128,7 @@ Target:
 ## Documentation Structure
 
 ROADMAP.md
-docs/prd/PRD_M13_1.md
-docs/prd/PRD_M13_5.md
-docs/prd/PRD_M14.md
+docs/prd/\*
 
 PRDs are authoritative.
 
@@ -140,7 +138,9 @@ PRDs are authoritative.
 
 Milestone 15 is the next milestone.
 
-Milestone 13 (Runner Prototype Validation), Milestone 13.1 (Visual Lane Redesign), Milestone 13.5 (Controls & UX), and Milestone 14 (Snake Growth Risk System) are complete and archived in archive/completed-milestones.md
+Milestone 13 (Runner Prototype Validation), Milestone 13.1 (Visual Lane Redesign), Milestone 13.5 (Controls & UX), and Milestone 14 (Snake Growth Risk System) are complete and archived in archive/completed-milestones.md.
+
+Milestone 14.1 (Smooth Runner Motion V2) is **archived with implementation complete but subjective goal not achieved**. Code retained per project owner decision (2026-06-12). Full assessment in `docs/Milestone 14.1-validation/VALIDATION.md`. Not counted as a successful milestone.
 
 ---
 
@@ -169,9 +169,11 @@ The objective is to discover whether endless-runner gameplay produces a more eng
 
 Milestone 13, Milestone 13.1, Milestone 13.5, and Milestone 14 Completed
 
+Milestone 14.1 — Archived with implementation complete, subjective goal not achieved. Not counted as a successful milestone. Code retained per project owner decision (2026-06-12). Full assessment: `docs/Milestone 14.1-validation/VALIDATION.md`.
+
 Next:
 
-- Milestone 15 — TBD
+- Milestone 15 — Future Work
 
 No milestone may begin until previous milestone acceptance criteria pass.
 
