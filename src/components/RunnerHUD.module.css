@@ -60,6 +60,28 @@
   text-shadow: var(--shadow-neon-gold);
 }
 
+.multiplierSection .label {
+  color: var(--color-accent-soft);
+}
+
+.multiplierValue {
+  color: var(--color-accent-soft);
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-shadow: var(--shadow-neon-green);
+}
+
+.celebrating .multiplierValue {
+  animation: multiplierCelebrate 0.6s ease-out;
+}
+
+@keyframes multiplierCelebrate {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+
 @media (max-width: 600px) {
   .runnerHud {
     flex-wrap: wrap;

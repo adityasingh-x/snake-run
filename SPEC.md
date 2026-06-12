@@ -721,17 +721,24 @@ Runner Mode is an endless runner variant of Snake Run. The snake automatically m
 ### 20.4 Scoring
 
 - **Distance points:** 1 point per 10 distance units traveled
-- **Food points:** 10 points per food × length multiplier (floor(length/5) + 1)
+- **Food points:** 10 points per food × tiered length multiplier
+- **Multiplier tiers (post-eat):**
+  - Length 3–9: x1
+  - Length 10–19: x2
+  - Length 20–29: x3
+  - Length 30–49: x4
+  - Length 50+: x5
+- The multiplier is based on the snake's length **after** eating. The food that grows the snake from length 9→10 is rewarded at x2.
 - Both distance and food contribute to the total score each tick
 
 ### 20.5 HUD
 
-The `RunnerHUD` component displays:
+The `RunnerHUD` component displays (4-section primary row):
 - Score (total points from distance + food, displayed in gold)
-- Distance
-- Food eaten
+- Multiplier (current tier, accent color with glow, pulse animation on milestone)
 - Snake length
-- High score (Best)
+- Distance
+- High score (Best) — wraps to second row on mobile
 
 Lane structure is communicated visually on the board rather than via text.
 
@@ -741,6 +748,8 @@ The `RunnerGameOver` overlay displays:
 - "Run Over!" heading
 - Score prominently with "New Best!" badge when score equals or exceeds high score, or "Best: {highScore}" for comparison
 - Distance, food eaten, snake length
+- Max Multiplier (highest tier reached during the run)
+- Next Milestone (nearest length milestone above current, hidden at length 50+)
 - "Play Again" button (primary, autoFocus)
 - "Menu" button (secondary)
 - "Press Space to play again" hint
@@ -782,6 +791,14 @@ gameover (isRunner=true)
 - Pattern count: 6 → 12 patterns per lap as difficulty increases
 - Blocked lanes per row: 1 (single blocker) or 2 (double blocker); at least one lane is always clear
 - Only `'normal'` food type is spawned in runner mode
+- **Risk-aware food placement:** Food is placed by length-based tier to create risk/reward decisions:
+  - Tier 1 (x1, length 3–9): Safe rows only (0 obstacles). Food in player's current lane or adjacent lane.
+  - Tier 2 (x2, length 10–19): Safe or Medium rows. Food may be in a different lane, requiring a lane change.
+  - Tier 3 (x3, length 20–29): Medium rows preferred (1 obstacle). Food in a different lane from player.
+  - Tier 4 (x4, length 30–49): Medium/High rows. Food requires significant lane deviation.
+  - Tier 5 (x5, length 50+): High rows preferred (2 obstacles). Food forces thread-through maneuver.
+- Food is never placed within 3 rows of the snake's head
+- Fallback: if no row matches the desired risk level, falls back to safer rows
 
 ### 20.10 Difficulty Scaling
 
@@ -815,3 +832,11 @@ Speed profiles for validation:
 | D (+75%) | 1.75 | 114ms | 46ms |
 
 The multiplier is applied in Engine.ts tick calculation as `effectiveSpeed = Math.round(effectiveSpeed / RUNNER_SPEED_MULTIPLIER)`. This is temporary validation infrastructure, not user-exposed.
+
+### 20.13 Milestone Celebration
+
+When the snake crosses a multiplier tier boundary (length 10, 20, 30, or 50), both audio and visual feedback play:
+
+- **Sound:** A two-tone ascending sine wave played through `playMilestone(tier)` on `sharedSoundManager`. Base frequency = 400 + tier × 100 Hz, with a second tone 200 Hz higher. Duration ~0.3s total. Higher tiers get slightly longer sustain.
+- **Visual:** The multiplier section in the RunnerHUD pulses (scale 1.0 → 1.15 → 1.0 over 0.6s) with an accent-color glow flash.
+- **Detection:** The Engine detects milestone crossings in `dispatch()` when `isRunner` and `foodEaten` increased and the new snake length crosses a tier boundary. The `onMilestone` callback fires with the new tier (2, 3, 4, or 5).

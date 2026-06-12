@@ -43,6 +43,7 @@ export interface GameState {
   isRunner: boolean;
   distance: number;
   lane: 0 | 1 | 2;
+  maxMultiplier: number;
 }
 
 export type GameAction =

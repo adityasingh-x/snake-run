@@ -784,4 +784,140 @@ describe('Engine', () => {
       expect(engine.getState().snake.length).toBe(2);
     });
   });
+
+  describe('milestone callback', () => {
+    function makeRunnerSnake(length: number): { x: number; y: number }[] {
+      const snake: { x: number; y: number }[] = [];
+      for (let i = 0; i < length; i++) {
+        snake.push({ x: 10, y: 10 + i });
+      }
+      return snake;
+    }
+
+    it('fires onMilestone when snake grows from 9→10', () => {
+      const onMilestone = vi.fn();
+      engine.onMilestone = onMilestone;
+
+      const snake = makeRunnerSnake(9);
+      engine.setState({
+        ...engine.getState(),
+        isRunner: true,
+        status: 'playing',
+        snake,
+        food: { position: { x: 10, y: 9 }, type: 'normal', timer: -1 },
+        obstacles: [],
+        lane: 1,
+        direction: 'UP',
+        nextDirection: 'UP',
+      });
+
+      engine.testDispatch({ type: 'MOVE_SNAKE' });
+      expect(onMilestone).toHaveBeenCalledWith(2);
+    });
+
+    it('fires onMilestone when snake grows from 19→20', () => {
+      const onMilestone = vi.fn();
+      engine.onMilestone = onMilestone;
+
+      const snake = makeRunnerSnake(19);
+      engine.setState({
+        ...engine.getState(),
+        isRunner: true,
+        status: 'playing',
+        snake,
+        food: { position: { x: 10, y: 9 }, type: 'normal', timer: -1 },
+        obstacles: [],
+        lane: 1,
+        direction: 'UP',
+        nextDirection: 'UP',
+      });
+
+      engine.testDispatch({ type: 'MOVE_SNAKE' });
+      expect(onMilestone).toHaveBeenCalledWith(3);
+    });
+
+    it('fires onMilestone when snake grows from 29→30', () => {
+      const onMilestone = vi.fn();
+      engine.onMilestone = onMilestone;
+
+      const snake = makeRunnerSnake(29);
+      engine.setState({
+        ...engine.getState(),
+        isRunner: true,
+        status: 'playing',
+        snake,
+        food: { position: { x: 10, y: 9 }, type: 'normal', timer: -1 },
+        obstacles: [],
+        lane: 1,
+        direction: 'UP',
+        nextDirection: 'UP',
+      });
+
+      engine.testDispatch({ type: 'MOVE_SNAKE' });
+      expect(onMilestone).toHaveBeenCalledWith(4);
+    });
+
+    it('fires onMilestone when snake grows from 49→50', () => {
+      const onMilestone = vi.fn();
+      engine.onMilestone = onMilestone;
+
+      const snake = makeRunnerSnake(49);
+      engine.setState({
+        ...engine.getState(),
+        isRunner: true,
+        status: 'playing',
+        snake,
+        food: { position: { x: 10, y: 9 }, type: 'normal', timer: -1 },
+        obstacles: [],
+        lane: 1,
+        direction: 'UP',
+        nextDirection: 'UP',
+      });
+
+      engine.testDispatch({ type: 'MOVE_SNAKE' });
+      expect(onMilestone).toHaveBeenCalledWith(5);
+    });
+
+    it('does NOT fire onMilestone when snake grows from 10→11 (same tier)', () => {
+      const onMilestone = vi.fn();
+      engine.onMilestone = onMilestone;
+
+      const snake = makeRunnerSnake(10);
+      engine.setState({
+        ...engine.getState(),
+        isRunner: true,
+        status: 'playing',
+        snake,
+        food: { position: { x: 10, y: 9 }, type: 'normal', timer: -1 },
+        obstacles: [],
+        lane: 1,
+        direction: 'UP',
+        nextDirection: 'UP',
+      });
+
+      engine.testDispatch({ type: 'MOVE_SNAKE' });
+      expect(onMilestone).not.toHaveBeenCalled();
+    });
+
+    it('does NOT fire onMilestone on non-food tick at length 10', () => {
+      const onMilestone = vi.fn();
+      engine.onMilestone = onMilestone;
+
+      const snake = makeRunnerSnake(10);
+      engine.setState({
+        ...engine.getState(),
+        isRunner: true,
+        status: 'playing',
+        snake,
+        food: { position: { x: 4, y: 15 }, type: 'normal', timer: -1 },
+        obstacles: [],
+        lane: 1,
+        direction: 'UP',
+        nextDirection: 'UP',
+      });
+
+      engine.testDispatch({ type: 'MOVE_SNAKE' });
+      expect(onMilestone).not.toHaveBeenCalled();
+    });
+  });
 });

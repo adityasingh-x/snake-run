@@ -2,48 +2,57 @@
 
 ## Current Version
 
-v0.13.5
+v0.14.0
 
 ---
 
 ## Current Status
 
-Milestone 13.5 — Runner Feel Validation Complete
+Milestone 14 — Snake Growth Risk System Complete
 
-All phases of Milestone 13.5 are now complete:
-- Phase A: Viewport Scrolling — Board supports `viewportHeadY` prop with screen-to-grid row mapping; snake stays fixed in lower third while obstacles scroll downward; `data-viewport-scrolling="true"` attribute; `React.memo` wrapping for performance
-- Phase B: Validation Gate — `docs/Milestone 13_5_validation/` directory created with README.md and recording instructions; `.gitignore` updated for recording files
-- Phase C1: Lane Change Visual Feedback — Snake head shows directional slide animation (150ms) with green glow on lane change; tracked via `laneChangeDir` state + `useRef` timer pattern; threaded through BoardProps → CellProps → Cell CSS
-- Phase C2: Speed Profile Tuning — `RUNNER_SPEED_MULTIPLIER` constant added to constants.ts; applied in Engine.ts tick calculation; temporary validation infrastructure
-- Phase C3: Course Generation — `MIN_PATTERN_SPACING = 2` added to runnerCourse.ts; prevents obstacles on adjacent rows; bounds check skips out-of-bounds patterns; reduces max patterns from 12 to 10 at extreme difficulty
-- Phase C4: HUD & GameOver Polish — RunnerHUD shows Score (gold) as first section; RunnerGameOver shows score prominently with "New Best!" badge or "Best: N" comparison
-- Phase D: Documentation — SPEC.md updated (§20.2, §20.5, §20.11, §20.12); ARCHITECTURE.md updated (viewport scrolling, lane change feedback, constants); PROJECT_STATE.md updated; ROADMAP.md updated; M13.1 PLAN_REVIEW.md archived
+All phases of Milestone 14 are now complete:
+- Phase A: Multiplier Engine — Tiered length-based multiplier (`getMultiplier` in `snake.ts`, `MILESTONES = [10, 20, 30, 50]`); food scoring uses post-eat multiplier; `maxMultiplier` tracked in `GameState`; reset on `START_RUNNER`
+- Phase D: Risk-Aware Food Placement — `spawnRunnerFood()` places food by length-based tier to create choice-based risk/reward decisions; safe/medium/high row categorization; lane selection forces lane changes at higher tiers; fallback chain ensures food is always reachable
+- Phase B: HUD Expansion — RunnerHUD shows multiplier section (accent color + glow); 4-section primary layout (Score | Multiplier | Length | Distance); RunnerGameOver shows Max Multiplier and Next Milestone stats
+- Phase C: Milestone Celebration — Two-tone ascending sine sound via `playMilestone(tier)`; HUD pulse animation on multiplier section; `onMilestone` callback on Engine fires at tier crossings in runner mode
 
 ---
 
 ## Current Milestone
 
-Milestone 13.5 — Controls & UX (Complete)
+Milestone 14 — Snake Growth Risk System (Complete)
 
 Next Goal:
 
-Milestone 14 — per `docs/prd/PRD_M14.md`.
+Milestone 15 (to be determined).
 
 ---
 
 ## Current Priorities
 
-1. Milestone 14 implementation (next milestone)
+1. Milestone 15 (next milestone)
 
 ---
 
 ## Next Milestone
 
-Milestone 14 — per `docs/prd/PRD_M14.md`.
+To be determined.
 
 ---
 
 ## Completed Features
+
+### Snake Growth Risk System (Milestone 14)
+
+- Tiered length-based multiplier (x1–x5) for food scoring in runner mode
+- `maxMultiplier` tracking in GameState (highest tier reached per run)
+- Risk-aware food placement by length tier (safe/medium/high rows, lane deviation)
+- Multiplier display in RunnerHUD (4-section layout: Score | Multiplier | Length | Distance)
+- Max Multiplier and Next Milestone stats in RunnerGameOver
+- Milestone celebration: two-tone ascending sound + HUD multiplier pulse animation at length 10/20/30/50
+- `onMilestone` callback on Engine for milestone detection in runner mode
+- `playMilestone(tier)` on SoundManager for per-tier audio feedback
+- 487 tests passing across 30 test files
 
 ### Runner Feel Validation (Milestone 13.5)
 
@@ -54,10 +63,6 @@ Milestone 14 — per `docs/prd/PRD_M14.md`.
 - HUD score display: Score section in RunnerHUD, score comparison in RunnerGameOver with "New Best!" badge
 - Validation infrastructure: recording directory, instructions, .gitignore rules
 - 447 tests passing across 27 test files
-
----
-
-## Completed Features
 
 ### Visual Lane Redesign (Milestone 13.1)
 
@@ -302,7 +307,7 @@ Milestone 14 — per `docs/prd/PRD_M14.md`.
 
 ## In Progress
 
-Milestone 14 (next milestone).
+Milestone 15 (next milestone).
 
 ---
 
@@ -350,28 +355,21 @@ Gameplay Principles:
 
 ## Success Definition For Current Milestone
 
-### Milestone 13.5 — Runner Feel Validation
+### Milestone 14 — Snake Growth Risk System (Complete)
 
 All implementation phases complete:
-- [x] Viewport scrolling creates forward motion perception (Phase A)
-- [x] Lane change animations visible (Phase C1)
-- [x] Speed profile multiplier functional (Phase C2)
-- [x] Course generation tuned for event density (Phase C3)
-- [x] HUD displays score; game over shows score comparison (Phase C4)
-- [x] Classic mode rendering is completely unchanged
-- [x] All 447 tests pass across 27 test files
+- [x] Phase A: Tiered length-based multiplier (`getMultiplier`), `maxMultiplier` in GameState
+- [x] Phase D: Risk-aware food placement by length tier (choice-based lane deviation)
+- [x] Phase B: HUD multiplier section, Max Multiplier / Next Milestone on game over
+- [x] Phase C: Milestone celebration (sound + HUD pulse at length 10/20/30/50)
+- [x] Phase E: Documentation updated (SPEC, ARCHITECTURE, ROADMAP, PROJECT_STATE)
+- [x] All 487 tests pass across 30 test files
 - [x] `npm run build` completes with no errors
 - [x] `npm run lint` passes with no new warnings
 - [x] `npx tsc --noEmit` passes with no errors
 
-Validation:
-- [x] Gate recording confirms forward motion perception
-- [x] Validation waived by project owner
-
-Documentation complete:
-- [x] SPEC.md updated (§20.2, §20.5, §20.11, §20.12)
-- [x] ARCHITECTURE.md updated (viewport scrolling, component props)
-- [x] PROJECT_STATE.md updated (version, status, features, test count)
-- [x] ROADMAP.md updated (milestone entry moved to archive)
-- [x] M13.1 PLAN_REVIEW.md archived
-- [x] No inconsistencies across documents
+Behavioral validation pending:
+- [ ] 5 gameplay recordings with per-death failure analysis
+- [ ] 4 behavioral observations confirmed (food skipped, food pursued, route changed, death by food)
+- [ ] Tail pressure assessed at lengths 10/20/30
+- [ ] Project owner PRD §20 confirmation

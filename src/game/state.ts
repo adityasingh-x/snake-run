@@ -2,7 +2,7 @@ import type { GameState, GameAction, Position } from './types';
 import { INITIAL_SNAKE, POINTS_PER_FOOD, DIRECTION_OPPOSITE, LEVEL_COUNT, GRID_SIZE, RUNNER_LANE_X, RUNNER_DISTANCE_PER_POINT } from './constants';
 import { positionsEqual, isCollision } from './collision';
 import { spawnFood } from './food';
-import { calculateNewHead } from './snake';
+import { calculateNewHead, getMultiplier } from './snake';
 import { loadHighScore, loadLastUnlockedLevel } from './storage';
 import { getLevelData, generateObstacles, getPortalPositions } from './levels';
 import { generateRunnerCourse, spawnRunnerFood } from './runnerCourse';
@@ -27,6 +27,7 @@ export function getInitialState(): GameState {
     isRunner: false,
     distance: 0,
     lane: 1,
+    maxMultiplier: 1,
   };
 }
 
@@ -53,7 +54,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         { x: RUNNER_LANE_X[1], y: 18 },
         { x: RUNNER_LANE_X[1], y: 19 },
       ];
-      const course = generateRunnerCourse(18, runnerSnake, 0);
+      const course = generateRunnerCourse(18, runnerSnake, 0, 1);
       return {
         ...initial,
         snake: runnerSnake,
@@ -65,6 +66,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         obstacles: course.obstacles,
         lastUnlockedLevel: state.lastUnlockedLevel,
         lane: 1,
+        maxMultiplier: 1,
       };
     }
 
@@ -119,20 +121,21 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         const newFoodEaten = state.foodEaten + (ateFood ? 1 : 0);
         const newDistance = state.distance + 1;
 
-        const lengthMultiplier = Math.floor(state.snake.length / 5) + 1;
-        let newScore = state.score + (ateFood ? POINTS_PER_FOOD * lengthMultiplier : 0);
+        const multiplier = getMultiplier(newSnake.length);
+        let newScore = state.score + (ateFood ? POINTS_PER_FOOD * multiplier : 0);
         newScore += Math.floor(newDistance / RUNNER_DISTANCE_PER_POINT)
                  - Math.floor(state.distance / RUNNER_DISTANCE_PER_POINT);
+        const newMaxMultiplier = Math.max(state.maxMultiplier, multiplier);
 
         let newFood = state.food;
         let newObstacles = state.obstacles;
 
         if (ateFood) {
-          newFood = spawnRunnerFood(newSnake, newObstacles, newHead.y);
+          newFood = spawnRunnerFood(newSnake, newObstacles, newHead.y, state.lane);
         }
 
         if (wrapped) {
-          const course = generateRunnerCourse(newHead.y, newSnake, newDistance);
+          const course = generateRunnerCourse(newHead.y, newSnake, newDistance, state.lane);
           newObstacles = course.obstacles;
           const foodStillValid = !newObstacles.some(o => o.x === newFood.position.x && o.y === newFood.position.y)
             && !newSnake.some(s => s.x === newFood.position.x && s.y === newFood.position.y);
@@ -149,6 +152,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
           score: newScore,
           distance: newDistance,
           foodEaten: newFoodEaten,
+          maxMultiplier: newMaxMultiplier,
         };
       }
 
@@ -326,6 +330,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         isRunner: false,
         distance: 0,
         lane: 1,
+        maxMultiplier: 1,
       };
     }
 

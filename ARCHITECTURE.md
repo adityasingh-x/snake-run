@@ -204,6 +204,18 @@ In runner mode, Board supports a `viewportHeadY` prop that creates forward motio
 
 When the player changes lanes, RunnerGame tracks the direction via `laneChangeDir` state and clears it after 200ms via a `laneChangeTimerRef`. The direction is threaded through `BoardProps` and `CellProps` as `laneChangeDirection`. Cell applies `laneSlidingLeft` or `laneSlidingRight` CSS classes on the snake head cell, triggering a 150ms directional slide animation with green glow.
 
+### Growth Risk System
+
+**Multiplier Engine:** Tiered length-based multiplier defined in `src/game/snake.ts` via `getMultiplier(length)` and `MILESTONES` constant (`[10, 20, 30, 50]`). Returns x1 (3–9), x2 (10–19), x3 (20–29), x4 (30–49), x5 (50+). Multiplier is computed post-eat (based on snake length after food consumption) in `state.ts` runner `MOVE_SNAKE` branch.
+
+**State Tracking:** `maxMultiplier` field in `GameState` tracks the highest multiplier tier reached during a run. Updated on each runner `MOVE_SNAKE` via `Math.max(state.maxMultiplier, getMultiplier(newSnake.length))`. Reset to 1 on `START_RUNNER` and `START_AT_LEVEL`.
+
+**Milestone Callback:** `onMilestone?(tier: 2 | 3 | 4 | 5)` on `Engine` fires when the snake crosses a multiplier tier boundary in runner mode. Detection in `dispatch()` compares `getMultiplier` before and after the state transition, gated on `foodEaten` increase. Wired in `useGame.ts` via a single callback that both triggers `sharedSoundManager.playMilestone(tier)` for audio feedback and sets `celebrateMultiplier` state (with a 600ms auto-clear timeout) for the HUD pulse animation. The UI reads `celebrateMultiplier` from `useGame()` and passes `celebrating` to `RunnerHUD` when it matches the current multiplier. This single-path design ensures sound and visual celebration stay synchronized.
+
+**Risk-Aware Food Placement:** `src/game/runnerCourse.ts` — `spawnRunnerFood()` categorizes grid rows by obstacle count (safe=0, medium=1, high=2) and selects a target row based on the snake's tier. Food lane is chosen to create choice-based risk: tier 1 prefers current/adjacent lane, tier 2 may require lane change, tier 3 requires different lane, tier 4 requires significant deviation, tier 5 forces thread-through on high-obstacle rows. Fallback chain: same-row other lanes → any safe row → ultimate fallback at center lane.
+
+**Milestone Sound:** `src/platform/sound.ts` — `playMilestone(tier)` creates a two-tone ascending sine oscillator. Base frequency = 400 + tier * 100 Hz, second tone at base+200 Hz. Fire-and-forget oscillators with linear gain decay.
+
 ### Collision Detection
 
 1. **Wall collision:** bounds check
@@ -327,6 +339,7 @@ interface GameState {
   isRunner: boolean;          // True when playing runner mode
   distance: number;           // Distance traveled in runner mode
   lane: 0 | 1 | 2;            // Current lane in runner mode
+  maxMultiplier: number;      // Highest multiplier tier reached this run
 }
 ```
 
@@ -377,7 +390,7 @@ interface GameState {
 ## Testing
 
 - **Framework:** Vitest with jsdom
-- **415 unit tests** across 26 test files
+- **487 unit tests** across 30 test files
 - **Coverage:** game/ modules (state, Engine, collision, food, snake, levels, storage, statistics, achievements, profile), hooks, utilities, touch recognizer, components (Game, Board, Cell, LevelTransition, GameOver, Statistics, Achievements, MainMenu, PauseMenu, ReadyOverlay, SettingsScreen, HelpScreen, StatisticsScreen, AchievementsScreen)
 - **Run:** `npm test` or `npm run test:watch`
 
