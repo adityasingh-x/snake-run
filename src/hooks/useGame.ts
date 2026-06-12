@@ -18,6 +18,9 @@ export function useGame() {
   const [stats, setStats] = useState<Stats>(() => engineRef.current!.getStats());
   const [achievements, setAchievements] = useState<Achievement[]>(() => loadAchievements());
 
+  const [celebrateMultiplier, setCelebrateMultiplier] = useState<number | null>(null);
+  const celebrateTimerRef = useRef<number | null>(null);
+
   useEffect(() => {
     const engine = engineRef.current;
     if (!engine) return;
@@ -39,6 +42,12 @@ export function useGame() {
     const onEat = () => sharedSoundManager.playEat();
     const onCollision = () => sharedSoundManager.playCollision();
     const onLevelUp = () => sharedSoundManager.playLevelUp();
+    const onMilestone = (tier: 2 | 3 | 4 | 5) => {
+      sharedSoundManager.playMilestone(tier);
+      setCelebrateMultiplier(tier);
+      if (celebrateTimerRef.current) clearTimeout(celebrateTimerRef.current);
+      celebrateTimerRef.current = window.setTimeout(() => setCelebrateMultiplier(null), 600);
+    };
     const onAchievementUnlock = () => {
       setAchievements(loadAchievements());
     };
@@ -47,6 +56,7 @@ export function useGame() {
     engine.onGameOver = onCollision;
     engine.onLevelUp = onLevelUp;
     engine.onWin = onLevelUp;
+    engine.onMilestone = onMilestone;
     engine.onAchievementUnlock = onAchievementUnlock;
 
     return () => {
@@ -54,7 +64,9 @@ export function useGame() {
       engine.onGameOver = undefined;
       engine.onLevelUp = undefined;
       engine.onWin = undefined;
+      engine.onMilestone = undefined;
       engine.onAchievementUnlock = undefined;
+      if (celebrateTimerRef.current) clearTimeout(celebrateTimerRef.current);
     };
   }, []);
 
@@ -114,6 +126,7 @@ export function useGame() {
     state,
     stats,
     achievements,
+    celebrateMultiplier,
     initAudio,
     startGame,
     startGameAtLevel,

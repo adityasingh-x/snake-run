@@ -29,7 +29,7 @@ export {
 } from './collision';
 
 export { spawnFood } from './food';
-export { calculateNewHead } from './snake';
+export { calculateNewHead, getMultiplier, MILESTONES } from './snake';
 export { default as LEVELS, getLevelData, generateObstacles, getPortalPositions } from './levels';
 export { loadHighScore, saveHighScore, loadLastUnlockedLevel, saveLastUnlockedLevel } from './storage';
 export { getInitialState, gameReducer } from './state';

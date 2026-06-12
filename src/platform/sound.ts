@@ -72,6 +72,42 @@ export class SoundManager {
     setTimeout(() => this.playTone(800, 0.2, 'sine'), 200);
   }
 
+  playMilestone(tier: 2 | 3 | 4 | 5) {
+    if (!this.enabled) return;
+    const ctx = this.ctx;
+    if (!ctx) return;
+    try {
+      const baseFreq = 400 + tier * 100;
+      const gainBase = 0.12 + (tier - 2) * 0.0075;
+      const duration = 0.12 + (tier - 2) * 0.01;
+      const gap = 0.08;
+
+      const osc1 = ctx.createOscillator();
+      const gain1 = ctx.createGain();
+      osc1.type = 'sine';
+      osc1.frequency.setValueAtTime(baseFreq, ctx.currentTime);
+      gain1.gain.setValueAtTime(gainBase, ctx.currentTime);
+      gain1.gain.linearRampToValueAtTime(0, ctx.currentTime + duration);
+      osc1.connect(gain1);
+      gain1.connect(ctx.destination);
+      osc1.start(ctx.currentTime);
+      osc1.stop(ctx.currentTime + duration);
+
+      const osc2 = ctx.createOscillator();
+      const gain2 = ctx.createGain();
+      osc2.type = 'sine';
+      osc2.frequency.setValueAtTime(baseFreq + 200, ctx.currentTime + duration + gap);
+      gain2.gain.setValueAtTime(gainBase, ctx.currentTime + duration + gap);
+      gain2.gain.linearRampToValueAtTime(0, ctx.currentTime + duration * 2 + gap);
+      osc2.connect(gain2);
+      gain2.connect(ctx.destination);
+      osc2.start(ctx.currentTime + duration + gap);
+      osc2.stop(ctx.currentTime + duration + gap + duration);
+    } catch {
+      // ignore audio errors
+    }
+  }
+
   toggleSound(): boolean {
     this.enabled = !this.enabled;
     saveSoundPreference(this.enabled);

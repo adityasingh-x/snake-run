@@ -2,13 +2,16 @@ import styles from './RunnerHUD.module.css';
 
 interface RunnerHUDProps {
   distance: number;
-  foodEaten: number;
   snakeLength: number;
   highScore: number;
   score: number;
+  multiplier: number;
+  celebrating: boolean;
 }
 
-export const RunnerHUD = ({ distance, foodEaten, snakeLength, highScore, score }: RunnerHUDProps) => {
+export const RunnerHUD = ({ distance, snakeLength, highScore, score, multiplier, celebrating }: RunnerHUDProps) => {
+  const multiplierClass = [styles.section, styles.multiplierSection, celebrating ? styles.celebrating : ''].filter(Boolean).join(' ');
+
   return (
     <>
       <div className={styles.runnerHud} aria-live="polite">
@@ -17,19 +20,19 @@ export const RunnerHUD = ({ distance, foodEaten, snakeLength, highScore, score }
           <span className={styles.scoreValue}>{score}</span>
         </div>
         <div className={styles.separator} />
-        <div className={styles.section}>
-          <span className={styles.label}>Distance</span>
-          <span className={styles.value}>{distance}</span>
-        </div>
-        <div className={styles.separator} />
-        <div className={styles.section}>
-          <span className={styles.label}>Food</span>
-          <span className={styles.value}>{foodEaten}</span>
+        <div className={multiplierClass}>
+          <span className={styles.label}>Multiplier</span>
+          <span className={styles.multiplierValue}>x{multiplier}</span>
         </div>
         <div className={styles.separator} />
         <div className={styles.section}>
           <span className={styles.label}>Length</span>
           <span className={styles.value}>{snakeLength}</span>
+        </div>
+        <div className={styles.separator} />
+        <div className={styles.section}>
+          <span className={styles.label}>Distance</span>
+          <span className={styles.value}>{distance}</span>
         </div>
         <div className={styles.separator} />
         <div className={`${styles.section} ${styles.highScoreSection}`}>
@@ -38,7 +41,7 @@ export const RunnerHUD = ({ distance, foodEaten, snakeLength, highScore, score }
         </div>
       </div>
       <div className="sr-only" aria-live="assertive" role="status">
-        Score: {score}. Distance: {distance}. Food: {foodEaten}. Length: {snakeLength}.
+        Score: {score}. Multiplier: x{multiplier}. Length: {snakeLength}. Distance: {distance}.
       </div>
     </>
   );

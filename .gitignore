@@ -32,3 +32,8 @@ bugs.md
 docs/Milestone 13_5_validation/recordings/*.webm
 docs/Milestone 13_5_validation/recordings/*.mp4
 docs/Milestone 13_5_validation/recordings/*.mov
+
+# Milestone 14 validation recordings (stored externally)
+docs/Milestone 14-validation/recordings/*.webm
+docs/Milestone 14-validation/recordings/*.mp4
+docs/Milestone 14-validation/recordings/*.mov

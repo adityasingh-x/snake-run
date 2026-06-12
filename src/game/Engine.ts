@@ -2,6 +2,7 @@ import type { GameState, GameAction, Direction } from './types';
 import { getInitialState, gameReducer } from './state';
 import { RUNNER_INITIAL_SPEED, RUNNER_MIN_SPEED, RUNNER_SPEED_MULTIPLIER } from './constants';
 import { getLevelData } from './levels';
+import { getMultiplier } from './snake';
 import { saveHighScore, saveLastUnlockedLevel } from './storage';
 import { loadStats, saveStats } from './statistics';
 import type { Stats } from './statistics';
@@ -103,6 +104,13 @@ export class Engine {
     }
     if (this.state.status === 'won') {
       this.onWin?.();
+    }
+    if (this.state.isRunner && this.state.status === 'playing' && this.state.foodEaten > prevFoodEaten) {
+      const newMultiplier = getMultiplier(this.state.snake.length);
+      const prevMultiplier = getMultiplier(prevState.snake.length);
+      if (newMultiplier > prevMultiplier) {
+        this.onMilestone?.(newMultiplier as 2 | 3 | 4 | 5);
+      }
     }
   }
 
@@ -285,6 +293,7 @@ export class Engine {
   onLevelUp?: () => void;
   onGameOver?: () => void;
   onWin?: () => void;
+  onMilestone?: (tier: 2 | 3 | 4 | 5) => void;
   onAchievementUnlock?: (id: string) => void;
 
   private visibilityHandler: (() => void) | null = null;

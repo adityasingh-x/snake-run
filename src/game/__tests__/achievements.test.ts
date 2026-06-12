@@ -20,6 +20,7 @@ function makeState(overrides: Partial<GameState> = {}): GameState {
     isRunner: false,
     distance: 0,
     lane: 1,
+    maxMultiplier: 1,
     ...overrides,
   };
 }

@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { gameReducer, getInitialState } from '../state';
-import type { GameState, GameAction, Food } from '../types';
+import type { GameState, GameAction, Food, Position } from '../types';
 import { POINTS_PER_FOOD } from '../constants';
+import { getMultiplier } from '../snake';
 
 const DEFAULT_FOOD: Food = { position: { x: 10, y: 10 }, type: 'normal', timer: -1 };
 
@@ -27,6 +28,7 @@ function makeState(overrides: Partial<GameState> = {}): GameState {
     isRunner: false,
     distance: 0,
     lane: 1,
+    maxMultiplier: 1,
     ...overrides,
   };
 }
@@ -1155,6 +1157,201 @@ describe('gameReducer', () => {
       });
       const next = gameReducer(state, { type: 'MOVE_SNAKE' });
       expect([4, 10, 16]).toContain(next.food.position.x);
+    });
+
+    describe('multiplier scoring', () => {
+      it('applies x1 multiplier at length 3-9', () => {
+        const state = makeState({
+          isRunner: true,
+          status: 'playing',
+          snake: [
+            { x: 10, y: 10 },
+            { x: 10, y: 11 },
+            { x: 10, y: 12 },
+          ],
+          food: { position: { x: 10, y: 9 }, type: 'normal', timer: -1 },
+          obstacles: [],
+          lane: 1,
+          direction: 'UP',
+          nextDirection: 'UP',
+          score: 0,
+        });
+        const next = gameReducer(state, { type: 'MOVE_SNAKE' });
+        expect(next.score).toBe(POINTS_PER_FOOD * 1);
+      });
+
+      it('applies x2 multiplier when eating at length 9→10', () => {
+        const snake: Position[] = [];
+        for (let i = 0; i < 9; i++) {
+          snake.push({ x: 10, y: 10 + i });
+        }
+        const state = makeState({
+          isRunner: true,
+          status: 'playing',
+          snake,
+          food: { position: { x: 10, y: 9 }, type: 'normal', timer: -1 },
+          obstacles: [],
+          lane: 1,
+          direction: 'UP',
+          nextDirection: 'UP',
+          score: 0,
+        });
+        const next = gameReducer(state, { type: 'MOVE_SNAKE' });
+        expect(next.snake.length).toBe(10);
+        expect(next.score).toBe(POINTS_PER_FOOD * 2);
+      });
+
+      it('applies x3 multiplier when eating at length 19→20', () => {
+        const snake: Position[] = [];
+        for (let i = 0; i < 19; i++) {
+          snake.push({ x: 10, y: 10 + i });
+        }
+        const state = makeState({
+          isRunner: true,
+          status: 'playing',
+          snake,
+          food: { position: { x: 10, y: 9 }, type: 'normal', timer: -1 },
+          obstacles: [],
+          lane: 1,
+          direction: 'UP',
+          nextDirection: 'UP',
+          score: 0,
+        });
+        const next = gameReducer(state, { type: 'MOVE_SNAKE' });
+        expect(next.score).toBe(POINTS_PER_FOOD * 3);
+      });
+
+      it('applies x4 multiplier when eating at length 29→30', () => {
+        const snake: Position[] = [];
+        for (let i = 0; i < 29; i++) {
+          snake.push({ x: 10, y: 10 + i });
+        }
+        const state = makeState({
+          isRunner: true,
+          status: 'playing',
+          snake,
+          food: { position: { x: 10, y: 9 }, type: 'normal', timer: -1 },
+          obstacles: [],
+          lane: 1,
+          direction: 'UP',
+          nextDirection: 'UP',
+          score: 0,
+        });
+        const next = gameReducer(state, { type: 'MOVE_SNAKE' });
+        expect(next.score).toBe(POINTS_PER_FOOD * 4);
+      });
+
+      it('applies x5 multiplier when eating at length 49→50', () => {
+        const snake: Position[] = [];
+        for (let i = 0; i < 49; i++) {
+          snake.push({ x: 10, y: 10 + i });
+        }
+        const state = makeState({
+          isRunner: true,
+          status: 'playing',
+          snake,
+          food: { position: { x: 10, y: 9 }, type: 'normal', timer: -1 },
+          obstacles: [],
+          lane: 1,
+          direction: 'UP',
+          nextDirection: 'UP',
+          score: 0,
+        });
+        const next = gameReducer(state, { type: 'MOVE_SNAKE' });
+        expect(next.score).toBe(POINTS_PER_FOOD * 5);
+      });
+
+      it('does not award food points when no food eaten', () => {
+        const state = makeState({
+          isRunner: true,
+          status: 'playing',
+          snake: [
+            { x: 10, y: 10 },
+            { x: 10, y: 11 },
+            { x: 10, y: 12 },
+          ],
+          food: { position: { x: 4, y: 15 }, type: 'normal', timer: -1 },
+          obstacles: [],
+          lane: 1,
+          direction: 'UP',
+          nextDirection: 'UP',
+          score: 100,
+        });
+        const next = gameReducer(state, { type: 'MOVE_SNAKE' });
+        expect(next.foodEaten).toBe(0);
+        expect(next.score).toBeGreaterThanOrEqual(100);
+      });
+
+      it('classic mode food scoring is unchanged', () => {
+        const state = makeState({
+          status: 'playing',
+          score: 90,
+          snake: [
+            { x: 5, y: 5 },
+            { x: 4, y: 5 },
+            { x: 3, y: 5 },
+          ],
+          food: { position: { x: 6, y: 5 }, type: 'normal', timer: -1 },
+          obstacles: [],
+          direction: 'RIGHT',
+          nextDirection: 'RIGHT',
+        });
+        const next = gameReducer(state, { type: 'MOVE_SNAKE' });
+        expect(next.score).toBe(100);
+      });
+    });
+
+    describe('maxMultiplier', () => {
+      it('tracks highest tier reached', () => {
+        const state = makeState({
+          isRunner: true,
+          status: 'playing',
+          snake: [
+            { x: 10, y: 10 },
+            { x: 10, y: 11 },
+            { x: 10, y: 12 },
+          ],
+          food: { position: { x: 10, y: 9 }, type: 'normal', timer: -1 },
+          obstacles: [],
+          lane: 1,
+          direction: 'UP',
+          nextDirection: 'UP',
+          maxMultiplier: 1,
+        });
+        const next = gameReducer(state, { type: 'MOVE_SNAKE' });
+        expect(next.maxMultiplier).toBe(1);
+      });
+
+      it('updates maxMultiplier at tier crossing 9→10', () => {
+        const snake: Position[] = [];
+        for (let i = 0; i < 9; i++) {
+          snake.push({ x: 10, y: 10 + i });
+        }
+        const state = makeState({
+          isRunner: true,
+          status: 'playing',
+          snake,
+          food: { position: { x: 10, y: 9 }, type: 'normal', timer: -1 },
+          obstacles: [],
+          lane: 1,
+          direction: 'UP',
+          nextDirection: 'UP',
+          maxMultiplier: 1,
+        });
+        const next = gameReducer(state, { type: 'MOVE_SNAKE' });
+        expect(next.maxMultiplier).toBe(2);
+        expect(getMultiplier(next.snake.length)).toBe(2);
+      });
+
+      it('START_RUNNER resets maxMultiplier to 1', () => {
+        const state = makeState({
+          status: 'gameover',
+          isRunner: true,
+          maxMultiplier: 4,
+        });
+        const next = gameReducer(state, { type: 'START_RUNNER' });
+        expect(next.maxMultiplier).toBe(1);
+      });
     });
   });
 });

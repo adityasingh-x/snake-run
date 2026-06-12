@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useGame } from '../hooks/useGame';
 import { useTouch } from '../hooks/useTouch';
 import { sharedSoundManager } from '../platform/sound';
+import { getMultiplier } from '../game';
 import { Board } from './Board';
 import { RunnerHUD } from './RunnerHUD';
 import { RunnerGameOver } from './RunnerGameOver';
@@ -12,7 +13,7 @@ interface RunnerGameProps {
 }
 
 export const RunnerGame = ({ onNavigateToMenu }: RunnerGameProps) => {
-  const { state, initAudio, startRunner, changeLane } = useGame();
+  const { state, celebrateMultiplier, initAudio, startRunner, changeLane } = useGame();
   const [soundOn, setSoundOn] = useState(() => sharedSoundManager.isEnabled());
 
   useEffect(() => {
@@ -34,6 +35,8 @@ export const RunnerGame = ({ onNavigateToMenu }: RunnerGameProps) => {
 
   const [laneChangeDir, setLaneChangeDir] = useState<'left' | 'right' | null>(null);
   const laneChangeTimerRef = useRef<number | null>(null);
+
+  const currentMultiplier = getMultiplier(state.snake.length);
 
   const handleLaneChange = useCallback((dir: -1 | 1) => {
     changeLane(dir);
@@ -102,10 +105,11 @@ export const RunnerGame = ({ onNavigateToMenu }: RunnerGameProps) => {
 
       <RunnerHUD
         distance={state.distance}
-        foodEaten={state.foodEaten}
         snakeLength={state.snake.length}
         highScore={state.highScore}
         score={state.score}
+        multiplier={currentMultiplier}
+        celebrating={celebrateMultiplier !== null && celebrateMultiplier === currentMultiplier}
       />
 
       <div ref={boardRef} className={styles.boardWrapper}>
@@ -137,6 +141,7 @@ export const RunnerGame = ({ onNavigateToMenu }: RunnerGameProps) => {
           snakeLength={state.snake.length}
           highScore={state.highScore}
           score={state.score}
+          maxMultiplier={state.maxMultiplier}
           onPlayAgain={handleStart}
           onReturnToMenu={onNavigateToMenu}
         />

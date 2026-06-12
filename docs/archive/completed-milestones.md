@@ -382,3 +382,55 @@ It only needs to validate the gameplay concept.
 - Validation infrastructure: recording directory with README, .gitignore for recordings
 - 447 tests passing across 27 test files
 - Documentation: SPEC.md §20.2 / §20.5 / §20.11 / §20.12, ARCHITECTURE.md updated, ROADMAP.md updated
+
+---
+
+## Milestone 14 — Snake Growth Risk System
+
+**Completed:** 2026-06-12
+
+### Summary
+
+Transformed food from automatic collection into a meaningful risk/reward decision via five mechanisms:
+
+- **Multiplier Engine (Phase A):** Tiered length-based multiplier replacing continuous formula. `getMultiplier(length)` returns x1 (3–9), x2 (10–19), x3 (20–29), x4 (30–49), x5 (50+). Computed post-eat. `maxMultiplier` field in `GameState` tracks highest tier reached during a run.
+- **Risk-Aware Food Placement (Phase D):** `spawnRunnerFood()` categorizes grid rows by obstacle count (safe/medium/high) and selects target row and lane based on snake length tier. Tier 1 places food in safe rows in current lane. Tier 2 may require lane change. Tier 3 requires different lane with obstacles. Tier 4 requires significant deviation. Tier 5 forces thread-through on high-obstacle rows. Fallback chain ensures food is always reachable.
+- **HUD Expansion (Phase B):** RunnerHUD shows multiplier section (accent color + glow) in 4-section layout (Score | Multiplier | Length | Distance). RunnerGameOver shows Max Multiplier and Next Milestone stats. Best stat wraps to second row on mobile.
+- **Milestone Celebration (Phase C):** `playMilestone(tier)` on SoundManager plays two-tone ascending sine (base freq = 400 + tier × 100 Hz). HUD multiplier section pulses on tier crossing. `onMilestone` callback on Engine fires in `dispatch()` when `foodEaten` increases and snake length crosses a tier boundary.
+
+### Key Files Changed/Created
+
+| File | Change |
+|------|--------|
+| `src/game/snake.ts` | Added `getMultiplier()`, `MILESTONES` |
+| `src/game/types.ts` | Added `maxMultiplier` to `GameState` |
+| `src/game/state.ts` | Tiered multiplier in runner `MOVE_SNAKE`; `maxMultiplier` tracking; `START_RUNNER`/`START_AT_LEVEL` reset |
+| `src/game/runnerCourse.ts` | Risk-aware food placement by tier; fallback chain; `currentLane` param added |
+| `src/game/Engine.ts` | `onMilestone` callback; milestone detection in `dispatch()` |
+| `src/game/index.ts` | Re-export `getMultiplier`, `MILESTONES` |
+| `src/platform/sound.ts` | `playMilestone(tier)` two-tone sine oscillator |
+| `src/hooks/useGame.ts` | Wire `onMilestone` to sound manager |
+| `src/components/RunnerHUD.tsx` | Multiplier section, `celebrating` prop |
+| `src/components/RunnerHUD.module.css` | Multiplier styles, celebration animation |
+| `src/components/RunnerGameOver.tsx` | Max Multiplier + Next Milestone stats |
+| `src/components/RunnerGame.tsx` | Multiplier computation, celebration animation detection |
+| `src/game/__tests__/snake.test.ts` | 7 tests for `getMultiplier` + `MILESTONES` |
+| `src/game/__tests__/state.test.ts` | 10 multiplier scoring + maxMultiplier tests |
+| `src/game/__tests__/runnerCourse.test.ts` | 7 risk-aware placement tests |
+| `src/game/__tests__/Engine.test.ts` | 6 milestone callback tests |
+| `src/components/__tests__/RunnerHUD.test.tsx` | 5 component tests |
+| `src/components/__tests__/RunnerGameOver.test.tsx` | 5 component tests |
+
+### Verification
+
+- 487 tests passing across 30 test files
+- `npx tsc --noEmit` passes with no errors
+- `npm run build` completes cleanly
+- `npm run lint` passes with no new warnings
+
+### Documentation
+
+- SPEC.md: §20.4 (tiered multiplier), §20.5 (HUD 4-section layout), §20.6 (Max Multiplier/Next Milestone), §20.9 (risk-aware food placement), §20.13 (milestone celebration)
+- ARCHITECTURE.md: "Growth Risk System" sub-section documenting all components
+- PROJECT_STATE.md: v0.14.0, status, completed features
+- ROADMAP.md: M14 moved to archive

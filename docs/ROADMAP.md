@@ -138,9 +138,9 @@ PRDs are authoritative.
 
 # Current Progress
 
-Milestone 14 is the next milestone.
+Milestone 15 is the next milestone.
 
-Milestone 13 (Runner Prototype Validation), Milestone 13.1 (Visual Lane Redesign), and Milestone 13.5 (Controls & UX) are complete and archived in archive/completed-milestones.md
+Milestone 13 (Runner Prototype Validation), Milestone 13.1 (Visual Lane Redesign), Milestone 13.5 (Controls & UX), and Milestone 14 (Snake Growth Risk System) are complete and archived in archive/completed-milestones.md
 
 ---
 
@@ -167,11 +167,11 @@ The objective is to discover whether endless-runner gameplay produces a more eng
 
 ## Current Sequence
 
-Milestone 13, Milestone 13.1, and Milestone 13.5 Completed
+Milestone 13, Milestone 13.1, Milestone 13.5, and Milestone 14 Completed
 
 Next:
 
-- Milestone 14 -> docs/prd/PRD_M14.md
+- Milestone 15 — TBD
 
 No milestone may begin until previous milestone acceptance criteria pass.
 
