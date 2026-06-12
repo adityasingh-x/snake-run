@@ -7,6 +7,7 @@
   aspect-ratio: 1 / 1;
   touch-action: none;
   box-shadow: var(--shadow-neon-purple);
+  overflow: hidden;
 }
 
 .board[data-wrap-around="true"] {
@@ -15,4 +16,23 @@
 
 .board[data-runner="true"] {
   border: 2px solid var(--color-accent);
+}
+
+.boardInner {
+  transform: translateY(0);
+}
+
+.boardAnimated {
+  animation: viewportScroll var(--viewport-speed, 200ms) linear;
+}
+
+@keyframes viewportScroll {
+  0%   { transform: translateY(-5%); }
+  100% { transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .boardAnimated {
+    animation: none;
+  }
 }

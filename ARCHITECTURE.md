@@ -200,6 +200,30 @@ In runner mode, the Board and Cell components accept optional `runnerLane`, `isL
 
 In runner mode, Board supports a `viewportHeadY` prop that creates forward motion perception by mapping screen rows to grid rows. The snake stays fixed at screen row 13 (`RUNNER_VIEWPORT_TAIL`) while obstacles and food scroll downward. The rendering transform is: `screenRow = (gridY - headY + VIEWPORT_TAIL + GRID_SIZE) % GRID_SIZE`. The Board is wrapped in `React.memo` and uses `data-viewport-scrolling="true"` attribute when viewport is active. When `viewportHeadY` is undefined (classic mode), rendering is identical to pre-viewport behavior.
 
+### Smooth Runner Motion
+
+**Problem:** Logical game positions only update at tick boundaries (80-200ms). Between ticks, the board was visually frozen, creating a ~5 FPS perception despite healthy browser frame rate. The engine, React rendering, and DOM layout were all healthy — this was purely a presentation gap.
+
+**Solution:** CSS keyframe animation on a new inner content wrapper inside the Board component provides continuous visual interpolation between logical tick updates without changing any gameplay logic, collision detection, scoring, or obstacle generation.
+
+**Architecture:**
+
+- `Engine.getEffectiveSpeed()` (private) — extracted from the duplicated calculation in `startLoop()`. Returns the current tick interval based on runner distance or classic level config.
+- `Engine.getTickInterval()` (public) — returns `getEffectiveSpeed()`. Called by the render layer to set `--viewport-speed` on the Board's inner wrapper.
+- `Board` — split into outer positioning container (`.board`, retains `role="grid"` and data attributes) and inner grid wrapper (`.boardInner`, contains the 400 cells with `display: grid`). Accepts `innerRef` prop.
+- `Board.module.css` — `.boardInner` (grid container), `.boardAnimated` (triggers `@keyframes viewportScroll`), and a `prefers-reduced-motion: reduce` media query that suppresses the animation.
+- `useGame` — exposes `getTickInterval()` callback wrapping `Engine.getTickInterval()`.
+- `RunnerGame` — `useEffect` watches `headY` changes and, on each tick, restarts the CSS animation via class toggle + forced reflow on the Board's inner wrapper. Sets `--viewport-speed` CSS custom property from `getTickInterval()`. Wrap-around detection (delta > 1) suppresses the animation for that frame.
+
+**Key Design Decisions:**
+
+1. **CSS animation over rAF interpolation** — lowest complexity (~80 LOC), zero JS per frame, GPU-accelerated. Rejected rAF-based visual state layer as over-engineered for this presentation problem.
+2. **Class toggle with forced reflow** for animation restart — well-understood CSS pattern used in production animation libraries. At 5-12 ticks/second, `void el.offsetWidth` has negligible performance cost.
+3. **Wrap-around suppression** — the 19-cell viewport jump at scroll wraparound cannot be interpolated cleanly. The single-frame snap is imperceptible at the screen edge.
+4. **Lane change animations compose independently** — viewport animation on the inner wrapper, lane change animations on the snake head cell. Browser compositor handles both `transform` values on different DOM elements without conflict.
+
+**Compatibility:** Classic mode is unaffected. The inner wrapper div exists in all Board renders but the `.boardAnimated` class is never applied. All classic mode tests pass without modification.
+
 ### Lane Change Visual Feedback
 
 When the player changes lanes, RunnerGame tracks the direction via `laneChangeDir` state and clears it after 200ms via a `laneChangeTimerRef`. The direction is threaded through `BoardProps` and `CellProps` as `laneChangeDirection`. Cell applies `laneSlidingLeft` or `laneSlidingRight` CSS classes on the snake head cell, triggering a 150ms directional slide animation with green glow.

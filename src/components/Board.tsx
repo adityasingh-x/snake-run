@@ -5,7 +5,7 @@ import { Cell } from './Cell';
 import type { BoardProps } from '../types/components';
 import styles from './Board.module.css';
 
-export const Board = memo(({ snake, direction, food, obstacles, wrapAround, portals, runnerLane, viewportHeadY, laneChangeDirection }: BoardProps) => {
+export const Board = memo(({ snake, direction, food, obstacles, wrapAround, portals, runnerLane, viewportHeadY, laneChangeDirection, innerRef }: BoardProps) => {
   const grid = useMemo(() => {
     const cells: { x: number; y: number; screenY: number }[] = [];
     if (viewportHeadY !== undefined) {
@@ -51,40 +51,52 @@ export const Board = memo(({ snake, direction, food, obstacles, wrapAround, port
       data-runner={runnerLane !== undefined ? 'true' : undefined}
       data-viewport-scrolling={isViewportScrolling ? 'true' : undefined}
       style={{
-        display: 'grid',
-        gridTemplateColumns: `repeat(${GRID_SIZE}, 1fr)`,
-        gridTemplateRows: `repeat(${GRID_SIZE}, 1fr)`,
+        width: '100%',
+        height: '100%',
+        aspectRatio: '1 / 1',
       }}
     >
-      {grid.map(({ x, y, screenY }) => {
-        const pos = { x, y };
-        const key = `${x},${y}`;
-        const isSnakeHead = positionsEqual(pos, snake[0]);
-        const isSnakeBody = snakeBodySet.has(key);
-        const isFood = positionsEqual(pos, food.position);
-        const isObstacle = obstaclesSet.has(key);
-        const isPortal = portalSet.has(key);
-        const isLaneColumn = runnerLane !== undefined && RUNNER_LANE_X.includes(x);
-        const isActiveLane = isLaneColumn && x === RUNNER_LANE_X[runnerLane];
+      <div
+        ref={innerRef}
+        className={styles.boardInner}
+        style={{
+          display: 'grid',
+          gridTemplateColumns: `repeat(${GRID_SIZE}, 1fr)`,
+          gridTemplateRows: `repeat(${GRID_SIZE}, 1fr)`,
+          width: '100%',
+          height: '100%',
+        }}
+      >
+        {grid.map(({ x, y, screenY }) => {
+          const pos = { x, y };
+          const key = `${x},${y}`;
+          const isSnakeHead = positionsEqual(pos, snake[0]);
+          const isSnakeBody = snakeBodySet.has(key);
+          const isFood = positionsEqual(pos, food.position);
+          const isObstacle = obstaclesSet.has(key);
+          const isPortal = portalSet.has(key);
+          const isLaneColumn = runnerLane !== undefined && RUNNER_LANE_X.includes(x);
+          const isActiveLane = isLaneColumn && x === RUNNER_LANE_X[runnerLane];
 
-        return (
-          <Cell
-            key={`${screenY}-${x}`}
-            x={x}
-            y={y}
-            isSnakeHead={isSnakeHead}
-            isSnakeBody={isSnakeBody}
-            foodType={isFood ? food.type : undefined}
-            isObstacle={isObstacle}
-            isPortal={isPortal}
-            direction={isSnakeHead ? direction : undefined}
-            isLaneColumn={isLaneColumn}
-            isActiveLane={isActiveLane}
-            isViewportScrolling={isViewportScrolling}
-            laneChangeDirection={isSnakeHead ? laneChangeDirection : undefined}
-          />
-        );
-      })}
+          return (
+            <Cell
+              key={`${screenY}-${x}`}
+              x={x}
+              y={y}
+              isSnakeHead={isSnakeHead}
+              isSnakeBody={isSnakeBody}
+              foodType={isFood ? food.type : undefined}
+              isObstacle={isObstacle}
+              isPortal={isPortal}
+              direction={isSnakeHead ? direction : undefined}
+              isLaneColumn={isLaneColumn}
+              isActiveLane={isActiveLane}
+              isViewportScrolling={isViewportScrolling}
+              laneChangeDirection={isSnakeHead ? laneChangeDirection : undefined}
+            />
+          );
+        })}
+      </div>
     </div>
   );
 });

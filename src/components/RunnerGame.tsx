@@ -7,19 +7,22 @@ import { Board } from './Board';
 import { RunnerHUD } from './RunnerHUD';
 import { RunnerGameOver } from './RunnerGameOver';
 import styles from './RunnerGame.module.css';
+import boardStyles from './Board.module.css';
 
 interface RunnerGameProps {
   onNavigateToMenu?: () => void;
 }
 
 export const RunnerGame = ({ onNavigateToMenu }: RunnerGameProps) => {
-  const { state, celebrateMultiplier, initAudio, startRunner, changeLane } = useGame();
+  const { state, getTickInterval, celebrateMultiplier, initAudio, startRunner, changeLane } = useGame();
   const [soundOn, setSoundOn] = useState(() => sharedSoundManager.isEnabled());
 
   useEffect(() => {
     return sharedSoundManager.subscribe(setSoundOn);
   }, []);
   const boardRef = useRef<HTMLDivElement>(null);
+  const boardInnerRef = useRef<HTMLDivElement>(null);
+  const prevHeadY = useRef<number>(10);
   const [hasStarted, setHasStarted] = useState(false);
 
   const toggleSound = useCallback(() => {
@@ -53,6 +56,32 @@ export const RunnerGame = ({ onNavigateToMenu }: RunnerGameProps) => {
       if (laneChangeTimerRef.current) clearTimeout(laneChangeTimerRef.current);
     };
   }, []);
+
+  const headY = state.snake[0]?.y ?? 10;
+
+  // Animation is controlled via direct DOM manipulation on the inner ref.
+  // React does not own the .boardAnimated class — it is added/removed
+  // exclusively here. This works because React's reconciler sees no
+  // className change on the JSX-rendered element (boardInner is static)
+  // and skips the DOM update, leaving this effect's class toggle intact.
+  useEffect(() => {
+    if (!state.isRunner || state.status !== 'playing') return;
+
+    const delta = Math.abs(headY - prevHeadY.current);
+    prevHeadY.current = headY;
+
+    if (delta > 1) return;
+
+    const el = boardInnerRef.current;
+    if (!el) return;
+
+    const tickInterval = getTickInterval();
+    el.style.setProperty('--viewport-speed', `${tickInterval}ms`);
+
+    el.classList.remove(boardStyles.boardAnimated);
+    void el.offsetWidth;
+    el.classList.add(boardStyles.boardAnimated);
+  }, [headY, state.isRunner, state.status, getTickInterval]);
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
@@ -121,6 +150,7 @@ export const RunnerGame = ({ onNavigateToMenu }: RunnerGameProps) => {
           runnerLane={state.lane}
           viewportHeadY={state.isRunner && state.status === 'playing' ? state.snake[0].y : undefined}
           laneChangeDirection={laneChangeDir}
+          innerRef={boardInnerRef}
         />
       </div>
 

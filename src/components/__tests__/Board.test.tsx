@@ -19,10 +19,12 @@ describe('Board Component', () => {
   });
 
   it('uses 1fr for columns and rows', () => {
-    render(<Board {...defaultProps} />);
+    const { container } = render(<Board {...defaultProps} />);
     const board = screen.getByRole('grid');
-    expect(board.style.gridTemplateColumns).toContain('1fr');
-    expect(board.style.gridTemplateRows).toContain('1fr');
+    const inner = board.querySelector('div')!;
+    expect(inner.style.gridTemplateColumns).toContain('1fr');
+    expect(inner.style.gridTemplateRows).toContain('1fr');
+    expect(container.querySelectorAll('[class*="boardInner"]').length).toBe(1);
   });
 
   it('has board class for responsive styling', () => {
@@ -104,5 +106,59 @@ describe('Board — viewport scrolling', () => {
     // Both should render the same number of cells (wrapping at y=0 and y=GRID_SIZE are equivalent)
     expect(at0.querySelectorAll('[role="gridcell"]').length)
       .toBe(atSize.querySelectorAll('[role="gridcell"]').length);
+  });
+});
+
+describe('Board — inner wrapper', () => {
+  const defaultProps = {
+    snake: [{ x: 10, y: 10 }],
+    direction: 'RIGHT' as const,
+    food: { position: { x: 5, y: 5 }, type: 'normal' as const, timer: -1 },
+    obstacles: [],
+  };
+
+  it('renders inner content wrapper with boardInner class', () => {
+    const { container } = render(<Board {...defaultProps} />);
+    const inner = container.querySelector('[class*="boardInner"]');
+    expect(inner).toBeInTheDocument();
+  });
+
+  it('inner wrapper is the grid container (display: grid)', () => {
+    render(<Board {...defaultProps} />);
+    const inner = screen.getByRole('grid').querySelector('div')!;
+    expect(inner.style.display).toBe('grid');
+  });
+
+  it('inner wrapper has 400 direct children (grid cells)', () => {
+    render(<Board {...defaultProps} />);
+    const inner = screen.getByRole('grid').querySelector('div')!;
+    expect(inner.querySelectorAll('[role="gridcell"]').length).toBe(400);
+  });
+});
+
+describe('Board — viewport scrolling inner wrapper', () => {
+  const defaultProps = {
+    snake: [{ x: 10, y: 10 }],
+    direction: 'RIGHT' as const,
+    food: { position: { x: 5, y: 5 }, type: 'normal' as const, timer: -1 },
+    obstacles: [],
+  };
+
+  it('data-viewport-scrolling still works with inner wrapper', () => {
+    render(<Board {...defaultProps} runnerLane={1} viewportHeadY={5} />);
+    const board = screen.getByRole('grid');
+    expect(board.getAttribute('data-viewport-scrolling')).toBe('true');
+  });
+
+  it('classic mode rendering is identical when viewportHeadY is undefined', () => {
+    const props = {
+      ...defaultProps,
+      snake: [{ x: 10, y: 10 }, { x: 9, y: 10 }, { x: 8, y: 10 }],
+      runnerLane: 1 as const,
+      direction: 'UP' as const,
+    };
+    const { container: classic } = render(<Board {...props} />);
+    const { container: viewportUndefined } = render(<Board {...props} viewportHeadY={undefined} />);
+    expect(viewportUndefined.innerHTML).toBe(classic.innerHTML);
   });
 });

@@ -1,8 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { Engine } from '../Engine';
 import { getInitialState } from '../state';
-import { LEVEL_COUNT } from '../constants';
+import { LEVEL_COUNT, RUNNER_INITIAL_SPEED, RUNNER_MIN_SPEED, RUNNER_SPEED_MULTIPLIER } from '../constants';
 import { saveLastUnlockedLevel } from '../storage';
+import { getLevelData } from '../levels';
 
 describe('Engine', () => {
   let engine: Engine;
@@ -918,6 +919,101 @@ describe('Engine', () => {
 
       engine.testDispatch({ type: 'MOVE_SNAKE' });
       expect(onMilestone).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('getTickInterval', () => {
+    it('returns RUNNER_INITIAL_SPEED / RUNNER_SPEED_MULTIPLIER at distance=0', () => {
+      engine.setState({
+        ...getInitialState(),
+        isRunner: true,
+        status: 'playing',
+        distance: 0,
+        snake: [{ x: 10, y: 10 }],
+        direction: 'UP',
+        nextDirection: 'UP',
+      });
+      expect(engine.getTickInterval()).toBe(RUNNER_INITIAL_SPEED / RUNNER_SPEED_MULTIPLIER);
+    });
+
+    it('decreases as distance increases', () => {
+      engine.setState({
+        ...getInitialState(),
+        isRunner: true,
+        status: 'playing',
+        distance: 0,
+        snake: [{ x: 10, y: 10 }],
+        direction: 'UP',
+        nextDirection: 'UP',
+      });
+      const at0 = engine.getTickInterval();
+
+      engine.setState({
+        ...engine.getState(),
+        distance: 100,
+      });
+      const at100 = engine.getTickInterval();
+
+      engine.setState({
+        ...engine.getState(),
+        distance: 200,
+      });
+      const at200 = engine.getTickInterval();
+
+      expect(at100).toBeLessThan(at0);
+      expect(at200).toBeLessThan(at100);
+    });
+
+    it('never returns below RUNNER_MIN_SPEED / RUNNER_SPEED_MULTIPLIER', () => {
+      engine.setState({
+        ...getInitialState(),
+        isRunner: true,
+        status: 'playing',
+        distance: 99999,
+        snake: [{ x: 10, y: 10 }],
+        direction: 'UP',
+        nextDirection: 'UP',
+      });
+      expect(engine.getTickInterval()).toBeGreaterThanOrEqual(RUNNER_MIN_SPEED / RUNNER_SPEED_MULTIPLIER);
+    });
+
+    it('returns classic mode speed when isRunner=false', () => {
+      engine.setState({
+        ...getInitialState(),
+        isRunner: false,
+        status: 'playing',
+        level: 1,
+      });
+      const expected = getLevelData(1).speed ?? 150;
+      expect(engine.getTickInterval()).toBe(expected);
+    });
+  });
+
+  describe('getEffectiveSpeed refactor regression', () => {
+    it('tick timing behavior is unchanged after refactor', () => {
+      engine.startAtLevel(1);
+      const listener = vi.fn();
+      engine.subscribe(listener);
+
+      // Collect move counts at original timing
+      vi.advanceTimersByTime(1000);
+      const moveCount = listener.mock.calls.length;
+
+      expect(moveCount).toBeGreaterThan(0);
+      // With level 1 speed of 150ms, we expect ~6-7 ticks in 1000ms
+      expect(moveCount).toBeGreaterThanOrEqual(5);
+      expect(moveCount).toBeLessThanOrEqual(10);
+    });
+
+    it('runner tick timing is consistent after refactor', () => {
+      engine.startRunner();
+      const listener = vi.fn();
+      engine.subscribe(listener);
+
+      vi.advanceTimersByTime(1000);
+      const moveCount = listener.mock.calls.length;
+
+      expect(moveCount).toBeGreaterThan(0);
     });
   });
 });
